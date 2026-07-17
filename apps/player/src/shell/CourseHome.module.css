@@ -1,0 +1,105 @@
+/* ============================================================
+ * CourseHome v4 — 重排版（大字号 · 无章节列表 · 雷达图溢出可见）
+ * ============================================================ */
+.courseHome {
+  padding: 32px 28px 48px;
+  color: var(--dg-color-text-primary);
+  font-size: 15px;
+  animation: dgbFadeIn .3s ease;
+  box-sizing: border-box;
+}
+@keyframes dgbFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Hero ===== */
+.hero { text-align: center; margin-bottom: 28px; }
+.heroTitle {
+  font-size: 26px; font-weight: 800;
+  margin: 0 0 10px; letter-spacing: .01em;
+  color: var(--dg-color-text-primary); line-height: 1.3;
+}
+.heroDesc {
+  font-size: 15px; color: var(--dg-color-text-secondary);
+  margin: 0 0 14px; line-height: 1.65;
+}
+.heroMeta {
+  display: flex; justify-content: center; gap: 20px;
+  font-size: 14px; color: var(--dg-color-text-tertiary); font-weight: 500;
+}
+.metaItem {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--dg-color-text-tertiary);
+}
+
+/* ===== 紧凑统计行 ===== */
+.statsRow {
+  display: flex; align-items: center; gap: 20px;
+  background: var(--dg-color-surface-card);
+  border: 1px solid var(--dg-color-surface-border);
+  border-radius: 16px; padding: 20px 24px; margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.donutWrap { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+.donut { display: block; }
+.donutText { font-family: var(--dg-font-sans, system-ui); }
+.donutLabel { font-size: 13px; color: var(--dg-color-text-tertiary); font-weight: 600; }
+.statCards { display: flex; gap: 12px; flex: 1; flex-wrap: wrap; }
+.statCard {
+  flex: 1; min-width: 80px; text-align: center;
+  padding: 14px 10px; background: var(--dg-color-surface-muted); border-radius: 12px;
+}
+.statVal { font-size: 28px; font-weight: 800; color: var(--dg-color-brand-600); line-height: 1.1; }
+.statLabel { font-size: 13px; color: var(--dg-color-text-tertiary); margin-top: 4px; font-weight: 500; }
+.badgeCol { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex-shrink: 0; }
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
+
+/* ===== Section 标题 ===== */
+.pathLabel { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--dg-color-text-tertiary); margin: 0 0 12px 2px; }
+
+/* ===== 能力雷达图 ===== */
+.abilitySection { margin-bottom: 28px; }
+.abilityPanel {
+  display: flex; align-items: flex-start; gap: 24px;
+  background: var(--dg-color-surface-card);
+  border: 1px solid var(--dg-color-surface-border);
+  border-radius: 16px; padding: 20px 24px;
+  overflow: visible;
+}
+.radar { flex-shrink: 0; display: block; overflow: visible; }
+.abilityDimList { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 10px; }
+.dimItem { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.dimDot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.dimName { flex: 1; min-width: 100px; color: var(--dg-color-text-secondary); font-weight: 600; font-size: 14px; }
+.dimBarWrap { width: 90px; height: 5px; background: var(--dg-color-surface-muted); border-radius: 999px; overflow: hidden; flex-shrink: 0; }
+.dimBar { height: 100%; border-radius: 999px; transition: width .5s ease; }
+.dimPct { font-size: 13px; font-weight: 700; min-width: 36px; text-align: right; }
+.abilityLegend {
+  display: flex; gap: 14px; margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--dg-color-surface-border);
+  font-size: 13px; color: var(--dg-color-text-tertiary); font-weight: 500;
+}
+
+/* ===== 成就系统 ===== */
+.achieveSection { margin-bottom: 28px; }
+.achieveSummary { font-size: 13px; color: var(--dg-color-text-tertiary); font-weight: 500; margin-left: 6px; }
+.achieveGrid { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+.achieveCard {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 12px 14px; border: 1px solid var(--dg-color-surface-border);
+  border-radius: 12px; background: var(--dg-color-surface-muted);
+  min-width: 80px; opacity: 0.45; filter: grayscale(80%);
+  transition: all .2s; cursor: default;
+}
+.achieveCardUnlocked {
+  opacity: 1; filter: none; background: var(--dg-color-surface-card);
+  border-color: #fbbf24; box-shadow: 0 0 0 2px rgba(251,191,36,0.18);
+}
+.achieveIcon { font-size: 26px; line-height: 1; }
+.achieveName { font-size: 12px; font-weight: 600; color: var(--dg-color-text-secondary); text-align: center; }
+
+
+
+
+

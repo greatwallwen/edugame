@@ -1,0 +1,69 @@
+/**
+ * Iter-40 / D · WokwiBlock 排版样式
+ * 与 GraphicsBlock / FigurePairBlock 的 caption 字号 / 间距对齐，
+ * 让 Wokwi 三件套在内容流里看起来像"教材插图"而不是孤立小部件。
+ *
+ * Iter-40-E · 视觉收敛（对标 5G 教材"卡片透明无底"克制美学）：
+ *   去掉米黄渐变背景 → 白底 + 1px 轻边 + 极轻阴影
+ *   背景层级降到与 callout / mermaid / graphics 同级，避免"三种背景叠加"
+ *
+ * Iter-40-H · 移除 prefers-color-scheme 自动深色（用户反馈：与教材现有暖米色样式不匹配）
+ *   现 DGBook 暂无完整 dark mode；强制浅底兼容 OS 深色偏好用户。
+ *   后续若加 [data-theme="dark"] 显式开关，再补对应深色变体。
+ */
+
+.dgb-wokwi-block {
+  margin: 16px 0;
+  padding: 18px 16px 14px;
+  background: var(--dg-color-surface-card, #ffffff);
+  border: 1px solid var(--dg-color-border-subtle, #e8e0d0);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  /* Iter-40-H · 强制使用浅底文字色，避免 OS 深色偏好继承到子文字
+     （prefers-color-scheme 移除后这层兜底确保任何 inherit 都被覆盖）*/
+  color: #1f2937;
+}
+
+.dgb-wokwi-block__title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--dg-color-text-secondary, #6f5b3a);
+  letter-spacing: 0.2px;
+  text-align: center;
+}
+
+.dgb-wokwi-block__stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+  padding: 8px 4px;
+}
+
+.dgb-wokwi-block__caption {
+  font-size: 12.5px;
+  color: var(--dg-color-text-muted, #5a5a5a);
+  text-align: center;
+  line-height: 1.55;
+  max-width: 480px;
+}
+
+/* Iter-47 · Wokwi 元件紧凑化：父容器是 display:grid 单列，inline-block 横排无效，
+ * 改为缩小每个 wokwi block 的尺寸，让三个元件竖排但更紧凑，减少空间占用。 */
+.dgb-wokwi-block {
+  margin: 8px 0;
+  padding: 12px 14px 10px;
+  gap: 6px;
+}
+.dgb-wokwi-block__stage {
+  min-height: 48px;
+  padding: 4px 2px;
+}
+.dgb-wokwi-block__caption {
+  font-size: 12px;
+  max-width: 560px;
+}

@@ -1,0 +1,110 @@
+/* InfoTableBlock — 教材风"任务描述"表格 */
+
+.dgb-info-table {
+  margin: 16px 0 22px;
+  padding: 20px 22px 16px;
+  border-radius: 18px;
+  background: var(--dg-color-surface-card, #fff);
+  border: 1px solid var(--dg-color-brand-100, #C8E4D0);
+  box-shadow: 0 6px 20px rgba(14, 124, 74, 0.05);
+}
+
+.dgb-info-table-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--dg-color-brand-700, #0A5132);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.dgb-info-table-intro {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--dg-color-text-secondary, #4B5563);
+}
+
+.dgb-info-table-list {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.dgb-info-table-row {
+  display: grid;
+  grid-template-columns: minmax(96px, 112px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding: 10px 8px;
+  border-bottom: 1px dashed var(--dg-color-brand-100, #C8E4D0);
+}
+.dgb-info-table-row:last-child {
+  border-bottom: 0;
+}
+
+.dgb-info-table-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-align: center;
+  justify-self: start;
+  white-space: nowrap;
+  background: var(--dg-color-brand-50, #E6F1EA);
+  color: var(--dg-color-brand-700, #0A5132);
+  border: 1px solid var(--dg-color-brand-100, #C8E4D0);
+}
+.dgb-info-table-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+}
+
+.dgb-info-table-row--warm .dgb-info-table-label {
+  background: #FFF3DF;
+  color: #8A4A00;
+  border-color: #F0D9A2;
+}
+.dgb-info-table-row--neutral .dgb-info-table-label {
+  background: var(--dg-color-surface-muted, #F4EEDF);
+  color: var(--dg-color-text-secondary, #4B5563);
+  border-color: var(--dg-color-surface-border, #D9E2D1);
+}
+
+.dgb-info-table-value {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--dg-color-text-primary, #1F2937);
+}
+.dgb-info-table-value strong {
+  color: var(--dg-color-brand-700, #0A5132);
+}
+.dgb-info-table-value code {
+  font-family: var(--dg-font-mono, 'JetBrains Mono', monospace);
+  background: var(--dg-color-brand-50, #E6F1EA);
+  color: var(--dg-color-brand-700, #0A5132);
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 13.5px;
+}
+
+@media (max-width: 720px) {
+  .dgb-info-table-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .dgb-info-table-label {
+    justify-self: start;
+  }
+}

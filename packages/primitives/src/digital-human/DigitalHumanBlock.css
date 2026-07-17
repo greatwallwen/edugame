@@ -1,0 +1,256 @@
+/* DigitalHumanBlock v5 · textbook 紧凑讲师卡 */
+
+.dgb-dh {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 14px;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-width: 0;
+}
+
+/* 场景模式下（动画下方教师卡）—— 走透明背景，让外层的米色教材纸显露 */
+.dgb-dh-scene { background: transparent; border: 0; box-shadow: none; }
+
+.dgb-dh-bar {
+  display: inline-grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg,
+    var(--dg-color-brand-600, #0C6A3F) 0%,
+    var(--dg-color-brand-500, #0E7C4A) 100%);
+  color: #fff;
+  align-self: flex-start;
+  max-width: 100%;
+  box-shadow: 0 4px 14px rgba(14, 124, 74, 0.20);
+}
+.dgb-dh-bar-meta { min-width: 0; }
+.dgb-dh-bar-name {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff;
+  white-space: nowrap;
+}
+.dgb-dh-bar-status {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.82);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dgb-dh-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+}
+.dgb-dh-pulse.on {
+  background: #bbf7d0;
+  box-shadow: 0 0 0 4px rgba(187, 247, 208, 0.22);
+  animation: dgb-dh-pulse-anim 1.6s ease-in-out infinite;
+}
+@keyframes dgb-dh-pulse-anim {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(187, 247, 208, 0); }
+  50%      { box-shadow: 0 0 0 5px rgba(187, 247, 208, 0.22); }
+}
+
+.dgb-dh-icon-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.dgb-dh-icon-btn:hover { background: rgba(255, 255, 255, 0.3); }
+.dgb-dh-icon-btn.is-on { background: rgba(255, 255, 255, 0.92); color: #0A5132; }
+.dgb-dh-icon-btn svg { display: block; }
+
+.dgb-dh-script {
+  padding: 4px 6px 4px 2px;
+  background: transparent;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--dg-color-brand-500) 28%, transparent) transparent;
+}
+.dgb-dh-script::-webkit-scrollbar { width: 6px; }
+.dgb-dh-script::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--dg-color-brand-500) 28%, transparent);
+  border-radius: 4px;
+}
+.dgb-dh-script-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.78;
+  color: var(--dg-color-text-primary, #1F2937);
+  word-break: break-word;
+}
+.dgb-dh-tts-error {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #FEF2F2;
+  color: #B91C1C;
+  font-size: 11.5px;
+  border: 1px solid #FECACA;
+}
+
+.dgb-dh-faq {
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--dg-color-surface-border, #D9E2D1);
+  background: var(--dg-color-surface-muted, #F4EEDF);
+}
+.dgb-dh-faq-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--dg-color-text-secondary, #4B5563);
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+.dgb-dh-faq-item + .dgb-dh-faq-item { margin-top: 4px; }
+.dgb-dh-faq-q {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 6px 8px;
+  font-size: 13px;
+  color: var(--dg-color-text-primary, #1F2937);
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dgb-dh-faq-q:hover { background: rgba(14, 124, 74, 0.06); }
+.dgb-dh-faq-chevron {
+  color: var(--dg-color-brand-500, #0E7C4A);
+  transition: transform 0.15s;
+  display: inline-block;
+}
+.dgb-dh-faq-chevron.open { transform: rotate(90deg); }
+.dgb-dh-faq-a {
+  padding: 4px 12px 10px 22px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--dg-color-text-secondary, #4B5563);
+}
+
+
+/* 步进按钮容器 */
+.dgb-dh-bar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.dgb-dh-icon-btn--ghost {
+  background: rgba(255, 255, 255, 0.1);
+}
+.dgb-dh-icon-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.24);
+}
+.dgb-dh-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* 分段讲稿列表 —— 当 stepScripts.length > 1 时启用（米色教材纸风） */
+.dgb-dh-script-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dgb-dh-script-item {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 14px 10px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--dg-color-text-tertiary, #8a8776);
+  font-size: 14px;
+  line-height: 1.82;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s, font-size 0.15s;
+  position: relative;
+}
+.dgb-dh-script-bullet {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(14, 124, 74, 0.10);
+  color: var(--dg-color-brand-700, #0A5132);
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.dgb-dh-script-line {
+  min-width: 0;
+  word-break: break-word;
+  font-family: var(--dg-font-serif, 'Noto Serif SC', 'Source Han Serif SC', Georgia, 'Times New Roman', serif);
+}
+.dgb-dh-script-item.is-current {
+  background: #ffffff;
+  border-color: #E3D4AA;
+  color: var(--dg-color-text-primary, #1F2937);
+  font-size: 15.5px;
+  line-height: 1.85;
+  box-shadow: 0 6px 18px rgba(120, 88, 27, 0.12);
+  padding-left: 18px;
+}
+.dgb-dh-script-item.is-current .dgb-dh-script-line {
+  font-weight: 500;
+  letter-spacing: 0.005em;
+}
+.dgb-dh-script-item.is-current .dgb-dh-script-bullet {
+  background: var(--dg-color-brand-500, #0E7C4A);
+  color: #fff;
+  transform: scale(1.05);
+}
+/* 朗读中：左侧绿色光标竖条 + 呼吸动画 */
+.dgb-dh-script-item.is-speaking::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 10px;
+  bottom: 10px;
+  width: 4px;
+  border-radius: 3px;
+  background: var(--dg-color-brand-500, #0E7C4A);
+  box-shadow: 0 0 10px rgba(14, 124, 74, 0.55);
+  animation: dgb-dh-cursor-pulse 1.1s ease-in-out infinite;
+}
+@keyframes dgb-dh-cursor-pulse {
+  0%, 100% { opacity: 0.5; transform: scaleY(0.9); }
+  50%      { opacity: 1;   transform: scaleY(1); }
+}

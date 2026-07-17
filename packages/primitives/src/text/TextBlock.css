@@ -1,0 +1,203 @@
+﻿/* ============================================================================
+ * 中文教材正文排版（参考 ZJU/财经类数字教材：宽行距 + 首行缩进 + 适度字间距）
+ *  - 正文 16.5px / 1.95 行高 / 0.02em 字间距 / 段间 1em
+ *  - 段落首行缩进 2em（中文教材标准；西文段不影响）
+ *  - 标题层级清晰：h2/h3 带左侧色块；段间留白足
+ *  - 容器宽度由外层 .dgb-page-inner 控（移除 max-width 限制）
+ * ========================================================================== */
+.dgb-text {
+  font-family: var(--dg-font-sans, 'PingFang SC', 'Source Han Sans SC', 'Microsoft YaHei', system-ui, sans-serif);
+  font-size: 16.5px;
+  line-height: 1.95;
+  letter-spacing: 0.02em;
+  color: var(--dg-color-text-primary, #0f172a);
+  /* 行内连续 ASCII 串（如长标识符 / 路径）允许换行，避免溢出 */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 段落（中文教材首行缩进 2em） ---------- */
+.dgb-text p {
+  margin: 0.95em 0;
+  text-indent: 2em;
+}
+/* 紧跟标题/列表/引用/代码块/图后的段落不缩进——标题已自带左侧锚定 */
+.dgb-text h1 + p,
+.dgb-text h2 + p,
+.dgb-text h3 + p,
+.dgb-text h4 + p,
+.dgb-text blockquote + p,
+.dgb-text pre + p,
+.dgb-text figure + p,
+.dgb-text table + p {
+  text-indent: 2em;   /* 中文教材：仍缩进，保持统一节律 */
+}
+/* 段内 inline 元素继承缩进规则（不破坏） */
+.dgb-text p > strong,
+.dgb-text p > em,
+.dgb-text p > code,
+.dgb-text p > a { text-indent: 0; }
+
+/* ---------- 标题层级 ---------- */
+.dgb-text h1,
+.dgb-text h2,
+.dgb-text h3,
+.dgb-text h4 {
+  color: var(--dg-color-text-primary, #0f172a);
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+}
+.dgb-text h1 {
+  font-size: 1.55em;
+  margin: 0.4em 0 0.65em;
+  padding-bottom: 0.35em;
+  border-bottom: 2px solid var(--dg-color-brand-500, #0E7C4A);
+}
+.dgb-text h2 {
+  font-size: 1.32em;
+  margin: 1.4em 0 0.6em;
+  padding-left: 0.55em;
+  border-left: 4px solid var(--dg-color-brand-500, #0E7C4A);
+}
+.dgb-text h3 {
+  font-size: 1.15em;
+  margin: 1.2em 0 0.45em;
+  color: var(--dg-color-brand-600, #3A63E8);
+}
+.dgb-text h4 {
+  font-size: 1.04em;
+  margin: 1em 0 0.35em;
+  color: var(--dg-color-text-secondary, #475569);
+}
+
+/* ---------- 列表 ---------- */
+.dgb-text ul,
+.dgb-text ol {
+  padding-left: 1.6em;
+  margin: 0.7em 0;
+}
+.dgb-text li {
+  margin: 0.35em 0;
+  line-height: 1.85;
+}
+.dgb-text li > p {            /* 列表项内段落不缩进 */
+  margin: 0.25em 0;
+  text-indent: 0;
+}
+
+/* ---------- 引用 / 图注 ---------- */
+.dgb-text blockquote {
+  margin: 1em 0;
+  padding: 0.7em 1.1em;
+  border-left: 4px solid var(--dg-color-brand-500, #0E7C4A);
+  background: var(--dg-color-surface-muted, #f1f5f9);
+  color: var(--dg-color-text-secondary, #475569);
+  border-radius: 0 10px 10px 0;
+  line-height: 1.85;
+}
+.dgb-text blockquote p { text-indent: 0; margin: 0.3em 0; }
+
+/* ---------- v3-rich · Callout 卡片（💡/🎯/⚠️/✅/❓） ---------- */
+.dgb-text .dgb-callout {
+  border-left-width: 5px;
+  border-radius: 10px;
+  padding: 0.85em 1.1em 0.85em 1.15em;
+  margin: 1.1em 0;
+  position: relative;
+}
+.dgb-text .dgb-callout p { text-indent: 0; line-height: 1.85; }
+.dgb-text .dgb-callout-tip {
+  background: #fffbe6;
+  border-left-color: #facc15;
+  color: #713f12;
+}
+.dgb-text .dgb-callout-goal {
+  background: #ecfeff;
+  border-left-color: #06b6d4;
+  color: #155e75;
+}
+.dgb-text .dgb-callout-warn {
+  background: #fef2f2;
+  border-left-color: #ef4444;
+  color: #7f1d1d;
+}
+.dgb-text .dgb-callout-ok {
+  background: #f0fdf4;
+  border-left-color: #16a34a;
+  color: #14532d;
+}
+.dgb-text .dgb-callout-ask {
+  background: #FBF7EC;
+  border-left-color: var(--dg-color-brand-500, #0E7C4A);
+  color: var(--dg-color-brand-700, #0A5132);
+}
+.dgb-text em:only-child,
+.dgb-text p > em:only-child {
+  display: block;
+  text-align: center;
+  font-style: normal;
+  color: var(--dg-color-text-tertiary, #94a3b8);
+  font-size: 0.92em;
+  letter-spacing: 0.04em;
+  margin: 0.4em 0 1em;
+}
+
+/* ---------- 代码 ---------- */
+.dgb-text code {
+  font-family: var(--dg-font-mono, 'JetBrains Mono', ui-monospace, monospace);
+  font-size: 0.92em;
+  background: var(--dg-color-surface-muted, #f1f5f9);
+  padding: 0.12em 0.42em;
+  border-radius: 5px;
+  color: var(--dg-color-brand-600, #3A63E8);
+  letter-spacing: 0;
+}
+.dgb-text pre {
+  padding: 16px 18px;
+  background: var(--dg-color-surface-muted, #f1f5f9);
+  border: 1px solid var(--dg-color-surface-border, #e2e8f0);
+  border-left: 3px solid var(--dg-color-brand-500, #0E7C4A);
+  border-radius: 10px;
+  overflow-x: auto;
+  font-size: 0.9em;
+  line-height: 1.7;
+  margin: 1em 0;
+}
+.dgb-text pre code {
+  background: transparent; padding: 0; color: inherit;
+  letter-spacing: 0;
+}
+
+/* ---------- 表格 ---------- */
+.dgb-text table {
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.95em;
+  width: 100%;
+}
+.dgb-text th,
+.dgb-text td {
+  border: 1px solid var(--dg-color-surface-border, #e2e8f0);
+  padding: 8px 12px;
+  text-align: left;
+  line-height: 1.7;
+}
+.dgb-text th {
+  background: var(--dg-color-surface-muted, #f1f5f9);
+  font-weight: 600;
+}
+
+/* ---------- 链接 / 强调 ---------- */
+.dgb-text a {
+  color: var(--dg-color-brand-600, #3A63E8);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--dg-color-brand-500, #0E7C4A);
+}
+.dgb-text a:hover { border-bottom-style: solid; }
+.dgb-text strong { color: var(--dg-color-text-primary, #0f172a); font-weight: 700; }
+.dgb-text hr {
+  border: 0;
+  border-top: 1px dashed var(--dg-color-surface-border, #e2e8f0);
+  margin: 1.6em 0;
+}

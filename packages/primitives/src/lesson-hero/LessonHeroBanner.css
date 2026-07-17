@@ -1,0 +1,136 @@
+/* LessonHeroBanner — 纸质教材风 Hero 页头 */
+
+.dgb-lesson-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 280px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: linear-gradient(135deg,
+    var(--dg-color-brand-700, #0A5132) 0%,
+    var(--dg-color-brand-500, #0E7C4A) 55%,
+    var(--dg-color-brand-600, #0C6A3F) 100%);
+  color: var(--dg-color-text-inverse, #fff);
+  box-shadow: 0 18px 48px rgba(14, 124, 74, 0.18);
+  padding: 0;
+  margin: 0 0 20px;
+}
+.dgb-lesson-hero.has-image {
+  background-size: cover;
+  background-position: center;
+  min-height: 320px;
+}
+
+/* 微纹理：教材纸的细格点，图像模式下额外叠暗幕 */
+.dgb-lesson-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 15% 12%, rgba(255, 255, 255, 0.10), transparent 38%),
+    radial-gradient(circle at 88% 82%, rgba(0, 0, 0, 0.14), transparent 42%);
+  z-index: 1;
+}
+.dgb-lesson-hero-veil {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(10, 81, 50, 0.08) 0%, rgba(10, 81, 50, 0.55) 100%);
+  z-index: 1;
+}
+.dgb-lesson-hero.has-image .dgb-lesson-hero-veil {
+  background: linear-gradient(180deg, rgba(10, 81, 50, 0.30) 0%, rgba(10, 81, 50, 0.70) 100%);
+}
+
+.dgb-lesson-hero-kind,
+.dgb-lesson-hero-brand {
+  position: absolute;
+  top: 18px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  z-index: 3;
+}
+.dgb-lesson-hero-kind {
+  left: 20px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+}
+.dgb-lesson-hero-brand {
+  right: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.dgb-lesson-hero-inner {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  padding: 56px 32px 44px;
+  display: grid;
+  place-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.dgb-lesson-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 28px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #FFF8EC 0%, #FFFFFF 100%);
+  color: var(--dg-color-brand-700, #0A5132);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), inset 0 0 0 1px rgba(10, 81, 50, 0.15);
+  max-width: min(92%, 820px);
+}
+.dgb-lesson-hero-eyebrow {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--dg-color-brand-500, #0E7C4A);
+  color: #fff;
+  flex-shrink: 0;
+}
+.dgb-lesson-hero-title {
+  font-size: clamp(22px, 3vw, 30px);
+  line-height: 1.15;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+
+.dgb-lesson-hero-subtitle {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  max-width: min(92%, 820px);
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.dgb-lesson-hero-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .dgb-lesson-hero-inner { padding: 44px 20px 32px; }
+  .dgb-lesson-hero-pill { gap: 10px; padding: 10px 18px; }
+  .dgb-lesson-hero-eyebrow { font-size: 11px; padding: 3px 8px; }
+  .dgb-lesson-hero-title { font-size: 20px; }
+}

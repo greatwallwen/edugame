@@ -1,0 +1,1710 @@
+[
+ {
+  "id": "p1-concept",
+  "title": "1.1 单片机的基本概念与分类",
+  "template": "T-concept",
+  "blocks": [
+   {
+    "id": "p1c-text",
+    "kind": "text",
+    "markdown": "# 1.1 单片机的基本概念与分类\n\n## 1.1.1 什么是单片机\n\n**单片机（MCU，Microcontroller Unit，单片微型计算机）** 是将CPU、存储器（Flash/RAM）、\nI/O端口、定时器、中断系统、串行接口等功能部件集成在一块硅片上的微型计算机。\n\n与通用计算机不同，单片机专注于**嵌入式控制任务**，具有以下核心特点：\n- **高集成度**：一颗芯片包含完整计算机系统\n- **低功耗**：毫安级工作电流，微安级待机\n- **实时性强**：确定性响应，中断延迟可精确到微秒级\n- **成本低**：大批量生产成本低至几元人民币\n- **体积小**：LQFP48封装仅7×7mm\n\n## 1.1.2 MCU / CPU / SoC 三者对比\n\n| 类别 | 代表产品 | 集成度 | 性能 | 功耗 | 典型应用 |\n|------|---------|--------|------|------|---------|\n| **MCU** | STM32F103 | 极高（含外设） | 中低 | 极低（mA级） | 电机控制、传感器 |\n| **MPU** | ARM Cortex-A53 | 中（需外接DDR） | 高 | 中（W级） | 路由器、工控机 |\n| **CPU** | Intel i7 | 低（需主板） | 极高 | 高（W~百W） | 台式机、服务器 |\n| **SoC** | 骁龙8 Gen 3 | 极高（含GPU/ISP） | 极高 | 中高 | 智能手机、平板 |\n| **DSP** | TMS320C6748 | 中 | 信号处理极强 | 中 | 音频、雷达处理 |\n\n> 💡 **记忆口诀**：MCU=控制专家，CPU=计算专家，SoC=全能选手\n\n## 1.1.3 STM32F103C8T6 详细规格\n\nSTM32F103C8T6是意法半导体（STMicroelectronics）基于ARM Cortex-M3内核的32位MCU，\n是嵌入式入门的经典选择。\n\n| 参数 | 规格值 | 说明 |\n|------|--------|------|\n| 内核 | ARM Cortex-M3 | 32位RISC，Thumb-2指令集 |\n| 主频 | 最高 **72MHz** | 内部PLL倍频，外部8MHz晶振 |\n| Flash | **64KB** | 程序存储，掉电不丢失 |\n| SRAM | **20KB** | 数据存储，掉电丢失 |\n| GPIO | **37个** | PA0~PA15, PB0~PB15, PC13~PC15 |\n| 定时器 | 3个通用 + 1个高级 | TIM1~TIM4 |\n| 串口 | 3个USART | USART1~3 |\n| SPI | 2个 | SPI1~2 |\n| I2C | 2个 | I2C1~2 |\n| ADC | 1个12位，10通道 | 最高1MSPS |\n| 封装 | LQFP48 | 7×7mm，48引脚 |\n| 工作电压 | 2.0~3.6V | 典型3.3V |\n| 工作温度 | -40~+85°C | 工业级 |\n\n## 1.1.4 单片机的应用领域\n\n单片机渗透到现代生活的每个角落：\n\n| 领域 | 典型应用 | 使用的MCU类型 |\n|------|---------|-------------|\n| 家用电器 | 洗衣机、微波炉、空调 | 8位MCU（成本优先） |\n| 汽车电子 | ABS、ECU、车窗控制 | 32位MCU（可靠性优先） |\n| 工业控制 | PLC、变频器、机器人 | 32位MCU+DSP |\n| 医疗设备 | 血糖仪、心电图机 | 低功耗32位MCU |\n| 物联网 | 智能门锁、传感器节点 | 带无线的MCU（ESP32等） |\n| 消费电子 | 键盘、鼠标、充电器 | 8~32位MCU |\n\n## 1.1.5 为什么选择STM32F103入门\n\n1. **生态完善**：ST官方提供CubeIDE+CubeMX+HAL库，开发效率高\n2. **资料丰富**：中文教程、视频、论坛资源极多\n3. **价格合理**：开发板约20~50元，芯片约5~15元\n4. **工业应用广**：掌握后可直接用于实际项目\n5. **国产替代**：GD32F103与STM32F103引脚兼容，代码可直接移植\n",
+    "commentary": {
+     "script": "单片机的英文是 MCU，全称 Microcontroller Unit。它把 CPU、Flash、SRAM、IO 端口、定时器、\n中断系统、串口通信全部集成在一块硅片上，相当于一台微型计算机。\n和电脑 CPU 的区别在哪？MCU 是控制专家，集成度极高、功耗以毫安计、成本几块钱、体积小到\n七毫米见方，专门为嵌入式控制任务设计。CPU 是计算专家，要配主板和内存。SoC 是全能选手，\n集成 GPU、ISP，用在手机平板。\n本课用的 STM32F103C8T6 关键参数要记住：内核 ARM Cortex-M3，主频最高 72 兆赫，64 KB 程序\nFlash，20 KB 数据 SRAM，37 个 GPIO，3 个通用 + 1 个高级定时器，3 个串口，工作电压 3.3 V，\n工业温度范围。\n",
+     "stepScripts": [
+      "单片机定义先记住：MCU 是 Microcontroller Unit 的缩写，把 CPU、存储器、IO、定时器、中断、串口集成在一块硅片上。它专门做嵌入式控制，不是通用计算。",
+      "MCU 的五大特点连起来背：高集成、低功耗、实时性强、成本低、体积小。LQFP48 封装才 7×7 毫米，这个尺寸要有概念。",
+      "MCU、CPU、SoC、MPU、DSP 五种芯片要分清。MCU 是控制专家，CPU 是计算专家，SoC 是全能选手，MPU 在中间，DSP 专做信号处理。这是高频考点。",
+      "STM32F103C8T6 的关键参数必须背：Cortex-M3 内核、72 兆主频、64K Flash、20K SRAM、37 个 GPIO、3 个通用加 1 个高级定时器、3 个串口、12 位 ADC、LQFP48 封装。后面所有项目都用它。"
+     ]
+    }
+   },
+   {
+    "id": "p1c-mindmap",
+    "kind": "mindmap",
+    "root": {
+     "text": "STM32F103 体系",
+     "children": [
+      {
+       "text": "硬件资源",
+       "children": [
+        {
+         "text": "Cortex-M3 @ 72MHz"
+        },
+        {
+         "text": "64KB Flash"
+        },
+        {
+         "text": "20KB SRAM"
+        },
+        {
+         "text": "37× GPIO"
+        }
+       ]
+      },
+      {
+       "text": "通信外设",
+       "children": [
+        {
+         "text": "3× USART"
+        },
+        {
+         "text": "2× SPI"
+        },
+        {
+         "text": "2× I2C"
+        },
+        {
+         "text": "USB/CAN"
+        }
+       ]
+      },
+      {
+       "text": "模拟外设",
+       "children": [
+        {
+         "text": "12位 ADC"
+        },
+        {
+         "text": "内部温度传感器"
+        }
+       ]
+      },
+      {
+       "text": "定时外设",
+       "children": [
+        {
+         "text": "SysTick"
+        },
+        {
+         "text": "通用 Timer"
+        },
+        {
+         "text": "高级 Timer"
+        }
+       ]
+      }
+     ]
+    },
+    "commentary": {
+     "script": "这张思维导图把 STM32F103 的体系结构分成四大块。\n硬件资源：Cortex-M3 内核跑 72 兆赫，64 KB Flash 装程序，20 KB SRAM 存数据，37 个 GPIO 引脚。\n通信外设：3 个串口、2 个 SPI、2 个 I2C，还有 USB 和 CAN。\n模拟外设：12 位 ADC，外加片上温度传感器。\n定时外设：SysTick 系统滴答，通用 Timer 和高级 Timer。\n这四块以后会逐章展开，形成一张完整的能力地图。\n",
+     "stepScripts": [
+      "这张思维导图把 STM32F103 体系 拆成 4 大模块。我们按结构一块一块过。",
+      "第一块叫 硬件资源。它下面挂着 Cortex-M3 @ 72MHz、64KB Flash、20KB SRAM、37× GPIO——这些是 硬件资源 的具体形态。",
+      "第二块叫 通信外设。它下面挂着 3× USART、2× SPI、2× I2C、USB/CAN——这些是 通信外设 的具体形态。",
+      "第三块叫 模拟外设。它下面挂着 12位 ADC、内部温度传感器——这些是 模拟外设 的具体形态。",
+      "第四块叫 定时外设。它下面挂着 SysTick、通用 Timer、高级 Timer——这些是 定时外设 的具体形态。",
+      "整张图就是 STM32F103 体系 的一张能力地图。背下这张图，STM32F103 体系 的结构就刻在脑子里了。"
+     ]
+    }
+   },
+   {
+    "id": "p1c-anim",
+    "kind": "animation",
+    "src": "inline:<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"UTF-8\"><title>MCU 是什么：CPU、MCU、SoC 三层关系</title><style>*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#FBF7EC;font-family:\"PingFang SC\",\"Source Han Sans SC\",\"Microsoft YaHei\",Arial,sans-serif;color:#1F2937}#viewport{position:fixed;inset:0;overflow:hidden;background:linear-gradient(135deg,#FBF7EC,#F4EEDF)}#stage{position:absolute;width:1920px;height:1080px;left:0;top:0;transform-origin:0 0;background:linear-gradient(180deg,#fff,#FBF7EC);border-radius:28px;box-shadow:0 24px 80px rgba(14,124,74,.14);overflow:hidden;border:1px solid #D9E2D1}.head{position:absolute;left:76px;top:54px;right:76px;display:flex;justify-content:flex-start;gap:50px}h1{font-size:52px;line-height:1.08;margin:0 0 14px;font-weight:900;letter-spacing:-.8px;max-width:1680px;color:#0A5132}.sub{font-size:22px;color:#4B5563;max-width:1400px}.panel{position:absolute;left:76px;top:205px;width:1115px;height:515px;background:#fff;border:1px solid #D9E2D1;border-radius:28px;box-shadow:0 16px 44px rgba(14,124,74,.08);overflow:hidden}.svg{width:100%;height:100%}.side{position:absolute;right:76px;top:205px;width:585px;height:515px;display:grid;grid-template-rows:auto 1fr;gap:18px}.formulaBox{padding:26px;border-radius:26px;background:#FFF8EC;border:1px solid #F0D9A2;box-shadow:0 12px 34px rgba(217,119,6,.10)}.formulaBox h2{margin:0 0 12px;font-size:30px;color:#0A5132}.formulaBox p{margin:0;font-size:28px;font-weight:800;color:#B45309}ol{margin:0;padding:0;display:grid;gap:14px;list-style:none}li{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border-radius:20px;background:#fff;border:1px solid #D9E2D1;font-size:20px;line-height:1.32;color:#4B5563;opacity:.4;transition:.3s}li b{min-width:34px;height:34px;border-radius:12px;background:#C8E4D0;color:#0A5132;display:grid;place-items:center}li.active{opacity:1;border-color:#0E7C4A;box-shadow:0 12px 32px rgba(14,124,74,.18);transform:translateX(-6px)}li.done{opacity:.85}.metrics{position:absolute;left:76px;right:76px;top:748px;height:118px;display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.metric{background:#fff;border:1px solid #D9E2D1;border-radius:24px;padding:18px;text-align:center;box-shadow:0 12px 30px rgba(14,124,74,.06);overflow:hidden;transition:.25s}.metric.hl{background:#FFF8EC;border-color:#F0D9A2;box-shadow:0 18px 38px rgba(217,119,6,.20);transform:translateY(-4px)}.metric strong{display:block;font-size:34px;line-height:1.05;color:#0E7C4A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.metric span{display:block;margin-top:10px;color:#4B5563;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.caption{position:absolute;left:120px;right:120px;bottom:46px;text-align:center;padding:18px 24px;border-radius:24px;background:rgba(255,255,255,.85);backdrop-filter:blur(6px);border:1px solid #D9E2D1}#cn{font-size:30px;line-height:1.25;font-weight:800;color:#0A5132;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dots{position:absolute;right:92px;top:32px;display:flex;gap:11px}.dots i{width:13px;height:13px;border-radius:50%;background:#D9E2D1;transition:.25s}.dots i.active{background:#0E7C4A;transform:scale(1.4)}.dots i.done{background:#10915A}[data-step]{opacity:.12;transition:opacity .45s ease, transform .45s ease}[data-step].show{opacity:1}[data-step].current{filter:drop-shadow(0 0 14px #10915A)}@keyframes pulse{50%{transform:scale(1.08);opacity:.72}}.breath{animation:pulse 2.2s ease-in-out infinite;transform-origin:center}\n.layer{fill:#fff;stroke:#0E7C4A;stroke-width:4}\n.layer.warn{fill:#FFF8EC;stroke:#D97706}\n.layer.success{fill:#DCFCE7;stroke:#10915A}\n.layerText{font-size:22px;text-anchor:middle;fill:#0A5132;font-weight:800}\n.layerSub{font-size:15px;text-anchor:middle;fill:#4B5563}\n.chip{fill:#0E7C4A}\n.chipText{font-size:18px;fill:#fff;text-anchor:middle;font-weight:800}\n/*DGB-DEVICE-ENH*/\n.led{filter:drop-shadow(0 0 6px rgba(185,28,28,.55)) drop-shadow(0 0 14px rgba(252,165,165,.45));}\n.led.on,.led[data-on=\"1\"]{filter:drop-shadow(0 0 10px #ef4444) drop-shadow(0 0 22px #fca5a5);}\n.res{filter:drop-shadow(0 1px 2px rgba(106,82,176,.4));}\n.diode{filter:drop-shadow(0 1px 3px rgba(106,82,176,.45));}\n.wire{filter:drop-shadow(0 0 2px rgba(107,114,128,.3));}\n.dot{filter:drop-shadow(0 0 8px #10915A) drop-shadow(0 0 16px rgba(16,145,90,.6));}\n.box,.chip,.blue,.green,.purple,.amber{filter:drop-shadow(0 2px 4px rgba(15,23,42,.12));}\n.irq{filter:drop-shadow(0 0 8px rgba(217,119,6,.7));}\n.wave,.cnt,.pwm{filter:drop-shadow(0 1px 3px rgba(14,124,74,.3));}\n</style></head><body><div id=\"viewport\"><main id=\"stage\"><div class=\"dots\"><i></i><i></i><i></i><i></i><i></i></div><header class=\"head\"><div><h1>MCU 是什么：CPU、MCU、SoC 三层关系</h1><div class=\"sub\">单芯片集成 · CPU + 存储 + 外设 · 最小系统</div></div></header><section class=\"panel\"><svg viewBox=\"0 0 980 410\" class=\"svg\">\n<!-- step1: CPU 单核 -->\n<g data-step=\"1\">\n<rect class=\"chip\" x=\"60\" y=\"160\" width=\"180\" height=\"100\" rx=\"20\"/>\n<text x=\"150\" y=\"200\" class=\"chipText\" font-size=\"28\">CPU</text>\n<text x=\"150\" y=\"226\" class=\"chipText\" font-size=\"14\">运算 · 控制</text>\n<text x=\"150\" y=\"246\" class=\"chipText\" font-size=\"14\">寄存器组 · ALU</text>\n<text x=\"150\" y=\"295\" class=\"layerSub\">需外接 RAM/Flash 才能工作</text>\n</g>\n\n<!-- step2: MCU 集成 -->\n<g data-step=\"2\">\n<rect class=\"layer\" x=\"280\" y=\"80\" width=\"380\" height=\"260\" rx=\"22\"/>\n<text x=\"470\" y=\"68\" class=\"layerText\">MCU 单芯片集成</text>\n<rect class=\"chip\" x=\"305\" y=\"115\" width=\"100\" height=\"72\" rx=\"14\"/>\n<text x=\"355\" y=\"148\" class=\"chipText\" font-size=\"18\">CPU</text>\n<text x=\"355\" y=\"170\" class=\"chipText\" font-size=\"13\">Cortex-M3</text>\n<rect class=\"layer warn\" x=\"420\" y=\"115\" width=\"100\" height=\"72\" rx=\"14\"/>\n<text x=\"470\" y=\"148\" class=\"layerText\" font-size=\"18\" fill=\"#B45309\">RAM</text>\n<text x=\"470\" y=\"172\" class=\"layerSub\">20KB</text>\n<rect class=\"layer warn\" x=\"535\" y=\"115\" width=\"100\" height=\"72\" rx=\"14\"/>\n<text x=\"585\" y=\"148\" class=\"layerText\" font-size=\"18\" fill=\"#B45309\">Flash</text>\n<text x=\"585\" y=\"172\" class=\"layerSub\">64KB</text>\n<rect class=\"layer success\" x=\"305\" y=\"200\" width=\"100\" height=\"60\" rx=\"14\"/>\n<text x=\"355\" y=\"234\" class=\"layerText\" font-size=\"16\">GPIO</text>\n<rect class=\"layer success\" x=\"420\" y=\"200\" width=\"100\" height=\"60\" rx=\"14\"/>\n<text x=\"470\" y=\"234\" class=\"layerText\" font-size=\"16\">UART</text>\n<rect class=\"layer success\" x=\"535\" y=\"200\" width=\"100\" height=\"60\" rx=\"14\"/>\n<text x=\"585\" y=\"234\" class=\"layerText\" font-size=\"16\">Timer</text>\n<rect class=\"layer success\" x=\"305\" y=\"270\" width=\"100\" height=\"50\" rx=\"14\"/>\n<text x=\"355\" y=\"300\" class=\"layerText\" font-size=\"16\">ADC</text>\n<rect class=\"layer success\" x=\"420\" y=\"270\" width=\"100\" height=\"50\" rx=\"14\"/>\n<text x=\"470\" y=\"300\" class=\"layerText\" font-size=\"16\">SPI/I2C</text>\n<rect class=\"layer success\" x=\"535\" y=\"270\" width=\"100\" height=\"50\" rx=\"14\"/>\n<text x=\"585\" y=\"300\" class=\"layerText\" font-size=\"16\">PWM</text>\n</g>\n\n<!-- step3: 上电独立工作 -->\n<g data-step=\"3\">\n<circle cx=\"700\" cy=\"180\" r=\"30\" fill=\"#FFF8EC\" stroke=\"#D97706\" stroke-width=\"3\"/>\n<text x=\"700\" y=\"187\" class=\"layerText\" font-size=\"18\" fill=\"#B45309\">3.3V</text>\n<text x=\"700\" y=\"232\" class=\"layerSub\">VCC</text>\n<line x1=\"660\" y1=\"180\" x2=\"700\" y2=\"180\" stroke=\"#D97706\" stroke-width=\"3\"/>\n<circle cx=\"780\" cy=\"180\" r=\"22\" fill=\"#DCFCE7\" stroke=\"#10915A\" stroke-width=\"3\"/>\n<text x=\"780\" y=\"186\" class=\"layerText\" font-size=\"14\" fill=\"#0A5132\">8MHz</text>\n<text x=\"780\" y=\"222\" class=\"layerSub\">晶振</text>\n</g>\n\n<!-- step4: SoC 横向对比 -->\n<g data-step=\"4\">\n<rect class=\"layer\" x=\"60\" y=\"345\" width=\"430\" height=\"55\" rx=\"14\" stroke=\"#0E7C4A\"/>\n<text x=\"78\" y=\"377\" class=\"layerText\" font-size=\"18\" text-anchor=\"start\">MCU · 单核 + 外设 · 控制为主</text>\n<rect class=\"layer warn\" x=\"510\" y=\"345\" width=\"430\" height=\"55\" rx=\"14\"/>\n<text x=\"528\" y=\"377\" class=\"layerText\" font-size=\"18\" text-anchor=\"start\" fill=\"#B45309\">SoC · 多核 + DSP + GPU + 射频</text>\n</g>\n\n<!-- step5: STM32F103 标记 -->\n<g data-step=\"5\">\n<rect class=\"layer success breath\" x=\"700\" y=\"240\" width=\"240\" height=\"100\" rx=\"22\"/>\n<text x=\"820\" y=\"278\" class=\"layerText\" font-size=\"22\" fill=\"#0A5132\">STM32F103</text>\n<text x=\"820\" y=\"304\" class=\"layerSub\">32 位 · 72MHz</text>\n<text x=\"820\" y=\"324\" class=\"layerSub\">本课主芯片</text>\n</g>\n</svg></section><aside class=\"side\"><div class=\"formulaBox\"><h2>核心定义</h2><p>MCU = CPU + RAM + Flash + 外设</p></div><ol><li data-k=\"0\"><b>1</b><span>CPU 只是运算与控制核心，需要外接存储与外设才能跑程序。</span></li>\n<li data-k=\"1\"><b>2</b><span>MCU 把 CPU 内核、RAM、Flash、定时器、串口等集成到同一颗芯片。</span></li>\n<li data-k=\"2\"><b>3</b><span>一颗 MCU 通常上电、复位、时钟齐备即可独立工作。</span></li>\n<li data-k=\"3\"><b>4</b><span>SoC 比 MCU 更大，集成 DSP、GPU、射频、多核，常用于手机、网关。</span></li>\n<li data-k=\"4\"><b>5</b><span>本课聚焦 STM32F103，属于 32 位通用 MCU，主频 72MHz。</span></li></ol></aside><section class=\"metrics\"><div class=\"metric\"><strong>CPU</strong><span>运算核心</span></div>\n<div class=\"metric\"><strong>MCU</strong><span>CPU+外设</span></div>\n<div class=\"metric\"><strong>SoC</strong><span>系统级集成</span></div>\n<div class=\"metric\"><strong>72MHz</strong><span>STM32F103</span></div></section><footer class=\"caption\"><div id=\"cn\"></div></footer></main></div><script>\n/* —— 受控显示器：所有 step 推进由 parent 通过 dgb-step 驱动 —— */\nconst steps=[\"CPU 只是运算与控制核心，需要外接存储与外设才能跑程序。\", \"MCU 把 CPU 内核、RAM、Flash、定时器、串口等集成到同一颗芯片。\", \"一颗 MCU 通常上电、复位、时钟齐备即可独立工作。\", \"SoC 比 MCU 更大，集成 DSP、GPU、射频、多核，常用于手机、网关。\", \"本课聚焦 STM32F103，属于 32 位通用 MCU，主频 72MHz。\"];\nconst total=steps.length;\nfunction measureContentH(scale){try{let maxBottom=0;const sr=stage.getBoundingClientRect();const all=stage.querySelectorAll('*');for(const el of all){const cs=getComputedStyle(el);if(cs.display==='none'||cs.visibility==='hidden')continue;const r=el.getBoundingClientRect();const bottom=r.bottom-sr.top;if(bottom>maxBottom)maxBottom=bottom;}const rawH=Math.ceil(maxBottom/Math.max(scale,.0001))+24;return Math.min(1080,Math.max(220,rawH));}catch(e){return 1080}}function fit(){const s=Math.max(.18,innerWidth/1920);stage.style.transform=`scale(${s})`;stage.style.transformOrigin='top left';stage.style.left='0px';stage.style.top='0px';const ch=measureContentH(s);parent.postMessage({type:'dgb-iframe-height',height:Math.ceil(ch*s)},'*')}\naddEventListener('resize',fit);\nlet step=0;\nfunction render(i){\n step=Math.max(0,Math.min(total-1,i));\n document.querySelectorAll('li[data-k]').forEach(el=>{const k=Number(el.dataset.k);el.classList.toggle('active',k===step);el.classList.toggle('done',k<step)});\n document.querySelectorAll('.dots i').forEach((el,k)=>{el.classList.toggle('active',k===step);el.classList.toggle('done',k<step)});\n document.querySelectorAll('[data-step]').forEach(el=>{const k=Number(el.dataset.step)-1;el.classList.toggle('show',k<=step);el.classList.toggle('current',k===step)});\n document.querySelectorAll('.metric').forEach((el,k)=>el.classList.toggle('hl',k===step));\n cn.textContent=steps[step]||'';\n parent.postMessage({type:'dgb-step-change',step,total},'*');setTimeout(fit,40)\n}\naddEventListener('message',e=>{\n const d=e.data||{};\n if(d.type==='dgb-step'){render(d.step|0);return}\n if(d.type==='dgb-reset'||d.type==='dgb-anim-finalize'){render(0);return}\n if(d.type==='SET_WIDGET_STATE'&&d.state)Object.entries(d.state).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.textContent=v});\n if(d.type==='HIGHLIGHT_ELEMENT'){const el=document.querySelector(d.target);if(el){el.classList.add('current');setTimeout(()=>el.classList.remove('current'),2400)}}\n if(d.type==='ANNOTATE_ELEMENT'){cn.textContent=d.text||cn.textContent}\n});\n/* visibilitychange / pagehide 仅作清场，不再驱动 RAF */\ndocument.addEventListener('visibilitychange',()=>{});\naddEventListener('pagehide',()=>{});\nfit();\nparent.postMessage({type:'dgb-steps-total',total},'*');\nrender(0);\n</script></body></html>",
+    "format": "html-svg",
+    "metadata": {
+     "topic": "单片机基础概念",
+     "engine": "svg",
+     "teacher": {
+      "script": "这段动画讲的是\"单片机基础概念\"。 核心定义：MCU = CPU + RAM + Flash + 外设 比如你家扫地机器人、空调遥控器里那颗芯片就是这类 MCU。",
+      "stepScripts": [
+       "CPU 只是运算与控制核心，需要外接存储与外设才能跑程序。",
+       "MCU 把 CPU 内核、RAM、Flash、定时器、串口等集成到同一颗芯片。",
+       "一颗 MCU 通常上电、复位、时钟齐备即可独立工作。",
+       "SoC 比 MCU 更大，集成 DSP、GPU、射频、多核，常用于手机、网关。",
+       "本课聚焦 STM32F103，属于 32 位通用 MCU，主频 72MHz。"
+      ],
+      "voice": "Cherry",
+      "autoPlay": false
+     },
+     "quality": "final",
+     "template": {
+      "name": "block-pipeline",
+      "params": {
+       "stages": [
+        {
+         "id": "mc-cpu",
+         "label": "CPU",
+         "sub": "取指/译码/执行"
+        },
+        {
+         "id": "mc-flash",
+         "label": "Flash",
+         "sub": "程序存储"
+        },
+        {
+         "id": "mc-ram",
+         "label": "RAM",
+         "sub": "运行时变量"
+        },
+        {
+         "id": "mc-bus",
+         "label": "AHB 总线",
+         "sub": "内核 ↔ 外设"
+        },
+        {
+         "id": "mc-perh",
+         "label": "外设",
+         "sub": "GPIO/UART/ADC"
+        }
+       ]
+      },
+      "nodes": [
+       {
+        "id": "mc-cpu",
+        "label": "CPU"
+       },
+       {
+        "id": "mc-flash",
+        "label": "Flash"
+       },
+       {
+        "id": "mc-ram",
+        "label": "RAM"
+       },
+       {
+        "id": "mc-bus",
+        "label": "AHB 总线"
+       },
+       {
+        "id": "mc-perh",
+        "label": "外设"
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "p1c-i1",
+    "kind": "interactive",
+    "spec": {
+     "kind": "classification",
+     "prompt": "🎯 将下列芯片/产品拖入正确分类栏：",
+     "categories": [
+      {
+       "id": "mcu",
+       "label": "MCU 单片机"
+      },
+      {
+       "id": "cpu",
+       "label": "CPU 处理器"
+      },
+      {
+       "id": "soc",
+       "label": "SoC 片上系统"
+      }
+     ],
+     "items": [
+      {
+       "id": "c1",
+       "text": "STM32F103C8T6",
+       "correctCategory": "mcu"
+      },
+      {
+       "id": "c2",
+       "text": "Intel Core i7",
+       "correctCategory": "cpu"
+      },
+      {
+       "id": "c3",
+       "text": "骁龙 8 Gen 2",
+       "correctCategory": "soc"
+      },
+      {
+       "id": "c4",
+       "text": "ATmega328（Arduino）",
+       "correctCategory": "mcu"
+      },
+      {
+       "id": "c5",
+       "text": "AMD Ryzen 9",
+       "correctCategory": "cpu"
+      },
+      {
+       "id": "c6",
+       "text": "BCM2711（树莓派4）",
+       "correctCategory": "soc"
+      }
+     ]
+    }
+   },
+   {
+    "id": "p1c-i2",
+    "kind": "interactive",
+    "spec": {
+     "kind": "matching",
+     "prompt": "🔗 将缩写与全称连线：",
+     "pairs": [
+      {
+       "left": "MCU",
+       "right": "微控制单元"
+      },
+      {
+       "left": "SRAM",
+       "right": "静态随机存取存储器"
+      },
+      {
+       "left": "GPIO",
+       "right": "通用输入输出端口"
+      },
+      {
+       "left": "NVIC",
+       "right": "嵌套向量中断控制器"
+      },
+      {
+       "left": "HAL",
+       "right": "硬件抽象层"
+      },
+      {
+       "left": "RCC",
+       "right": "复位与时钟控制"
+      }
+     ]
+    }
+   },
+   {
+    "id": "p1c-i3",
+    "kind": "interactive",
+    "spec": {
+     "kind": "memory-match",
+     "prompt": "🃏 翻牌配对：芯片型号与其内核类型",
+     "pairs": [
+      {
+       "id": "m1",
+       "front": "STM32F103",
+       "back": "ARM Cortex-M3"
+      },
+      {
+       "id": "m2",
+       "front": "STM32F4xx",
+       "back": "ARM Cortex-M4"
+      },
+      {
+       "id": "m3",
+       "front": "STM32H7xx",
+       "back": "ARM Cortex-M7"
+      },
+      {
+       "id": "m4",
+       "front": "STM32L0xx",
+       "back": "ARM Cortex-M0+"
+      },
+      {
+       "id": "m5",
+       "front": "ESP32",
+       "back": "Xtensa LX6双核"
+      },
+      {
+       "id": "m6",
+       "front": "nRF52840",
+       "back": "ARM Cortex-M4F"
+      }
+     ]
+    }
+   },
+   {
+    "id": "p1c-i4",
+    "kind": "interactive",
+    "spec": {
+     "kind": "flashcard",
+     "prompt": "📚 翻转卡片，检验核心概念掌握",
+     "cards": [
+      {
+       "id": "f1",
+       "front": "STM32F103C8T6 最高主频？",
+       "back": "72 MHz（ARM Cortex-M3）"
+      },
+      {
+       "id": "f2",
+       "front": "MCU与CPU的本质区别？",
+       "back": "MCU=CPU+存储器+外设集成单芯片；CPU只是处理器核心"
+      },
+      {
+       "id": "f3",
+       "front": "实时性的含义是什么？",
+       "back": "在规定时间内确定性响应，强调可预测性而非速度"
+      },
+      {
+       "id": "f4",
+       "front": "STM32F103 Flash和SRAM各多少？",
+       "back": "64KB Flash（程序存储）+20KB SRAM（数据存储）"
+      }
+     ]
+    }
+   },
+   {
+    "id": "p1c-i5",
+    "kind": "interactive",
+    "spec": {
+     "kind": "fill-blank",
+     "prompt": "根据所学填写 STM32F103C8T6 的参数：",
+     "segments": [
+      "该芯片内核为 ",
+      {
+       "blank": true,
+       "answer": "ARM Cortex-M3",
+       "hint": "内核架构名称"
+      },
+      "，最高主频 ",
+      {
+       "blank": true,
+       "answer": "72",
+       "hint": "数字"
+      },
+      " MHz。",
+      "片内集成 ",
+      {
+       "blank": true,
+       "answer": "64",
+       "hint": "数字"
+      },
+      " KB Flash 和 ",
+      {
+       "blank": true,
+       "answer": "20",
+       "hint": "数字"
+      },
+      " KB SRAM，",
+      "GPIO 引脚共 ",
+      {
+       "blank": true,
+       "answer": "37",
+       "hint": "数字"
+      },
+      " 个。"
+     ]
+    }
+   },
+   {
+    "id": "p1c-code",
+    "kind": "code",
+    "language": "c",
+    "filename": "stm32_first_look.c",
+    "code": "/* STM32F103 第一个程序框架 */\n#include \"stm32f1xx_hal.h\"\n\nvoid SystemClock_Config(void);\nstatic void MX_GPIO_Init(void);\n\nint main(void) {\n    /* 1. HAL库初始化（SysTick等）*/\n    HAL_Init();\n    /* 2. 配置系统时钟为72MHz */\n    SystemClock_Config();\n    /* 3. 初始化GPIO外设 */\n    MX_GPIO_Init();\n\n    while (1) {\n        /* 4. 用户业务逻辑写在这里 */\n        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); /* 翻转PC13 */\n        HAL_Delay(500);  /* 延时500ms */\n    }\n}\n\nstatic void MX_GPIO_Init(void) {\n    GPIO_InitTypeDef GPIO_InitStruct = {0};\n    __HAL_RCC_GPIOC_CLK_ENABLE(); /* 必须先使能时钟！*/\n    GPIO_InitStruct.Pin = GPIO_PIN_13;\n    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;\n    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;\n    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);\n}\n",
+    "highlightLines": [
+     7,
+     9,
+     11,
+     13,
+     16,
+     18
+    ],
+    "flow": {
+     "format": "mermaid",
+     "source": "flowchart TD\n  s1[\"1. HAL_Init()<br/>SysTick + 中断优先级\"] --> s2[\"2. SystemClock_Config()<br/>72MHz 主频\"]\n  s2 --> s3[\"3. MX_GPIO_Init()<br/>使能时钟+配置引脚\"]\n  s3 --> s4[\"4. while(1) 业务循环<br/>TogglePin + Delay\"]\n",
+     "steps": [
+      {
+       "id": "s1",
+       "title": "HAL 库初始化",
+       "highlightLines": [
+        7,
+        8,
+        9
+       ]
+      },
+      {
+       "id": "s2",
+       "title": "系统时钟配置 72MHz",
+       "highlightLines": [
+        10,
+        11
+       ]
+      },
+      {
+       "id": "s3",
+       "title": "GPIO 外设初始化",
+       "highlightLines": [
+        12,
+        13,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+       ]
+      },
+      {
+       "id": "s4",
+       "title": "业务循环",
+       "highlightLines": [
+        15,
+        16,
+        17,
+        18,
+        19,
+        20
+       ]
+      }
+     ]
+    },
+    "commentary": {
+     "sourceType": "code",
+     "speaker": "代码讲师",
+     "script": "这段 C 代码（stm32_first_look.c）一共 25 行，是本节的核心示例。 重点观察 GPIO 初始化结构体字段的填法，以及时钟使能宏放在哪一行。 建议对照上方原理图与寄存器表，边读边想\"这一行实际在操作哪一块硬件\"。",
+     "stepScripts": [
+      "这段 C 代码（stm32_first_look.c）一共 25 行，是本节的核心示例。",
+      "重点观察 GPIO 初始化结构体字段的填法，以及时钟使能宏放在哪一行。",
+      "建议对照上方原理图与寄存器表，边读边想\"这一行实际在操作哪一块硬件\"。"
+     ],
+     "highlightLines": [
+      [
+       2,
+       4,
+       5,
+       7,
+       22
+      ],
+      [
+       5,
+       12,
+       13,
+       17,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28
+      ],
+      [
+       19,
+       20,
+       23,
+       29
+      ]
+     ]
+    }
+   },
+   {
+    "id": "p1c-experiment",
+    "kind": "experiment",
+    "title": "观察STM32芯片封装与引脚功能",
+    "steps": [
+     {
+      "order": 1,
+      "title": "识别芯片封装",
+      "description": "观察开发板上的LQFP48封装STM32F103芯片，用放大镜数一数四面共48个引脚，注意标记点（左上角小圆点）是第1脚。",
+      "checkpoint": false
+     },
+     {
+      "order": 2,
+      "title": "查阅数据手册",
+      "description": "打开STM32F103C8T6数据手册第4章，找到引脚功能表，定位PA0-PA15（Port A）和PB0-PB15（Port B）引脚的复用功能。",
+      "checkpoint": true
+     },
+     {
+      "order": 3,
+      "title": "用万用表量VCC/GND",
+      "description": "将万用表调到直流电压档，红表笔接VCC（3.3V），黑表笔接GND，读数确认供电正常。",
+      "checkpoint": true
+     }
+    ],
+    "expectedResult": "能正确识别STM32F103芯片封装，理解引脚功能定义",
+    "commentary": {
+     "stepScripts": [
+      "实验目标是「观察STM32芯片封装与引脚功能」。整套实验分 3 步，下面挨个做一遍。",
+      "第 1 步 识别芯片封装。观察开发板上的LQFP48封装STM32F103芯片，用放大镜数一数四面共48个引脚，注意标记点（左上角小圆点）是第1脚。",
+      "第 2 步 【检查点】查阅数据手册。打开STM32F103C8T6数据手册第4章，找到引脚功能表，定位PA0-PA15（Port A）和PB0-PB15（Port B）引脚的复用功能。",
+      "第 3 步 【检查点】用万用表量VCC/GND。将万用表调到直流电压档，红表笔接VCC（3.3V），黑表笔接GND，读数确认供电正常。",
+      "预期结果：能正确识别STM32F103芯片封装，理解引脚功能定义。整套实验跑完看到这个现象就算通过。"
+     ]
+    }
+   },
+   {
+    "id": "p1c-summary",
+    "kind": "summary",
+    "keyPoints": [
+     "MCU=CPU+存储器+外设的单芯片集成，专用、低功耗、实时",
+     "STM32F103C8T6：Cortex-M3 @ 72MHz，64KB Flash，20KB SRAM，37× GPIO",
+     "实时性=确定性响应，不是绝对速度快",
+     "开发流程：CubeMX图形配置→生成HAL工程→编写用户代码→编译→ST-Link下载"
+    ],
+    "reviewQuestions": [
+     "举3个生活中单片机的应用场景",
+     "STM32的Flash和SRAM分别存什么？",
+     "为什么说实时性是嵌入式的核心特征？"
+    ],
+    "commentary": {
+     "stepScripts": [
+      "第一个要点：单片机就是 CPU 加存储器加外设的单芯片集成，记住\"专用、低功耗、实时\"三个关键词。",
+      "第二个要点：STM32F103C8T6 的五个数字必须脱口而出——M3 内核、72 兆、64K Flash、20K SRAM、37 个 GPIO。",
+      "第三个要点容易踩坑：实时性指的是\"确定性响应\"，不是绝对速度快。十毫秒每次响应都准确，比偶尔一毫秒但偶尔一秒的\"快\"更可靠。",
+      "第四个要点把开发流程串起来：CubeMX 图形配置、生成 HAL 工程、写用户代码、编译、ST-Link 下载，这五步是后面每个项目都要走的标准动作。",
+      "最后三个思考题留给你课后练习：举三个生活应用、Flash 和 SRAM 各存什么、为什么实时性是嵌入式的核心特征。"
+     ]
+    }
+   },
+   {
+    "id": "p1-concept-wokwi-uno",
+    "kind": "wokwi-element",
+    "spec": {
+     "kind": "arduino-uno",
+     "label": "概念图示"
+    },
+    "title": "Arduino UNO 概念图",
+    "caption": "从 UNO 看 STM32：内核更强、引脚更多、外设更全，但开发心智一致。"
+   },
+   {
+    "id": "p1-concept-mcu-manim",
+    "kind": "animation",
+    "src": "./assets/courses/stm32-course/animations/manim/ch01-intro/mcu_concept.mp4",
+    "format": "video-mp4",
+    "metadata": {
+     "topic": "单片机概念：CPU/MCU/SoC 集成度对比",
+     "engine": "manim",
+     "quality": "final",
+     "interactive": false,
+     "teacher": {
+      "script": "这段动画讲的是\"单片机概念：CPU/MCU/SoC 集成度对比\"。 下面这段动画围绕\"单片机概念：CPU/MCU/SoC 集成度对比\"展开，共 4 个场景。 跟随画面节奏观察每一个关键词，并把它们串成一句完整的因果链。 如果觉得某一幕信息太多，可以点击右下角朗读按钮让讲解逐句读给你听。",
+      "stepScripts": [
+       "下面这段动画围绕\"单片机概念：CPU/MCU/SoC 集成度对比\"展开，共 4 个场景。",
+       "跟随画面节奏观察每一个关键词，并把它们串成一句完整的因果链。",
+       "如果觉得某一幕信息太多，可以点击右下角朗读按钮让讲解逐句读给你听。"
+      ],
+      "voice": "Cherry",
+      "autoPlay": false
+     },
+     "_dgbookInjectSource": "manim-patch",
+     "duration": 27.2,
+     "coversLessons": [
+      "p1-concept"
+     ]
+    }
+   }
+  ],
+  "lesson": {
+   "objectives": [
+    "理解MCU/CPU/SoC的区别",
+    "掌握STM32F103C8T6核心资源参数",
+    "了解嵌入式实时性特点"
+   ],
+   "prerequisites": [],
+   "estimatedMinutes": 20,
+   "difficulty": "beginner",
+   "tags": [
+    "mcu",
+    "stm32",
+    "concept"
+   ]
+  },
+  "actions": [
+   {
+    "id": "p1-concept-act-001-sp",
+    "type": "spotlight",
+    "targetId": "dgb-wokwi-p1-concept-wokwi-uno"
+   },
+   {
+    "id": "p1-concept-act-002-sk",
+    "type": "speak",
+    "text": "从 UNO 看 STM32：内核更强、引脚更多、外设更全，但开发心智一致。",
+    "blockId": "p1-concept-wokwi-uno"
+   },
+   {
+    "id": "p1-concept-act-003-sp",
+    "type": "spotlight",
+    "targetId": "dgb-anim-step-1"
+   },
+   {
+    "id": "p1-concept-act-004-sk",
+    "type": "speak",
+    "text": "CPU 只是运算与控制核心，需要外接存储与外设才能跑程序。",
+    "blockId": "p1c-anim"
+   },
+   {
+    "id": "p1-concept-act-005-sp",
+    "type": "spotlight",
+    "targetId": "dgb-anim-step-2"
+   },
+   {
+    "id": "p1-concept-act-006-sk",
+    "type": "speak",
+    "text": "MCU 把 CPU 内核、RAM、Flash、定时器、串口等集成到同一颗芯片。",
+    "blockId": "p1c-anim"
+   },
+   {
+    "id": "p1-concept-act-007-sp",
+    "type": "spotlight",
+    "targetId": "dgb-anim-step-3"
+   },
+   {
+    "id": "p1-concept-act-008-sk",
+    "type": "speak",
+    "text": "一颗 MCU 通常上电、复位、时钟齐备即可独立工作。",
+    "blockId": "p1c-anim"
+   },
+   {
+    "id": "p1-concept-act-009-sp",
+    "type": "spotlight",
+    "targetId": "dgb-anim-step-4"
+   },
+   {
+    "id": "p1-concept-act-010-sk",
+    "type": "speak",
+    "text": "SoC 比 MCU 更大，集成 DSP、GPU、射频、多核，常用于手机、网关。",
+    "blockId": "p1c-anim"
+   },
+   {
+    "id": "p1-concept-act-011-sp",
+    "type": "spotlight",
+    "targetId": "dgb-anim-step-5"
+   },
+   {
+    "id": "p1-concept-act-012-sk",
+    "type": "speak",
+    "text": "本课聚焦 STM32F103，属于 32 位通用 MCU，主频 72MHz。",
+    "blockId": "p1c-anim"
+   },
+   {
+    "id": "p1-concept-act-013-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1-concept-mcu-manim"
+   },
+   {
+    "id": "p1-concept-act-014-pv",
+    "type": "play-video",
+    "targetId": "dgb-block-p1-concept-mcu-manim",
+    "subtitles": [
+     {
+      "t": 0.0,
+      "text": "step1 CPU 只是运算控制核心"
+     },
+     {
+      "t": 7.0,
+      "text": "step2 MCU 集成 CPU 存储 外设"
+     },
+     {
+      "t": 10.0,
+      "text": "step3 MCU 上电即可独立工作"
+     },
+     {
+      "t": 15.0,
+      "text": "step4 SoC 集成度更高"
+     },
+     {
+      "t": 20.0,
+      "text": "step5 STM32F103 定位"
+     },
+     {
+      "t": 24.0,
+      "text": "step6 总结集成度演进"
+     }
+    ]
+   },
+   {
+    "id": "p1-concept-act-015-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-text"
+   },
+   {
+    "id": "p1-concept-act-016-sk",
+    "type": "speak",
+    "text": "单片机定义先记住：MCU 是 Microcontroller Unit 的缩写，把 CPU、存储器、IO、定时器、中断、串口集成在一块硅片上。它专门做嵌入式控制，不是通用计算。",
+    "blockId": "p1c-text"
+   },
+   {
+    "id": "p1-concept-act-017-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-text"
+   },
+   {
+    "id": "p1-concept-act-018-sk",
+    "type": "speak",
+    "text": "MCU 的五大特点连起来背：高集成、低功耗、实时性强、成本低、体积小。LQFP48 封装才 7×7 毫米，这个尺寸要有概念。",
+    "blockId": "p1c-text"
+   },
+   {
+    "id": "p1-concept-act-019-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-text"
+   },
+   {
+    "id": "p1-concept-act-020-sk",
+    "type": "speak",
+    "text": "MCU、CPU、SoC、MPU、DSP 五种芯片要分清。MCU 是控制专家，CPU 是计算专家，SoC 是全能选手，MPU 在中间，DSP 专做信号处理。这是高频考点。",
+    "blockId": "p1c-text"
+   },
+   {
+    "id": "p1-concept-act-021-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-text"
+   },
+   {
+    "id": "p1-concept-act-022-sk",
+    "type": "speak",
+    "text": "STM32F103C8T6 的关键参数必须背：Cortex-M3 内核、72 兆主频、64K Flash、20K SRAM、37 个 GPIO、3 个通用加 1 个高级定时器、3 个串口、12 位 ADC、LQFP48 封装。后面所有项目都用它。",
+    "blockId": "p1c-text"
+   },
+   {
+    "id": "p1-concept-act-023-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-i1"
+   },
+   {
+    "id": "p1-concept-act-024-sk",
+    "type": "speak",
+    "text": "🎯 将下列芯片/产品拖入正确分类栏：",
+    "blockId": "p1c-i1"
+   },
+   {
+    "id": "p1-concept-act-025-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-i2"
+   },
+   {
+    "id": "p1-concept-act-026-sk",
+    "type": "speak",
+    "text": "🔗 将缩写与全称连线：",
+    "blockId": "p1c-i2"
+   },
+   {
+    "id": "p1-concept-act-027-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-i3"
+   },
+   {
+    "id": "p1-concept-act-028-sk",
+    "type": "speak",
+    "text": "🃏 翻牌配对：芯片型号与其内核类型",
+    "blockId": "p1c-i3"
+   },
+   {
+    "id": "p1-concept-act-029-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-i4"
+   },
+   {
+    "id": "p1-concept-act-030-sk",
+    "type": "speak",
+    "text": "📚 翻转卡片，检验核心概念掌握",
+    "blockId": "p1c-i4"
+   },
+   {
+    "id": "p1-concept-act-031-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-i5"
+   },
+   {
+    "id": "p1-concept-act-032-sk",
+    "type": "speak",
+    "text": "根据所学填写 STM32F103C8T6 的参数：",
+    "blockId": "p1c-i5"
+   },
+   {
+    "id": "p1-concept-act-033-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-code"
+   },
+   {
+    "id": "p1-concept-act-034-sk",
+    "type": "speak",
+    "text": "这段 C 代码（stm32_first_look.c）一共 25 行，是本节的核心示例。",
+    "blockId": "p1c-code"
+   },
+   {
+    "id": "p1-concept-act-035-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-code"
+   },
+   {
+    "id": "p1-concept-act-036-sk",
+    "type": "speak",
+    "text": "重点观察 GPIO 初始化结构体字段的填法，以及时钟使能宏放在哪一行。",
+    "blockId": "p1c-code"
+   },
+   {
+    "id": "p1-concept-act-037-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-code"
+   },
+   {
+    "id": "p1-concept-act-038-sk",
+    "type": "speak",
+    "text": "建议对照上方原理图与寄存器表，边读边想\"这一行实际在操作哪一块硬件\"。",
+    "blockId": "p1c-code"
+   },
+   {
+    "id": "p1-concept-act-039-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-experiment"
+   },
+   {
+    "id": "p1-concept-act-040-sk",
+    "type": "speak",
+    "text": "实验目标是「观察STM32芯片封装与引脚功能」。整套实验分 3 步，下面挨个做一遍。",
+    "blockId": "p1c-experiment"
+   },
+   {
+    "id": "p1-concept-act-041-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-experiment"
+   },
+   {
+    "id": "p1-concept-act-042-sk",
+    "type": "speak",
+    "text": "第 1 步 识别芯片封装。观察开发板上的LQFP48封装STM32F103芯片，用放大镜数一数四面共48个引脚，注意标记点（左上角小圆点）是第1脚。",
+    "blockId": "p1c-experiment"
+   },
+   {
+    "id": "p1-concept-act-043-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-experiment"
+   },
+   {
+    "id": "p1-concept-act-044-sk",
+    "type": "speak",
+    "text": "第 2 步 【检查点】查阅数据手册。打开STM32F103C8T6数据手册第4章，找到引脚功能表，定位PA0-PA15（Port A）和PB0-PB15（Port B）引脚的复用功能。",
+    "blockId": "p1c-experiment"
+   },
+   {
+    "id": "p1-concept-act-045-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-experiment"
+   },
+   {
+    "id": "p1-concept-act-046-sk",
+    "type": "speak",
+    "text": "第 3 步 【检查点】用万用表量VCC/GND。将万用表调到直流电压档，红表笔接VCC（3.3V），黑表笔接GND，读数确认供电正常。",
+    "blockId": "p1c-experiment"
+   },
+   {
+    "id": "p1-concept-act-047-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-experiment"
+   },
+   {
+    "id": "p1-concept-act-048-sk",
+    "type": "speak",
+    "text": "预期结果：能正确识别STM32F103芯片封装，理解引脚功能定义。整套实验跑完看到这个现象就算通过。",
+    "blockId": "p1c-experiment"
+   },
+   {
+    "id": "p1-concept-act-049-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-summary"
+   },
+   {
+    "id": "p1-concept-act-050-sk",
+    "type": "speak",
+    "text": "第一个要点：单片机就是 CPU 加存储器加外设的单芯片集成，记住\"专用、低功耗、实时\"三个关键词。",
+    "blockId": "p1c-summary"
+   },
+   {
+    "id": "p1-concept-act-051-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-summary"
+   },
+   {
+    "id": "p1-concept-act-052-sk",
+    "type": "speak",
+    "text": "第二个要点：STM32F103C8T6 的五个数字必须脱口而出——M3 内核、72 兆、64K Flash、20K SRAM、37 个 GPIO。",
+    "blockId": "p1c-summary"
+   },
+   {
+    "id": "p1-concept-act-053-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-summary"
+   },
+   {
+    "id": "p1-concept-act-054-sk",
+    "type": "speak",
+    "text": "第三个要点容易踩坑：实时性指的是\"确定性响应\"，不是绝对速度快。十毫秒每次响应都准确，比偶尔一毫秒但偶尔一秒的\"快\"更可靠。",
+    "blockId": "p1c-summary"
+   },
+   {
+    "id": "p1-concept-act-055-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-summary"
+   },
+   {
+    "id": "p1-concept-act-056-sk",
+    "type": "speak",
+    "text": "第四个要点把开发流程串起来：CubeMX 图形配置、生成 HAL 工程、写用户代码、编译、ST-Link 下载，这五步是后面每个项目都要走的标准动作。",
+    "blockId": "p1c-summary"
+   },
+   {
+    "id": "p1-concept-act-057-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-summary"
+   },
+   {
+    "id": "p1-concept-act-058-sk",
+    "type": "speak",
+    "text": "最后三个思考题留给你课后练习：举三个生活应用、Flash 和 SRAM 各存什么、为什么实时性是嵌入式的核心特征。",
+    "blockId": "p1c-summary"
+   },
+   {
+    "id": "p1-concept-act-059-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-dh"
+   },
+   {
+    "id": "p1-concept-act-060-sk",
+    "type": "speak",
+    "text": "同学们好！欢迎踏上STM32之旅。",
+    "blockId": "p1c-dh"
+   },
+   {
+    "id": "p1-concept-act-061-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-dh"
+   },
+   {
+    "id": "p1-concept-act-062-sk",
+    "type": "speak",
+    "text": "单片机听起来高深，但你家每个电器里都藏着它。今天认识的STM32F103，是全球最流行的32位MCU之一。",
+    "blockId": "p1c-dh"
+   },
+   {
+    "id": "p1-concept-act-063-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-dh"
+   },
+   {
+    "id": "p1-concept-act-064-sk",
+    "type": "speak",
+    "text": "记住一点：嵌入式不只是写代码，更要理解电流如何在芯片里流动。准备好了吗？",
+    "blockId": "p1c-dh"
+   },
+   {
+    "id": "p1-concept-act-065-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1c-dh"
+   },
+   {
+    "id": "p1-concept-act-066-sk",
+    "type": "speak",
+    "text": "课堂常见问题：STM32 比 Arduino 强在哪？ 老师的回答是——更接近工业实际：寄存器、时钟树、HAL 库都要直接打交道，所以你能学到嵌入式真正在做什么。Arduino 屏蔽了这些底层细节。",
+    "blockId": "p1c-dh"
+   }
+  ]
+ },
+ {
+  "id": "p1-history",
+  "title": "1.2 单片机发展历程与国产MCU崛起",
+  "template": "T-concept",
+  "blocks": [
+   {
+    "id": "p1h-text",
+    "kind": "text",
+    "markdown": "# 1.2 单片机发展历程与国产MCU崛起\n\n## 1.2.1 MCU发展四个阶段\n\n单片机自1971年诞生至今，经历了近50年的演进，大致分为四个阶段：\n\n### 第一阶段：探索期（1974~1976年）\n- 代表产品：Intel 8048、Motorola 6800\n- 特点：4~8位，集成度低，主要用于简单控制\n- 局限：无中断、无串口，编程困难\n\n### 第二阶段：形成期（1976~1990年）\n- 代表产品：**Intel 8051**（1980年，成为8位MCU工业标准）\n- 特点：8位，内置ROM/RAM/定时器/串口，完整单片机体系\n- 影响：8051架构沿用至今，国内高校教学主流\n\n### 第三阶段：全面发展期（1990~2010年）\n- 代表产品：PIC、AVR、ARM7TDMI\n- 特点：16/32位，RISC架构，低功耗，工具链完善\n- 里程碑：**2004年ARM Cortex-M3发布**，开启32位MCU普及时代\n\n### 第四阶段：物联网时代（2010年至今）\n- 代表产品：STM32系列、ESP32、nRF52840\n- 特点：集成无线通信（WiFi/BT/LoRa），超低功耗，AI推理能力\n- 趋势：边缘计算、TinyML、RISC-V架构崛起\n\n## 1.2.2 MCU发展历史时间线\n\n| 年份 | 里程碑事件 | 代表产品 | 意义 |\n|------|-----------|---------|------|\n| 1971 | 世界第一颗微处理器 | Intel 4004 | 集成电路计算时代开始 |\n| 1974 | 第一颗真正意义的MCU | Intel 8048 | 单芯片集成CPU+RAM+ROM |\n| 1980 | 8位MCU工业标准确立 | Intel 8051 | 至今仍有大量应用 |\n| 1993 | ARM架构商业授权 | ARM7TDMI | 开放IP授权模式改变行业 |\n| 2004 | Cortex-M3发布 | ARM Cortex-M3 | 32位MCU性能/功耗突破 |\n| 2007 | STM32系列发布 | STM32F101/103 | 32位MCU价格平民化 |\n| 2014 | 高性能MCU时代 | STM32F7（216MHz） | 主频突破200MHz |\n| 2019 | 国产MCU规模化 | GD32F103 | 引脚兼容替代进口 |\n| 2020 | RISC-V崛起 | GD32VF103 | 开源指令集MCU商用 |\n| 2023 | AI MCU时代 | STM32N6（NPU） | 片上神经网络推理 |\n\n## 1.2.3 为什么32位MCU全面替代8位\n\n| 对比维度 | 8位MCU（如8051） | 32位MCU（如STM32F103） |\n|---------|----------------|---------------------|\n| 数据宽度 | 8位，处理32位数需4次操作 | 32位，单次操作 |\n| 主频 | 典型12~24MHz | 典型72~480MHz |\n| 寻址空间 | 64KB（16位地址） | 4GB（32位地址） |\n| 外设 | 基础串口/定时器 | USB/CAN/以太网/ADC/DAC |\n| 开发工具 | 汇编/Keil C51 | GCC/HAL库/CubeMX |\n| 价格（2024） | ¥1~3 | ¥3~15（Cortex-M0+已<¥2） |\n\n> 💡 **结论**：32位MCU在价格接近的情况下，性能和外设远超8位，\n> 新项目几乎没有理由再选8位MCU。\n\n## 1.2.4 国产MCU的崛起\n\n在国际形势变化背景下，国产MCU快速发展，部分产品已达到国际先进水平：\n\n| 厂商 | 代表型号 | 内核 | 与STM32兼容性 | 特色优势 |\n|-----|---------|------|------------|---------|\n| **兆易创新** | GD32F103 | Cortex-M3 | **引脚完全兼容** | 主频108MHz（vs 72MHz），Flash擦写更快 |\n| **雅特力** | AT32F403A | Cortex-M4 | 引脚兼容 | 内置USB OTG，主频240MHz |\n| **华大半导体** | HC32F460 | Cortex-M4 | 部分兼容 | 超低功耗，汽车级认证 |\n| **国民技术** | N32G455 | Cortex-M4 | 部分兼容 | 内置硬件加密（AES/RSA） |\n| **乐鑫** | ESP32-S3 | Xtensa LX7 | 不兼容 | 集成WiFi+BT，AI加速 |\n| **沁恒** | CH32V307 | RISC-V | 不兼容 | 开源RISC-V，USB高速 |\n\n**GD32F103与STM32F103代码移植**：\n- 修改头文件：`#include \"stm32f1xx_hal.h\"` → `#include \"gd32f10x.h\"`\n- 大部分HAL函数名称相同，少量外设寄存器有差异\n- 时钟配置需要重新调整（GD32主频更高）\n",
+    "commentary": {
+     "script": "单片机 50 年发展史可以分四个阶段。\n第一阶段是 70 年代中期的探索期，代表是 Intel 8048，4 到 8 位、集成度低。\n第二阶段是 80 年代到 90 年代的形成期，标志是 1980 年 Intel 8051 成为工业标准，到现在\n高校教学还在用。\n第三阶段从 90 年代到 2010 年是全面发展期，PIC、AVR、ARM7 出现，2004 年 Cortex-M3 发布\n开启 32 位 MCU 普及。\n第四阶段是 2010 年到现在的物联网时代，STM32、ESP32、nRF52 集成了 WiFi、蓝牙、AI 推理。\n为什么 32 位全面替代 8 位？同价位下 STM32F103 跑 72 兆赫，8051 只能跑 24，外设差几个\n数量级。新项目几乎没理由选 8 位。\n国产 MCU 这几年崛起明显：兆易创新 GD32 引脚完全兼容 STM32，主频还更高；雅特力 AT32、\n华大 HC32、国民技术 N32、乐鑫 ESP32、沁恒 CH32V，覆盖从工业到 AIoT 的全部场景。\n",
+     "stepScripts": [
+      "单片机 50 年发展史可以分四个阶段。第一阶段是 70 年代中期的探索期，代表是 Intel 8048，4 到 8 位、集成度低，主要做简单控制。",
+      "第二阶段是 80 年代到 90 年代的形成期。1980 年 Intel 推出 8051 成为工业标准，到现在高校教学还在用。8 位 MCU 体系第一次完整建立。",
+      "第三阶段从 90 年代到 2010 年是全面发展期。PIC、AVR、ARM7 出现，2004 年 ARM Cortex-M3 发布，开启 32 位 MCU 时代——我们用的 STM32F103 就是这一波。",
+      "第四阶段是 2010 年至今的国产崛起期。兆易创新、华大、雅特力等公司推出 GD32、HC32、AT32，与 STM32 引脚兼容、代码兼容、价格更低，国产替代势头很猛。",
+      "这条时间线串起来就是从 8 位到 32 位、从国外垄断到国产替代两条主线，理解这两条主线再看具体型号就有方向感。"
+     ]
+    }
+   },
+   {
+    "id": "p1h-table",
+    "kind": "table",
+    "caption": "主流MCU性能对比",
+    "headers": [
+     "参数",
+     "STM32F103",
+     "STM32F4xx",
+     "STM32H7xx",
+     "GD32F103"
+    ],
+    "rows": [
+     [
+      "主频",
+      "72MHz",
+      "168MHz",
+      "480MHz",
+      "108MHz"
+     ],
+     [
+      "Flash",
+      "64-512KB",
+      "1MB",
+      "2MB",
+      "128-512KB"
+     ],
+     [
+      "内核",
+      "M3",
+      "M4F",
+      "M7",
+      "M3"
+     ],
+     [
+      "价格",
+      "¥6",
+      "¥15",
+      "¥50",
+      "¥4"
+     ]
+    ]
+   },
+   {
+    "id": "p1h-anim",
+    "kind": "animation",
+    "src": "inline:<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"UTF-8\"><title>单片机演进：从 4 位到 32 位 RISC-V</title><style>*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#FBF7EC;font-family:\"PingFang SC\",\"Source Han Sans SC\",\"Microsoft YaHei\",Arial,sans-serif;color:#1F2937}#viewport{position:fixed;inset:0;overflow:hidden;background:linear-gradient(135deg,#FBF7EC,#F4EEDF)}#stage{position:absolute;width:1920px;height:1080px;left:0;top:0;transform-origin:0 0;background:linear-gradient(180deg,#fff,#FBF7EC);border-radius:28px;box-shadow:0 24px 80px rgba(14,124,74,.14);overflow:hidden;border:1px solid #D9E2D1}.head{position:absolute;left:76px;top:54px;right:76px;display:flex;justify-content:flex-start;gap:50px}h1{font-size:52px;line-height:1.08;margin:0 0 14px;font-weight:900;letter-spacing:-.8px;max-width:1680px;color:#0A5132}.sub{font-size:22px;color:#4B5563;max-width:1400px}.panel{position:absolute;left:76px;top:205px;width:1115px;height:515px;background:#fff;border:1px solid #D9E2D1;border-radius:28px;box-shadow:0 16px 44px rgba(14,124,74,.08);overflow:hidden}.svg{width:100%;height:100%}.side{position:absolute;right:76px;top:205px;width:585px;height:515px;display:grid;grid-template-rows:auto 1fr;gap:18px}.formulaBox{padding:26px;border-radius:26px;background:#FFF8EC;border:1px solid #F0D9A2;box-shadow:0 12px 34px rgba(217,119,6,.10)}.formulaBox h2{margin:0 0 12px;font-size:30px;color:#0A5132}.formulaBox p{margin:0;font-size:28px;font-weight:800;color:#B45309}ol{margin:0;padding:0;display:grid;gap:14px;list-style:none}li{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border-radius:20px;background:#fff;border:1px solid #D9E2D1;font-size:20px;line-height:1.32;color:#4B5563;opacity:.4;transition:.3s}li b{min-width:34px;height:34px;border-radius:12px;background:#C8E4D0;color:#0A5132;display:grid;place-items:center}li.active{opacity:1;border-color:#0E7C4A;box-shadow:0 12px 32px rgba(14,124,74,.18);transform:translateX(-6px)}li.done{opacity:.85}.metrics{position:absolute;left:76px;right:76px;top:748px;height:118px;display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.metric{background:#fff;border:1px solid #D9E2D1;border-radius:24px;padding:18px;text-align:center;box-shadow:0 12px 30px rgba(14,124,74,.06);overflow:hidden;transition:.25s}.metric.hl{background:#FFF8EC;border-color:#F0D9A2;box-shadow:0 18px 38px rgba(217,119,6,.20);transform:translateY(-4px)}.metric strong{display:block;font-size:34px;line-height:1.05;color:#0E7C4A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.metric span{display:block;margin-top:10px;color:#4B5563;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.caption{position:absolute;left:120px;right:120px;bottom:46px;text-align:center;padding:18px 24px;border-radius:24px;background:rgba(255,255,255,.85);backdrop-filter:blur(6px);border:1px solid #D9E2D1}#cn{font-size:30px;line-height:1.25;font-weight:800;color:#0A5132;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dots{position:absolute;right:92px;top:32px;display:flex;gap:11px}.dots i{width:13px;height:13px;border-radius:50%;background:#D9E2D1;transition:.25s}.dots i.active{background:#0E7C4A;transform:scale(1.4)}.dots i.done{background:#10915A}[data-step]{opacity:.12;transition:opacity .45s ease, transform .45s ease}[data-step].show{opacity:1}[data-step].current{filter:drop-shadow(0 0 14px #10915A)}@keyframes pulse{50%{transform:scale(1.08);opacity:.72}}.breath{animation:pulse 2.2s ease-in-out infinite;transform-origin:center}\n.timeline{stroke:#0E7C4A;stroke-width:5}\n.tnode{fill:#fff;stroke:#0E7C4A;stroke-width:4}\n.tnode.active{fill:#FFF8EC;stroke:#D97706}\n.tnode.done{fill:#DCFCE7;stroke:#10915A}\n.tlabel{font-size:18px;text-anchor:middle;fill:#0A5132;font-weight:800}\n.tsub{font-size:14px;text-anchor:middle;fill:#4B5563}\n.cnLine{stroke:#D97706;stroke-width:4;stroke-dasharray:8 6;fill:none}\n/*DGB-DEVICE-ENH*/\n.led{filter:drop-shadow(0 0 6px rgba(185,28,28,.55)) drop-shadow(0 0 14px rgba(252,165,165,.45));}\n.led.on,.led[data-on=\"1\"]{filter:drop-shadow(0 0 10px #ef4444) drop-shadow(0 0 22px #fca5a5);}\n.res{filter:drop-shadow(0 1px 2px rgba(106,82,176,.4));}\n.diode{filter:drop-shadow(0 1px 3px rgba(106,82,176,.45));}\n.wire{filter:drop-shadow(0 0 2px rgba(107,114,128,.3));}\n.dot{filter:drop-shadow(0 0 8px #10915A) drop-shadow(0 0 16px rgba(16,145,90,.6));}\n.box,.chip,.blue,.green,.purple,.amber{filter:drop-shadow(0 2px 4px rgba(15,23,42,.12));}\n.irq{filter:drop-shadow(0 0 8px rgba(217,119,6,.7));}\n.wave,.cnt,.pwm{filter:drop-shadow(0 1px 3px rgba(14,124,74,.3));}\n</style></head><body><div id=\"viewport\"><main id=\"stage\"><div class=\"dots\"><i></i><i></i><i></i><i></i><i></i></div><header class=\"head\"><div><h1>单片机演进：从 4 位到 32 位 RISC-V</h1><div class=\"sub\">位宽演进 · 国产崛起 · 生态成熟</div></div></header><section class=\"panel\"><svg viewBox=\"0 0 980 410\" class=\"svg\">\n<!-- 主时间轴 -->\n<line x1=\"60\" y1=\"180\" x2=\"940\" y2=\"180\" class=\"timeline\"/>\n\n<!-- step1: 4-bit 1971 -->\n<g data-step=\"1\">\n<circle cx=\"120\" cy=\"180\" r=\"22\" class=\"tnode\"/>\n<text x=\"120\" y=\"186\" class=\"tlabel\" font-size=\"14\">4</text>\n<text x=\"120\" y=\"135\" class=\"tlabel\">1971</text>\n<text x=\"120\" y=\"225\" class=\"tsub\">TMS1000</text>\n<text x=\"120\" y=\"245\" class=\"tsub\">计算器</text>\n</g>\n\n<!-- step2: 8-bit 1980 8051 -->\n<g data-step=\"2\">\n<circle cx=\"290\" cy=\"180\" r=\"24\" class=\"tnode\"/>\n<text x=\"290\" y=\"186\" class=\"tlabel\" font-size=\"14\">8</text>\n<text x=\"290\" y=\"135\" class=\"tlabel\">1980</text>\n<text x=\"290\" y=\"225\" class=\"tsub\">Intel 8051</text>\n<text x=\"290\" y=\"245\" class=\"tsub\">工业标配</text>\n</g>\n\n<!-- step3: 32-bit 2007 Cortex-M -->\n<g data-step=\"3\">\n<circle cx=\"500\" cy=\"180\" r=\"28\" class=\"tnode\"/>\n<text x=\"500\" y=\"186\" class=\"tlabel\" font-size=\"14\">32</text>\n<text x=\"500\" y=\"130\" class=\"tlabel\">2007</text>\n<text x=\"500\" y=\"230\" class=\"tsub\">Cortex-M3</text>\n<text x=\"500\" y=\"250\" class=\"tsub\">STM32F1</text>\n</g>\n\n<!-- step4: RISC-V 2020 -->\n<g data-step=\"4\">\n<circle cx=\"720\" cy=\"180\" r=\"30\" class=\"tnode\"/>\n<text x=\"720\" y=\"186\" class=\"tlabel\" font-size=\"13\">RV</text>\n<text x=\"720\" y=\"128\" class=\"tlabel\">2020+</text>\n<text x=\"720\" y=\"230\" class=\"tsub\">RISC-V</text>\n<text x=\"720\" y=\"250\" class=\"tsub\">开源指令集</text>\n</g>\n\n<!-- step5: 国产支线 -->\n<g data-step=\"5\">\n<path d=\"M720 180 Q820 90 900 90\" class=\"cnLine\"/>\n<rect x=\"820\" y=\"50\" width=\"120\" height=\"86\" rx=\"14\" fill=\"#FFF8EC\" stroke=\"#D97706\" stroke-width=\"3\"/>\n<text x=\"880\" y=\"80\" class=\"tlabel\" font-size=\"16\" fill=\"#B45309\">国产 MCU</text>\n<text x=\"880\" y=\"100\" class=\"tsub\">兆易 GD32</text>\n<text x=\"880\" y=\"118\" class=\"tsub\">华大 HC32</text>\n<text x=\"880\" y=\"134\" class=\"tsub\">沁恒 CH32</text>\n<rect x=\"40\" y=\"320\" width=\"900\" height=\"60\" rx=\"16\" fill=\"#DCFCE7\" stroke=\"#10915A\" stroke-width=\"2\"/>\n<text x=\"490\" y=\"357\" class=\"tlabel\" font-size=\"20\" fill=\"#0A5132\">国产 32 位 MCU 已可替代部分进口型号 · 生态加速完善</text>\n</g>\n</svg></section><aside class=\"side\"><div class=\"formulaBox\"><h2>历程主线</h2><p>4-bit → 8-bit → 16-bit → 32-bit → RISC-V</p></div><ol><li data-k=\"0\"><b>1</b><span>70 年代 4 位 MCU 诞生，TMS1000 用于计算器。</span></li>\n<li data-k=\"1\"><b>2</b><span>80–90 年代 8051 风靡，8 位单片机成为工业标配。</span></li>\n<li data-k=\"2\"><b>3</b><span>2000 年代 16/32 位涌现，ARM Cortex-M 系列成主流。</span></li>\n<li data-k=\"3\"><b>4</b><span>RISC-V 开源指令集兴起，国产 MCU 加速布局。</span></li>\n<li data-k=\"4\"><b>5</b><span>兆易、华大、沁恒等国产 32 位 MCU 已可替代部分进口型号。</span></li></ol></aside><section class=\"metrics\"><div class=\"metric\"><strong>1971</strong><span>TMS1000</span></div>\n<div class=\"metric\"><strong>1980</strong><span>8051</span></div>\n<div class=\"metric\"><strong>2007</strong><span>Cortex-M</span></div>\n<div class=\"metric\"><strong>2020+</strong><span>RISC-V</span></div></section><footer class=\"caption\"><div id=\"cn\"></div></footer></main></div><script>\n/* —— 受控显示器：所有 step 推进由 parent 通过 dgb-step 驱动 —— */\nconst steps=[\"70 年代 4 位 MCU 诞生，TMS1000 用于计算器。\", \"80–90 年代 8051 风靡，8 位单片机成为工业标配。\", \"2000 年代 16/32 位涌现，ARM Cortex-M 系列成主流。\", \"RISC-V 开源指令集兴起，国产 MCU 加速布局。\", \"兆易、华大、沁恒等国产 32 位 MCU 已可替代部分进口型号。\"];\nconst total=steps.length;\nfunction measureContentH(scale){try{let maxBottom=0;const sr=stage.getBoundingClientRect();const all=stage.querySelectorAll('*');for(const el of all){const cs=getComputedStyle(el);if(cs.display==='none'||cs.visibility==='hidden')continue;const r=el.getBoundingClientRect();const bottom=r.bottom-sr.top;if(bottom>maxBottom)maxBottom=bottom;}const rawH=Math.ceil(maxBottom/Math.max(scale,.0001))+24;return Math.min(1080,Math.max(220,rawH));}catch(e){return 1080}}function fit(){const s=Math.max(.18,innerWidth/1920);stage.style.transform=`scale(${s})`;stage.style.transformOrigin='top left';stage.style.left='0px';stage.style.top='0px';const ch=measureContentH(s);parent.postMessage({type:'dgb-iframe-height',height:Math.ceil(ch*s)},'*')}\naddEventListener('resize',fit);\nlet step=0;\nfunction render(i){\n step=Math.max(0,Math.min(total-1,i));\n document.querySelectorAll('li[data-k]').forEach(el=>{const k=Number(el.dataset.k);el.classList.toggle('active',k===step);el.classList.toggle('done',k<step)});\n document.querySelectorAll('.dots i').forEach((el,k)=>{el.classList.toggle('active',k===step);el.classList.toggle('done',k<step)});\n document.querySelectorAll('[data-step]').forEach(el=>{const k=Number(el.dataset.step)-1;el.classList.toggle('show',k<=step);el.classList.toggle('current',k===step)});\n document.querySelectorAll('.metric').forEach((el,k)=>el.classList.toggle('hl',k===step));\n cn.textContent=steps[step]||'';\n parent.postMessage({type:'dgb-step-change',step,total},'*');setTimeout(fit,40)\n}\naddEventListener('message',e=>{\n const d=e.data||{};\n if(d.type==='dgb-step'){render(d.step|0);return}\n if(d.type==='dgb-reset'||d.type==='dgb-anim-finalize'){render(0);return}\n if(d.type==='SET_WIDGET_STATE'&&d.state)Object.entries(d.state).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.textContent=v});\n if(d.type==='HIGHLIGHT_ELEMENT'){const el=document.querySelector(d.target);if(el){el.classList.add('current');setTimeout(()=>el.classList.remove('current'),2400)}}\n if(d.type==='ANNOTATE_ELEMENT'){cn.textContent=d.text||cn.textContent}\n});\n/* visibilitychange / pagehide 仅作清场，不再驱动 RAF */\ndocument.addEventListener('visibilitychange',()=>{});\naddEventListener('pagehide',()=>{});\nfit();\nparent.postMessage({type:'dgb-steps-total',total},'*');\nrender(0);\n</script></body></html>",
+    "format": "html-svg",
+    "metadata": {
+     "topic": "MCU发展历程",
+     "engine": "svg",
+     "teacher": {
+      "script": "这段动画讲的是\"MCU发展历程\"。 历程主线：4-bit → 8-bit → 16-bit → 32-bit → RISC-V 比如你家扫地机器人、空调遥控器里那颗芯片就是这类 MCU。",
+      "stepScripts": [
+       "70 年代 4 位 MCU 诞生，TMS1000 用于计算器。",
+       "80–90 年代 8051 风靡，8 位单片机成为工业标配。",
+       "2000 年代 16/32 位涌现，ARM Cortex-M 系列成主流。",
+       "RISC-V 开源指令集兴起，国产 MCU 加速布局。",
+       "兆易、华大、沁恒等国产 32 位 MCU 已可替代部分进口型号。"
+      ],
+      "voice": "Cherry",
+      "autoPlay": false
+     },
+     "quality": "final",
+     "template": {
+      "name": "sequence-flow",
+      "params": {
+       "actors": [
+        {
+         "id": "h-4004",
+         "label": "Intel 4004 (1971)"
+        },
+        {
+         "id": "h-z80",
+         "label": "Z80 (1976)"
+        },
+        {
+         "id": "h-8051",
+         "label": "8051 (1980)"
+        },
+        {
+         "id": "h-arm",
+         "label": "ARM Cortex (2004)"
+        },
+        {
+         "id": "h-stm",
+         "label": "STM32 (2007)"
+        }
+       ],
+       "messages": [
+        {
+         "id": "m-4bit",
+         "from": "h-4004",
+         "to": "h-4004",
+         "label": "世界第一片 4 位 MCU",
+         "kind": "note"
+        },
+        {
+         "id": "m-8bit",
+         "from": "h-4004",
+         "to": "h-z80",
+         "label": "8 位时代开启",
+         "kind": "async"
+        },
+        {
+         "id": "m-mcs",
+         "from": "h-z80",
+         "to": "h-8051",
+         "label": "MCS-51 架构定型",
+         "kind": "async"
+        },
+        {
+         "id": "m-32",
+         "from": "h-8051",
+         "to": "h-arm",
+         "label": "32 位 RISC 时代",
+         "kind": "async"
+        },
+        {
+         "id": "m-st",
+         "from": "h-arm",
+         "to": "h-stm",
+         "label": "ST 集成 Cortex-M3",
+         "kind": "async"
+        },
+        {
+         "id": "m-now",
+         "from": "h-stm",
+         "to": "h-stm",
+         "label": "主流嵌入式平台",
+         "kind": "note"
+        }
+       ]
+      },
+      "nodes": [
+       {
+        "id": "h-4004",
+        "label": "Intel 4004 (1971)"
+       },
+       {
+        "id": "h-z80",
+        "label": "Z80 (1976)"
+       },
+       {
+        "id": "h-8051",
+        "label": "8051 (1980)"
+       },
+       {
+        "id": "h-arm",
+        "label": "ARM Cortex (2004)"
+       },
+       {
+        "id": "h-stm",
+        "label": "STM32 (2007)"
+       }
+      ]
+     }
+    }
+   },
+   {
+    "id": "p1h-i1",
+    "kind": "interactive",
+    "spec": {
+     "kind": "ordering",
+     "prompt": "⏱️ 按时间顺序排列MCU发展里程碑（从早到晚）：",
+     "items": [
+      {
+       "id": "o1",
+       "text": "ARM Cortex-M3发布，STM32诞生（2004-2007）"
+      },
+      {
+       "id": "o2",
+       "text": "Intel 8051成为8位MCU工业标准（1980s）"
+      },
+      {
+       "id": "o3",
+       "text": "世界第一颗微处理器Intel 4004（1971）"
+      },
+      {
+       "id": "o4",
+       "text": "国产GD32与STM32引脚兼容替代（2020+）"
+      },
+      {
+       "id": "o5",
+       "text": "STM32H7主频突破400MHz（2014+）"
+      }
+     ],
+     "correctOrder": [
+      "o3",
+      "o2",
+      "o1",
+      "o5",
+      "o4"
+     ]
+    }
+   },
+   {
+    "id": "p1h-i2",
+    "kind": "interactive",
+    "spec": {
+     "kind": "matching",
+     "prompt": "连线：国产MCU厂商与其代表产品",
+     "pairs": [
+      {
+       "left": "兆易创新",
+       "right": "GD32F103"
+      },
+      {
+       "left": "雅特力",
+       "right": "AT32F403A"
+      },
+      {
+       "left": "华大半导体",
+       "right": "HC32F460"
+      },
+      {
+       "left": "乐鑫",
+       "right": "ESP32-S3"
+      }
+     ]
+    }
+   },
+   {
+    "id": "p1h-i3",
+    "kind": "interactive",
+    "spec": {
+     "kind": "classification",
+     "prompt": "将下列特性分类到对应的MCU系列：",
+     "categories": [
+      {
+       "id": "f1xx",
+       "label": "STM32F1xx"
+      },
+      {
+       "id": "f4xx",
+       "label": "STM32F4xx"
+      },
+      {
+       "id": "h7xx",
+       "label": "STM32H7xx"
+      }
+     ],
+     "items": [
+      {
+       "id": "x1",
+       "text": "Cortex-M3内核 72MHz",
+       "correctCategory": "f1xx"
+      },
+      {
+       "id": "x2",
+       "text": "带FPU的Cortex-M4 168MHz",
+       "correctCategory": "f4xx"
+      },
+      {
+       "id": "x3",
+       "text": "双核Cortex-M7 480MHz",
+       "correctCategory": "h7xx"
+      },
+      {
+       "id": "x4",
+       "text": "最经典入门系列",
+       "correctCategory": "f1xx"
+      },
+      {
+       "id": "x5",
+       "text": "带硬件浮点运算",
+       "correctCategory": "f4xx"
+      },
+      {
+       "id": "x6",
+       "text": "L1 Cache加速",
+       "correctCategory": "h7xx"
+      }
+     ]
+    }
+   },
+   {
+    "id": "p1h-code",
+    "kind": "code",
+    "language": "c",
+    "filename": "mcu_generations.c",
+    "code": "/* 不同时代MCU的典型代码对比 */\n\n/* === 8位时代：Intel 8051（汇编风格C） === */\n/* sfr P1 = 0x90; */\n/* void led_8051(void) { P1 = ~P1; } */\n\n/* === 32位时代：STM32F103（HAL库） === */\n#include \"stm32f1xx_hal.h\"\n\n/* HAL库将寄存器操作封装为函数调用 */\nvoid led_stm32(void) {\n    /* HAL_GPIO_TogglePin 内部操作BSRR寄存器 */\n    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);\n}\n\n/* 直接寄存器操作（性能最高，可读性低）*/\nvoid led_register(void) {\n    /* 通过BSRR（bit set/reset register）原子操作 */\n    GPIOC->BSRR = GPIO_PIN_13;  /* 置高 */\n    /* GPIOC->BSRR = GPIO_PIN_13 << 16; 置低 */\n}\n\n/* GD32F103（国产）与STM32F103代码完全兼容 */\n/* 只需修改头文件include和链接脚本即可移植 */\n/* #include \"gd32f10x.h\" → 兼容HAL大部分功能 */\n",
+    "highlightLines": [
+     12,
+     19,
+     20
+    ],
+    "flow": {
+     "format": "mermaid",
+     "source": "flowchart TD\n  s1[\"1. 8 位时代 8051<br/>P1 = ~P1 直接操作端口\"] --> s2[\"2. 32 位时代 STM32 HAL<br/>函数封装\"]\n  s2 --> s3[\"3. 直接寄存器操作<br/>BSRR 原子写\"]\n",
+     "steps": [
+      {
+       "id": "s1",
+       "title": "8051 时代写法",
+       "highlightLines": [
+        3,
+        4,
+        5
+       ]
+      },
+      {
+       "id": "s2",
+       "title": "STM32 HAL 库写法",
+       "highlightLines": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14
+       ]
+      },
+      {
+       "id": "s3",
+       "title": "寄存器直接操作",
+       "highlightLines": [
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+       ]
+      }
+     ]
+    },
+    "commentary": {
+     "sourceType": "code",
+     "speaker": "代码讲师",
+     "script": "这段 C 代码（mcu_generations.c）一共 20 行，是本节的核心示例。 重点观察 GPIO 初始化结构体字段的填法，以及时钟使能宏放在哪一行。 建议对照上方原理图与寄存器表，边读边想\"这一行实际在操作哪一块硬件\"。",
+     "stepScripts": [
+      "这段 C 代码（mcu_generations.c）一共 20 行，是本节的核心示例。",
+      "重点观察 GPIO 初始化结构体字段的填法，以及时钟使能宏放在哪一行。",
+      "建议对照上方原理图与寄存器表，边读边想\"这一行实际在操作哪一块硬件\"。"
+     ],
+     "highlightLines": [
+      [
+       5,
+       8,
+       11,
+       17,
+       25
+      ],
+      [
+       12,
+       13,
+       19,
+       20
+      ],
+      [
+       5,
+       14,
+       21
+      ]
+     ]
+    }
+   },
+   {
+    "id": "p1h-summary",
+    "kind": "summary",
+    "keyPoints": [
+     "MCU经历4位→8位→32位的演进，ARM Cortex-M架构成为32位MCU主流",
+     "STM32F103基于Cortex-M3，是32位MCU入门的经典选择",
+     "国产MCU（GD32/AT32）快速崛起，部分与STM32引脚兼容，价格更具竞争力",
+     "选型时需综合考虑：性能、功耗、外设、价格和生态"
+    ],
+    "reviewQuestions": [
+     "8051和STM32F103最主要的差异是什么？",
+     "为什么国产MCU能替代STM32？"
+    ],
+    "commentary": {
+     "stepScripts": [
+      "第一个要点：单片机经历了 8 位、16 位、32 位三代演进，今天 32 位已经是主流，4 位 MCU 几乎只在最低成本的家电里还见得到。",
+      "第二个要点：1980 年 Intel 8051 是工业标准奠基者，至今还在大学课程里。但生产环境主流早已迁到 ARM Cortex-M 体系。",
+      "第三个要点：国产 MCU 经过十年追赶，GD32、AT32、HC32 已经能在大部分场景平替 STM32，价格便宜 30% 以上，引脚和代码都兼容。",
+      "最后留思考题：为什么 8051 还能在教学里活到今天？理解了它的简单性，你就理解了为什么 32 位 MCU 仍然要先教 8 位的概念。"
+     ]
+    }
+   },
+   {
+    "id": "p1h-dh",
+    "kind": "digital-human",
+    "script": "单片机的发展史，其实就是嵌入式行业的缩影。从Intel 8051的辉煌，到ARM Cortex-M的统治，再到国产芯片的强势崛起——这个行业从未停止进化。对学习者来说，掌握STM32既是打好基础，也是对接最真实的工业需求。",
+    "faq": [
+     {
+      "q": "学了STM32还要学GD32吗？",
+      "a": "GD32与STM32基本兼容，HAL库和开发工具几乎相同，学会STM32后切换GD32只需适应少量差异。"
+     },
+     {
+      "q": "GPIO 推挽输出和开漏输出分别用在什么场景？",
+      "a": "第四阶段是 2010 年至今的国产崛起期。兆易创新、华大、雅特力等公司推出 GD32、HC32、AT32，与 STM32 引脚兼容、代码兼容、价格更低，国产替代势头很猛"
+     },
+     {
+      "q": "时钟树配置错误会导致什么现象？",
+      "a": "重点观察 GPIO 初始化结构体字段的填法，以及时钟使能宏放在哪一行"
+     },
+     {
+      "q": "单片机和普通电脑 CPU 的核心区别是什么？",
+      "a": "单片机 50 年发展史可以分四个阶段。第一阶段是 70 年代中期的探索期，代表是 Intel 8048，4 到 8 位、集成度低，主要做简单控制"
+     }
+    ],
+    "avatarState": "explaining",
+    "ttsEnabled": true,
+    "commentary": {
+     "stepScripts": [
+      "单片机的发展史，其实就是嵌入式行业的缩影。从Intel 8051的辉煌，到ARM Cortex-M的统治，再到国产芯片的强势崛起——这个行业从未停止进化。",
+      "对学习者来说，掌握STM32既是打好基础，也是对接最真实的工业需求。",
+      "课堂常见问题：学了STM32还要学GD32吗？ 老师的回答是——GD32与STM32基本兼容，HAL库和开发工具几乎相同，学会STM32后切换GD32只需适应少量差异。"
+     ]
+    }
+   },
+   {
+    "id": "p1-history-wokwi-uno",
+    "kind": "wokwi-element",
+    "spec": {
+     "kind": "arduino-uno",
+     "label": "STM32 同思想"
+    },
+    "title": "Arduino UNO（同思想参照）",
+    "caption": "STM32F103 与 UNO 一脉相承：MCU + GPIO + 串口 + ISP 烧录，思想完全可迁移。"
+   }
+  ],
+  "lesson": {
+   "objectives": [
+    "了解MCU从4位到32位的发展历程",
+    "认识主要国产MCU厂商与产品",
+    "理解32位MCU取代8位的原因"
+   ],
+   "prerequisites": [],
+   "estimatedMinutes": 15,
+   "difficulty": "beginner",
+   "tags": [
+    "history",
+    "mcu",
+    "domestic-chip"
+   ]
+  },
+  "actions": [
+   {
+    "id": "p1-history-act-001-sp",
+    "type": "spotlight",
+    "targetId": "dgb-wokwi-p1-history-wokwi-uno"
+   },
+   {
+    "id": "p1-history-act-002-sk",
+    "type": "speak",
+    "text": "STM32F103 与 UNO 一脉相承：MCU + GPIO + 串口 + ISP 烧录，思想完全可迁移。",
+    "blockId": "p1-history-wokwi-uno"
+   },
+   {
+    "id": "p1-history-act-003-sp",
+    "type": "spotlight",
+    "targetId": "dgb-anim-step-1"
+   },
+   {
+    "id": "p1-history-act-004-sk",
+    "type": "speak",
+    "text": "70 年代 4 位 MCU 诞生，TMS1000 用于计算器。",
+    "blockId": "p1h-anim"
+   },
+   {
+    "id": "p1-history-act-005-sp",
+    "type": "spotlight",
+    "targetId": "dgb-anim-step-2"
+   },
+   {
+    "id": "p1-history-act-006-sk",
+    "type": "speak",
+    "text": "80–90 年代 8051 风靡，8 位单片机成为工业标配。",
+    "blockId": "p1h-anim"
+   },
+   {
+    "id": "p1-history-act-007-sp",
+    "type": "spotlight",
+    "targetId": "dgb-anim-step-3"
+   },
+   {
+    "id": "p1-history-act-008-sk",
+    "type": "speak",
+    "text": "2000 年代 16/32 位涌现，ARM Cortex-M 系列成主流。",
+    "blockId": "p1h-anim"
+   },
+   {
+    "id": "p1-history-act-009-sp",
+    "type": "spotlight",
+    "targetId": "dgb-anim-step-4"
+   },
+   {
+    "id": "p1-history-act-010-sk",
+    "type": "speak",
+    "text": "RISC-V 开源指令集兴起，国产 MCU 加速布局。",
+    "blockId": "p1h-anim"
+   },
+   {
+    "id": "p1-history-act-011-sp",
+    "type": "spotlight",
+    "targetId": "dgb-anim-step-5"
+   },
+   {
+    "id": "p1-history-act-012-sk",
+    "type": "speak",
+    "text": "兆易、华大、沁恒等国产 32 位 MCU 已可替代部分进口型号。",
+    "blockId": "p1h-anim"
+   },
+   {
+    "id": "p1-history-act-013-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-text"
+   },
+   {
+    "id": "p1-history-act-014-sk",
+    "type": "speak",
+    "text": "单片机 50 年发展史可以分四个阶段。第一阶段是 70 年代中期的探索期，代表是 Intel 8048，4 到 8 位、集成度低，主要做简单控制。",
+    "blockId": "p1h-text"
+   },
+   {
+    "id": "p1-history-act-015-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-text"
+   },
+   {
+    "id": "p1-history-act-016-sk",
+    "type": "speak",
+    "text": "第二阶段是 80 年代到 90 年代的形成期。1980 年 Intel 推出 8051 成为工业标准，到现在高校教学还在用。8 位 MCU 体系第一次完整建立。",
+    "blockId": "p1h-text"
+   },
+   {
+    "id": "p1-history-act-017-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-text"
+   },
+   {
+    "id": "p1-history-act-018-sk",
+    "type": "speak",
+    "text": "第三阶段从 90 年代到 2010 年是全面发展期。PIC、AVR、ARM7 出现，2004 年 ARM Cortex-M3 发布，开启 32 位 MCU 时代——我们用的 STM32F103 就是这一波。",
+    "blockId": "p1h-text"
+   },
+   {
+    "id": "p1-history-act-019-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-text"
+   },
+   {
+    "id": "p1-history-act-020-sk",
+    "type": "speak",
+    "text": "第四阶段是 2010 年至今的国产崛起期。兆易创新、华大、雅特力等公司推出 GD32、HC32、AT32，与 STM32 引脚兼容、代码兼容、价格更低，国产替代势头很猛。",
+    "blockId": "p1h-text"
+   },
+   {
+    "id": "p1-history-act-021-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-text"
+   },
+   {
+    "id": "p1-history-act-022-sk",
+    "type": "speak",
+    "text": "这条时间线串起来就是从 8 位到 32 位、从国外垄断到国产替代两条主线，理解这两条主线再看具体型号就有方向感。",
+    "blockId": "p1h-text"
+   },
+   {
+    "id": "p1-history-act-023-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-i1"
+   },
+   {
+    "id": "p1-history-act-024-sk",
+    "type": "speak",
+    "text": "⏱️ 按时间顺序排列MCU发展里程碑（从早到晚）：",
+    "blockId": "p1h-i1"
+   },
+   {
+    "id": "p1-history-act-025-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-i2"
+   },
+   {
+    "id": "p1-history-act-026-sk",
+    "type": "speak",
+    "text": "连线：国产MCU厂商与其代表产品",
+    "blockId": "p1h-i2"
+   },
+   {
+    "id": "p1-history-act-027-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-i3"
+   },
+   {
+    "id": "p1-history-act-028-sk",
+    "type": "speak",
+    "text": "将下列特性分类到对应的MCU系列：",
+    "blockId": "p1h-i3"
+   },
+   {
+    "id": "p1-history-act-029-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-code"
+   },
+   {
+    "id": "p1-history-act-030-sk",
+    "type": "speak",
+    "text": "这段 C 代码（mcu_generations.c）一共 20 行，是本节的核心示例。",
+    "blockId": "p1h-code"
+   },
+   {
+    "id": "p1-history-act-031-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-code"
+   },
+   {
+    "id": "p1-history-act-032-sk",
+    "type": "speak",
+    "text": "重点观察 GPIO 初始化结构体字段的填法，以及时钟使能宏放在哪一行。",
+    "blockId": "p1h-code"
+   },
+   {
+    "id": "p1-history-act-033-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-code"
+   },
+   {
+    "id": "p1-history-act-034-sk",
+    "type": "speak",
+    "text": "建议对照上方原理图与寄存器表，边读边想\"这一行实际在操作哪一块硬件\"。",
+    "blockId": "p1h-code"
+   },
+   {
+    "id": "p1-history-act-035-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-summary"
+   },
+   {
+    "id": "p1-history-act-036-sk",
+    "type": "speak",
+    "text": "第一个要点：单片机经历了 8 位、16 位、32 位三代演进，今天 32 位已经是主流，4 位 MCU 几乎只在最低成本的家电里还见得到。",
+    "blockId": "p1h-summary"
+   },
+   {
+    "id": "p1-history-act-037-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-summary"
+   },
+   {
+    "id": "p1-history-act-038-sk",
+    "type": "speak",
+    "text": "第二个要点：1980 年 Intel 8051 是工业标准奠基者，至今还在大学课程里。但生产环境主流早已迁到 ARM Cortex-M 体系。",
+    "blockId": "p1h-summary"
+   },
+   {
+    "id": "p1-history-act-039-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-summary"
+   },
+   {
+    "id": "p1-history-act-040-sk",
+    "type": "speak",
+    "text": "第三个要点：国产 MCU 经过十年追赶，GD32、AT32、HC32 已经能在大部分场景平替 STM32，价格便宜 30% 以上，引脚和代码都兼容。",
+    "blockId": "p1h-summary"
+   },
+   {
+    "id": "p1-history-act-041-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-summary"
+   },
+   {
+    "id": "p1-history-act-042-sk",
+    "type": "speak",
+    "text": "最后留思考题：为什么 8051 还能在教学里活到今天？理解了它的简单性，你就理解了为什么 32 位 MCU 仍然要先教 8 位的概念。",
+    "blockId": "p1h-summary"
+   },
+   {
+    "id": "p1-history-act-043-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-dh"
+   },
+   {
+    "id": "p1-history-act-044-sk",
+    "type": "speak",
+    "text": "单片机的发展史，其实就是嵌入式行业的缩影。从Intel 8051的辉煌，到ARM Cortex-M的统治，再到国产芯片的强势崛起——这个行业从未停止进化。",
+    "blockId": "p1h-dh"
+   },
+   {
+    "id": "p1-history-act-045-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-dh"
+   },
+   {
+    "id": "p1-history-act-046-sk",
+    "type": "speak",
+    "text": "对学习者来说，掌握STM32既是打好基础，也是对接最真实的工业需求。",
+    "blockId": "p1h-dh"
+   },
+   {
+    "id": "p1-history-act-047-sp",
+    "type": "spotlight",
+    "targetId": "dgb-block-p1h-dh"
+   },
+   {
+    "id": "p1-history-act-048-sk",
+    "type": "speak",
+    "text": "课堂常见问题：学了STM32还要学GD32吗？ 老师的回答是——GD32与STM32基本兼容，HAL库和开发工具几乎相同，学会STM32后切换GD32只需适应少量差异。",
+    "blockId": "p1h-dh"
+   }
+  ]
+ }
+]

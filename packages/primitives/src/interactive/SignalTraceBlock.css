@@ -1,0 +1,72 @@
+@import './interactive-tokens.css';
+/* Iter-56 · SignalTraceBlock 样式 */
+.dgb-signal-trace {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dgb-signal-trace-markers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dgb-signal-trace-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 2px solid var(--chip-color, var(--ig-primary));
+  border-radius: 16px;
+  background: transparent;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.dgb-signal-trace-chip.active {
+  background: var(--chip-color, var(--ig-primary));
+  color: var(--ig-surface);
+}
+.dgb-signal-trace-chip.placed { opacity: 0.6; }
+.dgb-signal-trace-chip.correct { border-color: var(--ig-ok); opacity: 1; }
+.dgb-signal-trace-chip.wrong { border-color: var(--ig-ng); opacity: 1; }
+.dgb-signal-trace-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--chip-color, var(--ig-primary));
+}
+.dgb-signal-trace-chip.active .dgb-signal-trace-chip-dot { background: var(--ig-surface); }
+.dgb-signal-trace-chip-type { font-size: 14px; }
+.dgb-signal-trace-svg {
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 600 / 160;
+  cursor: crosshair;
+  border: 1px solid var(--ig-border);
+  border-radius: 8px;
+  background: #fafbfc;
+}
+.dgb-signal-trace-hint {
+  font-size: 13px;
+  color: var(--ig-text-muted);
+  text-align: center;
+}
+.dgb-signal-trace-actions { text-align: center; }
+.dgb-signal-trace-submit {
+  padding: 8px 24px;
+  border: none;
+  border-radius: 8px;
+  background: var(--ig-primary);
+  color: var(--ig-surface);
+  font-size: 14px;
+  cursor: pointer;
+}
+.dgb-signal-trace-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+.dgb-signal-trace-explanation {
+  font-size: 13px;
+  color: var(--ig-text-sub);
+  padding: 8px 12px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border-left: 3px solid var(--ig-ok);
+}

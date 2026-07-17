@@ -1,0 +1,18 @@
+.dgb-wave {
+  border: 1px solid var(--dg-color-surface-border, #e2e8f0);
+  background: var(--dg-color-surface-card, #fff);
+  border-radius: 12px; padding: 14px 0 0;
+  max-width: none; width: 100%;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(15,23,42,0.04);
+}
+.dgb-wave-cap {
+  font-size: 13px; font-weight: 600; color: var(--dg-color-text-primary, #0f172a);
+  padding: 0 16px 10px;
+  border-bottom: 1px solid var(--dg-color-surface-border, #e2e8f0);
+}
+.dgb-wave-chart { padding: 10px 8px; overflow-x: auto; }
+.dgb-wave-chart svg { width: 100%; min-width: 300px; }
+.dgb-wave-grid { stroke: var(--dg-color-surface-border, #e2e8f0); stroke-width: 1; stroke-dasharray: 3,3; }
+.dgb-wave-label { font-size: 10px; fill: var(--dg-color-text-secondary, #475569); font-family: ui-monospace, monospace; }
+.dgb-wave-xlabel { font-size: 10px; fill: var(--dg-color-text-tertiary, #94a3b8); }

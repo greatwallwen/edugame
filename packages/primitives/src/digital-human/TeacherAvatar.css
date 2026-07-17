@@ -1,0 +1,34 @@
+/* Teacher avatar — 紧凑圆形头像 + speaking 呼吸光环 */
+.dgb-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  position: relative;
+}
+.dgb-avatar svg { display: block; border-radius: 50%; }
+
+.dgb-avatar--speaking::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(16, 145, 90, 0.55);
+  animation: dgb-av-pulse 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.dgb-avatar--speaking .dgb-avatar-mouth {
+  animation: dgb-av-mouth 0.38s ease-in-out infinite alternate;
+  transform-origin: 32px 27px;
+}
+
+@keyframes dgb-av-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50%      { transform: scale(1.12); opacity: 0.15; }
+}
+@keyframes dgb-av-mouth {
+  0%   { transform: scaleY(0.6); }
+  100% { transform: scaleY(1.4); }
+}

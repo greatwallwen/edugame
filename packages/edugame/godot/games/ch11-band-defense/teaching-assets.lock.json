@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "gameId": "ch11-band-defense",
+  "authority": "courses/stm32f10x",
+  "generated": [
+    {
+      "id": "ch11-questions",
+      "source": "courses/stm32f10x/knowledge/ch11-band-defense.questions.json",
+      "publicTarget": "apps/player/public/assets/courses/stm32-course/knowledge/ch11-band-defense.questions.json",
+      "localTarget": "packages/edugame/godot/games/ch11-band-defense/data/questions.local.json",
+      "sha256": "038e961fb8032ea939561d6d356497f81a882ed3ac65e011e1b4cc5be306fbc2"
+    }
+  ]
+}

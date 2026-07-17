@@ -1,0 +1,86 @@
+/**
+ * MathBlock.css — KaTeX 数学公式块样式
+ * 全局类 dgb-math-* 前缀
+ */
+
+.dgb-math-block {
+  margin: 16px 0;
+  padding: 18px 24px;
+  background: linear-gradient(180deg, #fefce8 0%, #fef9c3 100%);
+  border-left: 4px solid #ca8a04;
+  border-radius: 6px;
+  font-family: 'KaTeX_Main', Georgia, serif;
+}
+
+.dgb-math-block--inline {
+  display: inline-block;
+  padding: 4px 12px;
+  margin: 0 4px;
+  background: rgba(254, 240, 138, 0.4);
+  border-left-width: 2px;
+  vertical-align: middle;
+}
+
+.dgb-math-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #713f12;
+  text-transform: none;
+}
+
+.dgb-math-formula {
+  display: block;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #1f2937;
+  overflow-x: auto;
+}
+
+.dgb-math-block--inline .dgb-math-formula {
+  display: inline;
+  text-align: inherit;
+}
+
+.dgb-math-caption {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #ca8a04;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 13px;
+  color: #78350f;
+  line-height: 1.6;
+  text-align: left;
+}
+
+.dgb-math-block--error {
+  background: #fef2f2;
+  border-left-color: #dc2626;
+}
+
+.dgb-math-error-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #b91c1c;
+  margin-bottom: 6px;
+}
+
+.dgb-math-error-source {
+  margin: 0;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  color: #1f2937;
+  white-space: pre-wrap;
+}
+
+.dgb-math-error-msg {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #991b1b;
+  font-family: 'Inter', sans-serif;
+}

@@ -1,0 +1,33 @@
+﻿.dgb-video {
+  margin: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.dgb-video-player {
+  display: block;
+  width: 100%;
+  max-height: 540px;
+  border-radius: 12px;
+}
+
+.dgb-video-fallback {
+  padding: 24px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+.dgb-video-fallback a {
+  color: var(--dg-color-brand-500, #0E7C4A);
+  text-decoration: underline;
+}
+
+.dgb-video-caption {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--dg-color-text-secondary, #666);
+  text-align: center;
+  background: var(--dg-color-surface-muted, #f8fafc);
+}

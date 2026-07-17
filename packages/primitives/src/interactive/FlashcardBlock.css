@@ -1,0 +1,95 @@
+@import './interactive-tokens.css';
+﻿.dgb-flashcard {
+  border: 1px solid var(--dg-color-surface-border, var(--ig-border));
+  background: var(--dg-color-surface-card, var(--ig-surface));
+  border-radius: 12px; padding: 14px 16px 16px;
+  max-width: none; width: 100%;
+  box-shadow: 0 2px 6px rgba(15,23,42,0.04);
+}
+.dgb-flashcard-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.dgb-flashcard-badge {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+  color: var(--ig-primary));
+  background: var(--ig-primary-soft));
+  padding: 3px 8px; border-radius: 999px;
+}
+.dgb-flashcard-prompt { font-size: 13.5px; color: var(--dg-color-text-secondary, var(--ig-text-sub)); line-height: 1.55; }
+.dgb-flashcard-count { margin-left: auto; font-size: 12px; color: var(--dg-color-text-tertiary, #94a3b8); font-weight: 500; }
+.dgb-flashcard-deck { display: flex; justify-content: center; margin-bottom: 14px; }
+.dgb-flashcard-card {
+  width: 100%; max-width: 420px; min-height: 180px;
+  position: relative;
+  border: 2px solid var(--dg-color-surface-border, var(--ig-border));
+  border-radius: 14px;
+  background: var(--dg-color-surface-base, var(--ig-surface));
+  cursor: pointer; padding: 20px;
+  transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+  perspective: 800px;
+}
+.dgb-flashcard-card:hover { box-shadow: 0 8px 24px rgba(14, 124, 74,0.1); border-color: var(--ig-primary)); }
+.dgb-flashcard-card.flipped { transform: rotateY(180deg); }
+.dgb-flashcard-face {
+  backface-visibility: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; min-height: 140px;
+}
+.dgb-flashcard-front { }
+.dgb-flashcard-back { position: absolute; inset: 20px; transform: rotateY(180deg); }
+.dgb-flashcard-hint { font-size: 11px; color: var(--dg-color-text-tertiary, #94a3b8); margin-bottom: 8px; }
+.dgb-flashcard-front-text { font-size: 16px; font-weight: 600; color: var(--dg-color-text-primary, var(--ig-text)); line-height: 1.5; margin: 0; }
+.dgb-flashcard-front-hint { font-size: 12px; color: var(--ig-primary)); margin-top: 10px; }
+.dgb-flashcard-back-text { font-size: 14.5px; color: var(--dg-color-text-secondary, var(--ig-text-sub)); line-height: 1.6; margin: 0; }
+.dgb-flashcard-nav { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 14px; }
+.dgb-flashcard-navbtn {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid var(--dg-color-surface-border, var(--ig-border));
+  background: var(--ig-surface); color: var(--dg-color-text-secondary, var(--ig-text-sub));
+  font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.dgb-flashcard-navbtn:hover { background: var(--dg-color-surface-muted, var(--ig-surface-muted)); }
+.dgb-flashcard-action {
+  padding: 7px 16px; border-radius: 8px; border: 0;
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: transform .1s ease;
+}
+.dgb-flashcard-action:hover { transform: translateY(-1px); }
+.dgb-flashcard-review { background: var(--ig-ng-bg); color: var(--ig-ng); }
+.dgb-flashcard-review:hover { background: var(--ig-ng-bg); }
+.dgb-flashcard-known { background: #f0fdf4; color: var(--ig-ok); }
+.dgb-flashcard-known:hover { background: var(--ig-ok-bg); }
+.dgb-flashcard-progress { }
+.dgb-flashcard-progress-bar { height: 6px; border-radius: 3px; background: var(--dg-color-surface-muted, var(--ig-surface-muted)); overflow: hidden; position: relative; margin-bottom: 6px; }
+.dgb-flashcard-progress-known { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ig-ok); border-radius: 3px; transition: width .3s ease; }
+.dgb-flashcard-progress-review { position: absolute; top: 0; bottom: 0; background: var(--ig-warn); border-radius: 3px; transition: width .3s ease, left .3s ease; }
+.dgb-flashcard-progress-labels { display: flex; justify-content: space-between; font-size: 11px; }
+.dgb-flashcard-label-known { color: var(--ig-ok); }
+.dgb-flashcard-label-review { color: var(--ig-warn); }
+.dgb-flashcard-label-new { color: var(--dg-color-text-tertiary, #94a3b8); }
+
+/* 完成后参考答案汇�?*/
+.dgb-flashcard-summary {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #f0fdf4;
+  border: 1px solid var(--ig-ok-bg);
+  border-radius: 10px;
+}
+.dgb-flashcard-summary-title {
+  font-size: 12px; font-weight: 700;
+  color: var(--ig-ok); margin-bottom: 8px;
+}
+.dgb-flashcard-summary-row {
+  display: flex; flex-direction: column;
+  gap: 2px; margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ig-primary-soft);
+}
+.dgb-flashcard-summary-row:last-child { border-bottom: none; margin-bottom: 0; }
+.dgb-flashcard-summary-q {
+  font-size: 12px; font-weight: 600;
+  color: var(--dg-color-text-primary, var(--ig-text));
+}
+.dgb-flashcard-summary-a {
+  font-size: 12px;
+  color: var(--ig-ok);
+  padding-left: 12px;
+}

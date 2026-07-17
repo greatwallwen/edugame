@@ -1,0 +1,714 @@
+{
+  "i2c": {
+    "name": "I2C initialization hardware tower",
+    "real_hardware_cues": [
+      "sensor breakout board",
+      "header pins",
+      "pull-up resistors",
+      "small IMU package",
+      "SDA/SCL bus traces"
+    ],
+    "tower_concept_cues": [
+      "raised chassis",
+      "pedestal ring",
+      "diagnostic mast",
+      "layered tech pedestal",
+      "holographic docking base",
+      "glowing board socket",
+      "side guide rail",
+      "maglev base ring",
+      "energy port"
+    ],
+    "hardware_accessory_cues": [
+      "SDA probe",
+      "SCL probe",
+      "bus activity light"
+    ],
+    "circuit_layout_cues": [
+      "non-overlapping component zones",
+      "clear trace routing",
+      "component clearance",
+      "separate connector, sensor, and pull-up resistor areas"
+    ],
+    "component_layout": [
+      {
+        "name": "imu sensor package",
+        "box": [
+          101,
+          113,
+          132,
+          143
+        ]
+      },
+      {
+        "name": "header pins",
+        "box": [
+          66,
+          166,
+          126,
+          178
+        ]
+      },
+      {
+        "name": "status connector",
+        "box": [
+          143,
+          151,
+          178,
+          174
+        ]
+      },
+      {
+        "name": "pull-up resistor bank",
+        "box": [
+          146,
+          112,
+          180,
+          140
+        ]
+      },
+      {
+        "name": "bus route vias",
+        "box": [
+          68,
+          94,
+          95,
+          115
+        ]
+      },
+      {
+        "name": "sda probe",
+        "box": [
+          103,
+          83,
+          116,
+          106
+        ]
+      },
+      {
+        "name": "scl probe",
+        "box": [
+          125,
+          83,
+          138,
+          106
+        ]
+      },
+      {
+        "name": "bus activity light",
+        "box": [
+          125,
+          150,
+          134,
+          157
+        ]
+      }
+    ],
+    "mechanical_detail_layout": [
+      {
+        "name": "machined fastener upper right",
+        "box": [
+          144,
+          81,
+          155,
+          93
+        ]
+      },
+      {
+        "name": "machined fastener bus corner",
+        "box": [
+          68,
+          121,
+          79,
+          133
+        ]
+      },
+      {
+        "name": "machined fastener lower left",
+        "box": [
+          80,
+          145,
+          91,
+          157
+        ]
+      }
+    ],
+    "board_bounds": [
+      65,
+      78,
+      191,
+      178
+    ],
+    "ambient_effect_cues": [
+      "orbiting data motes",
+      "scan arc",
+      "energy spark",
+      "layered hologram rings",
+      "data filament lattice",
+      "micro telemetry ticks",
+      "bus constellation links"
+    ],
+    "board_presentation_cues": [
+      "angled board plane",
+      "visible board thickness",
+      "beveled edge highlight",
+      "contact shadow"
+    ],
+    "component_presentation_cues": [
+      "raised IC packages",
+      "metal pin shadows",
+      "connector housings",
+      "machined fasteners"
+    ],
+    "animation_cues": [
+      "8-frame idle hardware sprite cycle",
+      "8-frame attack hardware sprite burst",
+      "board-contained scan pulse",
+      "i2c specific attack energy signature"
+    ],
+    "attack_effect_cues": [
+      "separate beam sprite sheet",
+      "separate particle range sprite sheet",
+      "clear emitter flare",
+      "readable pulsed energy path",
+      "volumetric glow",
+      "soft scatter halo",
+      "depth-layered particles",
+      "perspective falloff"
+    ]
+  },
+  "filter": {
+    "name": "analog/digital signal filter hardware tower",
+    "real_hardware_cues": [
+      "op-amp",
+      "resistors",
+      "capacitors",
+      "RC filter network",
+      "small waveform monitor"
+    ],
+    "tower_concept_cues": [
+      "raised chassis",
+      "pedestal ring",
+      "diagnostic mast",
+      "layered tech pedestal",
+      "holographic docking base",
+      "glowing board socket",
+      "side guide rail",
+      "maglev base ring",
+      "energy port"
+    ],
+    "hardware_accessory_cues": [
+      "input terminal",
+      "output terminal",
+      "mini waveform window"
+    ],
+    "circuit_layout_cues": [
+      "non-overlapping component zones",
+      "clear trace routing",
+      "component clearance",
+      "separate op-amp, resistor, and capacitor areas"
+    ],
+    "component_layout": [
+      {
+        "name": "op-amp package",
+        "box": [
+          114,
+          116,
+          150,
+          146
+        ]
+      },
+      {
+        "name": "input resistor bank",
+        "box": [
+          66,
+          90,
+          98,
+          114
+        ]
+      },
+      {
+        "name": "capacitor bank",
+        "box": [
+          162,
+          92,
+          194,
+          119
+        ]
+      },
+      {
+        "name": "output capacitor bank",
+        "box": [
+          163,
+          149,
+          195,
+          176
+        ]
+      },
+      {
+        "name": "waveform monitor",
+        "box": [
+          60,
+          157,
+          104,
+          174
+        ]
+      },
+      {
+        "name": "input terminal",
+        "box": [
+          76,
+          122,
+          98,
+          143
+        ]
+      },
+      {
+        "name": "output terminal",
+        "box": [
+          170,
+          126,
+          192,
+          142
+        ]
+      },
+      {
+        "name": "mini waveform window",
+        "box": [
+          112,
+          154,
+          151,
+          174
+        ]
+      }
+    ],
+    "mechanical_detail_layout": [
+      {
+        "name": "machined fastener upper left",
+        "box": [
+          107,
+          86,
+          118,
+          98
+        ]
+      },
+      {
+        "name": "machined fastener upper center",
+        "box": [
+          135,
+          86,
+          146,
+          98
+        ]
+      }
+    ],
+    "board_bounds": [
+      60,
+      83,
+      196,
+      179
+    ],
+    "ambient_effect_cues": [
+      "orbiting data motes",
+      "scan arc",
+      "energy spark",
+      "layered hologram rings",
+      "data filament lattice",
+      "micro telemetry ticks",
+      "frequency comb field"
+    ],
+    "board_presentation_cues": [
+      "angled board plane",
+      "visible board thickness",
+      "beveled edge highlight",
+      "contact shadow"
+    ],
+    "component_presentation_cues": [
+      "raised IC packages",
+      "metal pin shadows",
+      "connector housings",
+      "machined fasteners"
+    ],
+    "animation_cues": [
+      "8-frame idle hardware sprite cycle",
+      "8-frame attack hardware sprite burst",
+      "board-contained scan pulse",
+      "filter specific attack energy signature"
+    ],
+    "attack_effect_cues": [
+      "separate beam sprite sheet",
+      "separate particle range sprite sheet",
+      "clear emitter flare",
+      "readable pulsed energy path",
+      "volumetric glow",
+      "soft scatter halo",
+      "depth-layered particles",
+      "perspective falloff"
+    ]
+  },
+  "peak": {
+    "name": "peak detector comparator hardware tower",
+    "real_hardware_cues": [
+      "comparator",
+      "diode",
+      "threshold reference",
+      "sample capacitor",
+      "oscilloscope-style signal trace"
+    ],
+    "tower_concept_cues": [
+      "raised chassis",
+      "pedestal ring",
+      "diagnostic mast",
+      "layered tech pedestal",
+      "holographic docking base",
+      "glowing board socket",
+      "side guide rail",
+      "maglev base ring",
+      "energy port"
+    ],
+    "hardware_accessory_cues": [
+      "threshold trim knob",
+      "diode direction label",
+      "peak latch bar"
+    ],
+    "circuit_layout_cues": [
+      "non-overlapping component zones",
+      "clear trace routing",
+      "component clearance",
+      "separate comparator, diode, threshold, and capacitor areas"
+    ],
+    "component_layout": [
+      {
+        "name": "comparator package",
+        "box": [
+          68,
+          112,
+          102,
+          142
+        ]
+      },
+      {
+        "name": "threshold package",
+        "box": [
+          153,
+          116,
+          190,
+          146
+        ]
+      },
+      {
+        "name": "diode marker",
+        "box": [
+          116,
+          100,
+          144,
+          119
+        ]
+      },
+      {
+        "name": "sample capacitor",
+        "box": [
+          182,
+          154,
+          196,
+          176
+        ]
+      },
+      {
+        "name": "peak waveform bus",
+        "box": [
+          70,
+          169,
+          136,
+          181
+        ]
+      },
+      {
+        "name": "reference resistor bank",
+        "box": [
+          70,
+          84,
+          190,
+          90
+        ]
+      },
+      {
+        "name": "threshold trim knob",
+        "box": [
+          111,
+          143,
+          131,
+          163
+        ]
+      },
+      {
+        "name": "diode direction label",
+        "box": [
+          110,
+          126,
+          142,
+          137
+        ]
+      },
+      {
+        "name": "peak latch bar",
+        "box": [
+          144,
+          153,
+          170,
+          165
+        ]
+      }
+    ],
+    "mechanical_detail_layout": [
+      {
+        "name": "machined fastener upper center",
+        "box": [
+          151,
+          98,
+          162,
+          110
+        ]
+      },
+      {
+        "name": "machined fastener upper right",
+        "box": [
+          179,
+          98,
+          190,
+          110
+        ]
+      },
+      {
+        "name": "machined fastener lower left",
+        "box": [
+          63,
+          150,
+          74,
+          162
+        ]
+      }
+    ],
+    "board_bounds": [
+      60,
+      83,
+      196,
+      181
+    ],
+    "ambient_effect_cues": [
+      "orbiting data motes",
+      "scan arc",
+      "energy spark",
+      "layered hologram rings",
+      "data filament lattice",
+      "micro telemetry ticks",
+      "peak lock prism"
+    ],
+    "board_presentation_cues": [
+      "angled board plane",
+      "visible board thickness",
+      "beveled edge highlight",
+      "contact shadow"
+    ],
+    "component_presentation_cues": [
+      "raised IC packages",
+      "metal pin shadows",
+      "connector housings",
+      "machined fasteners"
+    ],
+    "animation_cues": [
+      "8-frame idle hardware sprite cycle",
+      "8-frame attack hardware sprite burst",
+      "board-contained scan pulse",
+      "peak specific attack energy signature"
+    ],
+    "attack_effect_cues": [
+      "separate beam sprite sheet",
+      "separate particle range sprite sheet",
+      "clear emitter flare",
+      "readable pulsed energy path",
+      "volumetric glow",
+      "soft scatter halo",
+      "depth-layered particles",
+      "perspective falloff"
+    ]
+  },
+  "power": {
+    "name": "low-power wakeup hardware tower",
+    "real_hardware_cues": [
+      "battery",
+      "MOSFET",
+      "wake interrupt",
+      "power gate",
+      "coin-cell holder"
+    ],
+    "tower_concept_cues": [
+      "raised chassis",
+      "pedestal ring",
+      "diagnostic mast",
+      "layered tech pedestal",
+      "holographic docking base",
+      "glowing board socket",
+      "side guide rail",
+      "maglev base ring",
+      "energy port"
+    ],
+    "hardware_accessory_cues": [
+      "battery contacts",
+      "wake coil",
+      "power gate indicator"
+    ],
+    "circuit_layout_cues": [
+      "non-overlapping component zones",
+      "clear trace routing",
+      "component clearance",
+      "separate battery, MOSFET, wake line, and status gauge areas"
+    ],
+    "component_layout": [
+      {
+        "name": "coin cell holder",
+        "box": [
+          70,
+          105,
+          121,
+          156
+        ]
+      },
+      {
+        "name": "mosfet package",
+        "box": [
+          158,
+          110,
+          188,
+          140
+        ]
+      },
+      {
+        "name": "status gauge",
+        "box": [
+          143,
+          154,
+          193,
+          176
+        ]
+      },
+      {
+        "name": "wake antenna route",
+        "box": [
+          160,
+          85,
+          192,
+          101
+        ]
+      },
+      {
+        "name": "power resistor bank",
+        "box": [
+          128,
+          88,
+          140,
+          103
+        ]
+      },
+      {
+        "name": "battery contacts",
+        "box": [
+          60,
+          124,
+          63,
+          138
+        ]
+      },
+      {
+        "name": "wake coil",
+        "box": [
+          130,
+          117,
+          146,
+          135
+        ]
+      },
+      {
+        "name": "power gate indicator",
+        "box": [
+          122,
+          163,
+          137,
+          177
+        ]
+      }
+    ],
+    "mechanical_detail_layout": [
+      {
+        "name": "machined fastener upper left",
+        "box": [
+          62,
+          86,
+          73,
+          98
+        ]
+      },
+      {
+        "name": "machined fastener upper center",
+        "box": [
+          90,
+          86,
+          101,
+          98
+        ]
+      },
+      {
+        "name": "machined fastener lower left",
+        "box": [
+          62,
+          162,
+          73,
+          174
+        ]
+      }
+    ],
+    "board_bounds": [
+      59,
+      83,
+      197,
+      181
+    ],
+    "ambient_effect_cues": [
+      "orbiting data motes",
+      "scan arc",
+      "energy spark",
+      "layered hologram rings",
+      "data filament lattice",
+      "micro telemetry ticks",
+      "wake pulse halo"
+    ],
+    "board_presentation_cues": [
+      "angled board plane",
+      "visible board thickness",
+      "beveled edge highlight",
+      "contact shadow"
+    ],
+    "component_presentation_cues": [
+      "raised IC packages",
+      "metal pin shadows",
+      "connector housings",
+      "machined fasteners"
+    ],
+    "animation_cues": [
+      "8-frame idle hardware sprite cycle",
+      "8-frame attack hardware sprite burst",
+      "board-contained scan pulse",
+      "power specific attack energy signature"
+    ],
+    "attack_effect_cues": [
+      "separate beam sprite sheet",
+      "separate particle range sprite sheet",
+      "clear emitter flare",
+      "readable pulsed energy path",
+      "volumetric glow",
+      "soft scatter halo",
+      "depth-layered particles",
+      "perspective falloff"
+    ]
+  }
+}

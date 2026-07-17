@@ -1,0 +1,79 @@
+[
+    {
+        "name": "\u5f15\u51fa PWM \u6982\u5ff5\u4e0e\u65b9\u6ce2",
+        "type": "default.normal",
+        "video": "PwmDutyVoltage_0000_\u5f15\u51fa PWM \u6982\u5ff5\u4e0e\u65b9\u6ce2.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "7.000000",
+        "nb_frames": "210"
+    },
+    {
+        "name": "\u6807\u6ce8 ON \u65f6\u95f4\u4e0e\u5468\u671f",
+        "type": "default.normal",
+        "video": "PwmDutyVoltage_0001_\u6807\u6ce8 ON \u65f6\u95f4\u4e0e\u5468\u671f.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.500000",
+        "nb_frames": "105"
+    },
+    {
+        "name": "\u7ed9\u51fa\u5360\u7a7a\u6bd4\u5b9a\u4e49",
+        "type": "default.normal",
+        "video": "PwmDutyVoltage_0002_\u7ed9\u51fa\u5360\u7a7a\u6bd4\u5b9a\u4e49.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "5.000000",
+        "nb_frames": "150"
+    },
+    {
+        "name": "\u6f14\u793a 25% \u5360\u7a7a\u6bd4",
+        "type": "default.normal",
+        "video": "PwmDutyVoltage_0003_\u6f14\u793a 25% \u5360\u7a7a\u6bd4.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.000000",
+        "nb_frames": "120"
+    },
+    {
+        "name": "\u6f14\u793a 50% \u5360\u7a7a\u6bd4",
+        "type": "default.normal",
+        "video": "PwmDutyVoltage_0004_\u6f14\u793a 50% \u5360\u7a7a\u6bd4.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.000000",
+        "nb_frames": "120"
+    },
+    {
+        "name": "\u6f14\u793a 75% \u5360\u7a7a\u6bd4",
+        "type": "default.normal",
+        "video": "PwmDutyVoltage_0005_\u6f14\u793a 75% \u5360\u7a7a\u6bd4.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.000000",
+        "nb_frames": "120"
+    },
+    {
+        "name": "\u603b\u7ed3\uff1aU_avg = D \u00d7 Vcc",
+        "type": "default.normal",
+        "video": "PwmDutyVoltage_0006_\u603b\u7ed3\uff1aU_avg = D \u00d7 Vcc.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "5.500000",
+        "nb_frames": "165"
+    }
+]

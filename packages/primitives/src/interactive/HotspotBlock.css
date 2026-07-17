@@ -1,0 +1,31 @@
+@import './interactive-tokens.css';
+.dgb-hotspot { max-width: none; width: 100%; padding: 16px; }
+.dgb-hotspot-title { font-size: 15px; font-weight: 600; color: var(--dg-color-text-primary); margin: 0 0 12px; }
+.dgb-hotspot-hint { font-size: 12.5px; color: var(--dg-color-text-tertiary); margin-bottom: 14px; }
+.dgb-hotspot-stage { position: relative; display: inline-block; border-radius: 10px; overflow: hidden; border: 1px solid var(--dg-color-surface-border); background: var(--dg-color-surface-card); }
+.dgb-hotspot-img { display: block; max-width: 100%; height: auto; }
+.dgb-hotspot-area { position: absolute; border-radius: 50%; cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; }
+.dgb-hotspot-area::after { content: attr(data-idx); font-size: 10px; font-weight: 700; color: var(--ig-surface); background: rgba(0,0,0,.55); width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.dgb-hotspot-area:hover { box-shadow: 0 0 0 4px rgba(14,165,233,.25); }
+.dgb-hotspot-area.found::after { background: var(--ig-ok); }
+.dgb-hotspot-area.found { box-shadow: 0 0 0 4px rgba(22,163,74,.25); animation: dgbHotspotPop .35s ease; }
+.dgb-hotspot-ctrl { display: flex; gap: 10px; margin-top: 14px; }
+.dgb-hotspot-btn {
+  padding: 8px 18px; border-radius: 8px; border: 1px solid var(--dg-color-surface-border);
+  background: var(--dg-color-surface-card); color: var(--dg-color-text-primary);
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.dgb-hotspot-btn:hover { border-color: var(--ig-primary); color: var(--ig-primary); }
+.dgb-hotspot-btn.primary { background: var(--ig-primary); color: var(--ig-surface); border-color: var(--ig-primary); }
+.dgb-hotspot-btn.primary:hover { background: var(--ig-primary-hover); }
+.dgb-hotspot-result { margin-top: 10px; font-size: 13px; padding: 10px 14px; border-radius: 8px; }
+.dgb-hotspot-result.ok { background: #f0fdf4; color: var(--ig-primary); }
+.dgb-hotspot-result.err { background: var(--ig-ng-bg); color: var(--ig-ng); }
+.dgb-hotspot-found-list { margin-top: 12px; }
+.dgb-hotspot-found-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: 12.5px; border-radius: 6px; margin-bottom: 4px; background: var(--dg-color-surface-muted); }
+.dgb-hotspot-found-item svg { color: var(--ig-ok); flex-shrink: 0; }
+@keyframes dgbHotspotPop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}

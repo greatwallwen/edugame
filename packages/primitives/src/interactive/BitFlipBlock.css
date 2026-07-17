@@ -1,0 +1,201 @@
+@import './interactive-tokens.css';
+/**
+ * Iter-41-A · BitFlipBlock 寄存器位操作互动游戏样式
+ * 与教材风（暖米色 + 深棕字 + 教材插图浅底）一致；专业代码字体显示 hex/bin 值。
+ */
+
+.dgb-bitflip {
+  margin: 16px 0;
+  padding: 18px 18px 16px;
+  background: var(--dg-color-surface-card, var(--ig-surface));
+  border: 1px solid var(--dg-color-border-subtle, #e8e0d0);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  color: var(--ig-text);
+}
+
+.dgb-bitflip__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.dgb-bitflip__prompt {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ig-text);
+  flex: 1;
+}
+
+.dgb-bitflip__reg {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 12.5px;
+  background: #f3eee2;
+  border: 1px solid #d8c8a4;
+  color: #6f5b3a;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.dgb-bitflip__target,
+.dgb-bitflip__current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+  color: #5a5a5a;
+  margin: 8px 0;
+}
+
+.dgb-bitflip__target-value,
+.dgb-bitflip__current-value {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ig-text);
+  padding: 1px 6px;
+  background: #f3eee2;
+  border-radius: 4px;
+}
+
+.dgb-bitflip__current-value.is-correct {
+  background: var(--ig-primary-soft);
+  color: var(--ig-primary);
+}
+
+.dgb-bitflip__target-bin,
+.dgb-bitflip__current-bin {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 12.5px;
+  color: #94918a;
+}
+
+.dgb-bitflip__diff {
+  font-size: 12px;
+  color: var(--ig-warn);
+  background: var(--ig-warn);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+/* 8 个 bit cell：横排 + 等宽，与寄存器视觉对齐 */
+.dgb-bitflip__bits {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  margin: 12px 0;
+  max-width: 520px;
+}
+
+.dgb-bitflip__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 6px;
+  background: var(--ig-surface-muted);
+  border: 1.5px solid var(--ig-border-strong);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+}
+.dgb-bitflip__cell:hover:not(:disabled) {
+  border-color: var(--ig-primary);
+  background: #f0f9ff;
+}
+.dgb-bitflip__cell:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.dgb-bitflip__cell.is-on {
+  background: var(--ig-primary);
+  border-color: var(--ig-primary-hover);
+  color: var(--ig-surface);
+}
+.dgb-bitflip__cell.is-on:hover:not(:disabled) {
+  background: var(--ig-primary-hover);
+}
+
+.dgb-bitflip__cell.is-correct {
+  border-color: var(--ig-ok);
+  box-shadow: 0 0 0 2px #10b98133;
+}
+.dgb-bitflip__cell.is-wrong {
+  border-color: var(--ig-ng);
+  box-shadow: 0 0 0 2px #ef444433;
+}
+
+.dgb-bitflip__cell-val {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+.dgb-bitflip__cell-label {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.dgb-bitflip__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.dgb-bitflip__btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.dgb-bitflip__btn--primary {
+  background: var(--ig-primary);
+  color: var(--ig-surface);
+  border-color: var(--ig-primary-hover);
+}
+.dgb-bitflip__btn--primary:hover {
+  background: var(--ig-primary-hover);
+}
+.dgb-bitflip__btn--ghost {
+  background: var(--ig-surface);
+  color: var(--ig-text-sub);
+  border-color: var(--ig-border-strong);
+}
+.dgb-bitflip__btn--ghost:hover {
+  background: var(--ig-surface-muted);
+  border-color: #94a3b8;
+}
+
+.dgb-bitflip__feedback {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.dgb-bitflip__feedback.is-correct {
+  background: var(--ig-primary-soft);
+  border: 1px solid var(--ig-primary-border);
+  color: var(--ig-primary);
+}
+.dgb-bitflip__feedback.is-wrong {
+  background: var(--ig-ng-bg);
+  border: 1px solid var(--ig-ng-bg);
+  color: var(--ig-ng);
+}
+.dgb-bitflip__explanation {
+  margin: 6px 0 0;
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--ig-text-sub);
+  line-height: 1.6;
+}

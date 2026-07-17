@@ -1,0 +1,80 @@
+/* Phase G3.7 · LaserOverlay 样式
+ *
+ * 设计纪律：
+ *   - 不依赖 framer-motion / motion，纯 CSS（transition + keyframe）
+ *   - position:fixed，pointer-events:none，aria-hidden（与 HighlightOverlay 同等无侵入）
+ *   - z-index 比 HighlightOverlay (9000) 略高，确保激光在聚光遮罩之上
+ *   - 配色经 --dgb-laser-color CSS var 注入，默认 #ff3b30（对标 OpenMAIC 视觉）
+ */
+
+.dgb-laser-overlay {
+  position: fixed;
+  /* 父盒以圆心定位，子元素使用 -50%/-50% 把视觉中心放到 (left,top) */
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 9100;
+  transition:
+    left 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    top 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.15s ease;
+}
+
+/* 光核：12px 红圆点 + 外发光 */
+.dgb-laser-core {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--dgb-laser-color, #ff3b30);
+  box-shadow:
+    0 0 8px 2px color-mix(in srgb, var(--dgb-laser-color, #ff3b30) 60%, transparent),
+    0 0 24px 6px color-mix(in srgb, var(--dgb-laser-color, #ff3b30) 30%, transparent);
+}
+
+/* 呼吸光环：1.5s 周期 scale 1→2.8 + opacity 0.6→0，repeatDelay 0.3s */
+.dgb-laser-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  margin-top: -6px;
+  border-radius: 50%;
+  border: 1.5px solid var(--dgb-laser-color, #ff3b30);
+  /* 总周期 1.8s = 1.5s 动画 + 0.3s repeatDelay；用 keyframe 自带 0.0~0.83 区间表达 */
+  animation: dgb-laser-ring-pulse 1.8s ease-out infinite;
+}
+
+@keyframes dgb-laser-ring-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  /* 0~83% 是 1.5s 主动画段，83%~100% 是 0.3s 静止段（repeatDelay） */
+  83% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* 无障碍：用户开启 reduced motion 时跳过飞行入场和呼吸光环 */
+@media (prefers-reduced-motion: reduce) {
+  .dgb-laser-overlay {
+    transition: opacity 0.15s ease;
+  }
+  .dgb-laser-ring {
+    animation: none;
+    opacity: 0.4;
+    transform: scale(1.6);
+  }
+}

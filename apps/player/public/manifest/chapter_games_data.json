@@ -1,0 +1,2504 @@
+{
+  "p1-goals": [
+    {
+      "id": "p1-goals-auto-i1",
+      "spec": {
+        "prompt": "单片机核心概念确认",
+        "options": [
+          {
+            "id": "a",
+            "text": "MCU = 微控制器，集成CPU+存储+外设于一颗芯片"
+          },
+          {
+            "id": "b",
+            "text": "MCU 只能用汇编语言编程"
+          },
+          {
+            "id": "c",
+            "text": "单片机不需要时钟源就能工作"
+          },
+          {
+            "id": "d",
+            "text": "STM32 属于 8051 架构"
+          }
+        ],
+        "answer": "a",
+        "explanation": "MCU(Microcontroller Unit)将处理器、存储器和外设集成在单芯片上",
+        "kind": "single-choice"
+      }
+    },
+    {
+      "id": "p1-goals-auto-i2",
+      "spec": {
+        "prompt": "单片机基础判断",
+        "statements": [
+          {
+            "id": "s1",
+            "text": "STM32F103 采用 ARM Cortex-M3 内核",
+            "correct": true,
+            "rationale": "STM32F1 系列统一使用 Cortex-M3 内核，主频 72MHz"
+          },
+          {
+            "id": "s2",
+            "text": "Flash 存储器断电后数据会丢失",
+            "correct": false,
+            "rationale": "Flash 是非易失性存储，断电数据保持；RAM 才会丢失"
+          },
+          {
+            "id": "s3",
+            "text": "GPIO 引脚只能做输出不能做输入",
+            "correct": false,
+            "rationale": "GPIO 可配置为输入/输出/复用/模拟等多种模式"
+          }
+        ],
+        "kind": "true-false"
+      }
+    },
+    {
+      "id": "p1-goals-auto-i3",
+      "spec": {
+        "prompt": "单片机核心术语闪卡",
+        "cards": [
+          {
+            "id": "c1",
+            "front": "MCU",
+            "back": "微控制器，集成CPU+RAM+Flash+外设的单芯片计算机",
+            "hint": "Microcontroller Unit"
+          },
+          {
+            "id": "c2",
+            "front": "Cortex-M3",
+            "back": "ARM 32位RISC处理器内核，STM32F1系列采用，主频72MHz",
+            "hint": "ARM架构"
+          },
+          {
+            "id": "c3",
+            "front": "JTAG/SWD",
+            "back": "芯片调试接口，SWD只需2线(SWDIO+SWCLK)即可下载调试",
+            "hint": "调试烧录"
+          }
+        ],
+        "kind": "flashcard"
+      }
+    }
+  ],
+  "p1-arch": [
+    {
+      "id": "p1-arch-auto-i2",
+      "spec": {
+        "prompt": "补全 STM32 启动关键代码",
+        "language": "c",
+        "template": "void SystemInit(void)\n{\n  RCC->CR |= {{hse-on}};\n  while(!(RCC->CR & RCC_CR_HSERDY));\n  RCC->CFGR |= {{pll-src}};\n}",
+        "blanks": [
+          {
+            "id": "hse-on",
+            "accepted": [
+              "RCC_CR_HSEON",
+              "(1<<16)"
+            ],
+            "rationale": "使能外部高速时钟HSE"
+          },
+          {
+            "id": "pll-src",
+            "accepted": [
+              "RCC_CFGR_PLLSRC",
+              "(1<<16)"
+            ],
+            "rationale": "选择HSE作为PLL输入源"
+          }
+        ],
+        "validate": "normalized",
+        "kind": "code-cloze"
+      }
+    },
+    {
+      "id": "p1-arch-auto-i3",
+      "spec": {
+        "prompt": "单片机基础快答 · 限时45秒",
+        "seconds": 45,
+        "questions": [
+          {
+            "id": "q1",
+            "stem": "STM32F103C8T6 的 Flash 容量是？",
+            "options": [
+              "64KB",
+              "128KB",
+              "256KB",
+              "32KB"
+            ],
+            "answer": 0
+          },
+          {
+            "id": "q2",
+            "stem": "Cortex-M3 的指令集是？",
+            "options": [
+              "Thumb-2",
+              "ARM",
+              "MIPS",
+              "x86"
+            ],
+            "answer": 0
+          },
+          {
+            "id": "q3",
+            "stem": "SWD 调试接口需要几根线？",
+            "options": [
+              "2根",
+              "4根",
+              "1根",
+              "8根"
+            ],
+            "answer": 0
+          }
+        ],
+        "kind": "timed-quiz"
+      }
+    }
+  ],
+  "p1-devflow": [
+    {
+      "id": "p1-devflow-auto-i1",
+      "spec": {
+        "prompt": "补全 STM32 启动关键代码",
+        "language": "c",
+        "template": "void SystemInit(void)\n{\n  RCC->CR |= {{hse-on}};\n  while(!(RCC->CR & RCC_CR_HSERDY));\n  RCC->CFGR |= {{pll-src}};\n}",
+        "blanks": [
+          {
+            "id": "hse-on",
+            "accepted": [
+              "RCC_CR_HSEON",
+              "(1<<16)"
+            ],
+            "rationale": "使能外部高速时钟HSE"
+          },
+          {
+            "id": "pll-src",
+            "accepted": [
+              "RCC_CFGR_PLLSRC",
+              "(1<<16)"
+            ],
+            "rationale": "选择HSE作为PLL输入源"
+          }
+        ],
+        "validate": "normalized",
+        "kind": "code-cloze"
+      }
+    },
+    {
+      "id": "p1-devflow-auto-i2",
+      "spec": {
+        "prompt": "单片机基础快答 · 限时45秒",
+        "seconds": 45,
+        "questions": [
+          {
+            "id": "q1",
+            "stem": "STM32F103C8T6 的 Flash 容量是？",
+            "options": [
+              "64KB",
+              "128KB",
+              "256KB",
+              "32KB"
+            ],
+            "answer": 0
+          },
+          {
+            "id": "q2",
+            "stem": "Cortex-M3 的指令集是？",
+            "options": [
+              "Thumb-2",
+              "ARM",
+              "MIPS",
+              "x86"
+            ],
+            "answer": 0
+          },
+          {
+            "id": "q3",
+            "stem": "SWD 调试接口需要几根线？",
+            "options": [
+              "2根",
+              "4根",
+              "1根",
+              "8根"
+            ],
+            "answer": 0
+          }
+        ],
+        "kind": "timed-quiz"
+      }
+    },
+    {
+      "id": "p1-devflow-auto-i3",
+      "spec": {
+        "prompt": "补全 STM32 时钟配置",
+        "segments": [
+          "RCC_APB2PeriphClockCmd(",
+          {
+            "blank": true,
+            "answer": "RCC_APB2Periph_GPIOA",
+            "hint": "GPIOA 时钟"
+          },
+          ", ",
+          {
+            "blank": true,
+            "answer": "ENABLE",
+            "hint": "使能/禁止"
+          },
+          ");"
+        ],
+        "kind": "fill-blank"
+      }
+    }
+  ],
+  "ch3-intro": [
+    {
+      "id": "ch3-intro-auto-i1",
+      "spec": {
+        "kind": "single-choice",
+        "prompt": "GPIO 应用核心概念",
+        "options": [
+          {
+            "id": "a",
+            "text": "GPIO 有推挽输出和开漏输出两种输出模式"
+          },
+          {
+            "id": "b",
+            "text": "GPIO 只能输出不能输入"
+          },
+          {
+            "id": "c",
+            "text": "所有 GPIO 引脚都能承受 5V 电压"
+          },
+          {
+            "id": "d",
+            "text": "GPIO 不需要使能时钟就能工作"
+          }
+        ],
+        "answer": "a",
+        "explanation": "推挽输出可驱动高低电平，开漏输出需外接上拉"
+      }
+    },
+    {
+      "id": "ch3-intro-auto-i2",
+      "spec": {
+        "kind": "true-false",
+        "prompt": "GPIO 原理判断",
+        "statements": [
+          {
+            "id": "s1",
+            "text": "STM32 GPIO 有 8 种工作模式（4输入+4输出）",
+            "correct": true,
+            "rationale": "浮空/上拉/下拉/模拟输入 + 推挽/开漏/复用推挽/复用开漏"
+          },
+          {
+            "id": "s2",
+            "text": "配置 GPIO 前必须先使能对应端口的时钟",
+            "correct": true,
+            "rationale": "APB2 总线时钟未使能时寄存器不可写"
+          },
+          {
+            "id": "s3",
+            "text": "LED 限流电阻越大，LED 越亮",
+            "correct": false,
+            "rationale": "电阻越大电流越小，LED 越暗"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch3-intro-auto-i3",
+      "spec": {
+        "kind": "flashcard",
+        "prompt": "GPIO 应用术语闪卡",
+        "cards": [
+          {
+            "id": "c1",
+            "front": "推挽输出(PP)",
+            "back": "输出高电平(VDD)和低电平(VSS)，可驱动 LED 等负载",
+            "hint": "Push-Pull"
+          },
+          {
+            "id": "c2",
+            "front": "开漏输出(OD)",
+            "back": "只能拉低，输出高需外接上拉电阻，用于 I2C 等总线",
+            "hint": "Open-Drain"
+          },
+          {
+            "id": "c3",
+            "front": "上拉输入(PU)",
+            "back": "内部接 10kΩ 到 VDD，无外部信号时读到高电平",
+            "hint": "Pull-Up"
+          }
+        ]
+      }
+    }
+  ],
+  "p3-led-code": [
+    {
+      "id": "p3-led-code-auto-i2",
+      "spec": {
+        "kind": "code-cloze",
+        "prompt": "补全 GPIO LED 控制代码",
+        "language": "c",
+        "template": "while (1)\n{\n  {{toggle}};\n  HAL_Delay({{delay}});\n}",
+        "blanks": [
+          {
+            "id": "toggle",
+            "accepted": [
+              "HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13)",
+              "HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5)"
+            ],
+            "rationale": "翻转LED引脚电平"
+          },
+          {
+            "id": "delay",
+            "accepted": [
+              "500",
+              "1000",
+              "200"
+            ],
+            "rationale": "延时控制闪烁频率(ms)"
+          }
+        ],
+        "validate": "normalized"
+      }
+    },
+    {
+      "id": "p3-led-code-auto-i3",
+      "spec": {
+        "kind": "timed-quiz",
+        "prompt": "GPIO 应用快答 · 限时45秒",
+        "seconds": 45,
+        "questions": [
+          {
+            "id": "q1",
+            "stem": "推挽输出与开漏输出的区别？",
+            "options": [
+              "推挽可输出高低电平，开漏只能拉低",
+              "推挽更省电",
+              "开漏速度更快",
+              "没有区别"
+            ],
+            "answer": 0
+          },
+          {
+            "id": "q2",
+            "stem": "LED 限流电阻 220Ω，3.3V 供电，LED 压降 2V，电流约？",
+            "options": [
+              "5.9mA",
+              "15mA",
+              "1mA",
+              "33mA"
+            ],
+            "answer": 0
+          },
+          {
+            "id": "q3",
+            "stem": "HAL_GPIO_ReadPin 返回值类型？",
+            "options": [
+              "GPIO_PinState",
+              "int",
+              "void",
+              "bool"
+            ],
+            "answer": 0
+          }
+        ]
+      }
+    }
+  ],
+  "p3-ws-led": [
+    {
+      "id": "p3-ws-led-auto-i3",
+      "spec": {
+        "kind": "ordering",
+        "prompt": "GPIO LED 闪烁实验步骤排序",
+        "items": [
+          {
+            "id": "s1",
+            "text": "CubeMX 将 PC13 配置为 GPIO_Output"
+          },
+          {
+            "id": "s2",
+            "text": "设置输出模式为推挽、速率为 Low"
+          },
+          {
+            "id": "s3",
+            "text": "Generate Code 生成工程"
+          },
+          {
+            "id": "s4",
+            "text": "在 main.c while 循环中调用 TogglePin"
+          },
+          {
+            "id": "s5",
+            "text": "添加 HAL_Delay(500) 控制闪烁频率"
+          },
+          {
+            "id": "s6",
+            "text": "编译下载，观察 LED 闪烁"
+          }
+        ],
+        "correctOrder": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ]
+      }
+    }
+  ],
+  "p3-exti-code": [
+    {
+      "id": "p3-exti-code-auto-i2",
+      "spec": {
+        "kind": "classification",
+        "prompt": "GPIO 应用常见问题分类",
+        "categories": [
+          {
+            "id": "hw",
+            "label": "硬件问题"
+          },
+          {
+            "id": "sw",
+            "label": "软件问题"
+          },
+          {
+            "id": "cfg",
+            "label": "配置问题"
+          }
+        ],
+        "items": [
+          {
+            "id": "e1",
+            "text": "LED 接反（正负极反）导致不亮",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e2",
+            "text": "忘记调用 HAL_GPIO_WritePin 设置电平",
+            "correctCategory": "sw"
+          },
+          {
+            "id": "e3",
+            "text": "CubeMX 中 GPIO 速率设为 Low 导致高频翻转失败",
+            "correctCategory": "cfg"
+          },
+          {
+            "id": "e4",
+            "text": "限流电阻阻值过大 LED 暗淡",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e5",
+            "text": "GPIO 模式选错（输入配成了模拟）",
+            "correctCategory": "cfg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "p3-exti-code-auto-i3",
+      "spec": {
+        "kind": "matching",
+        "prompt": "GPIO 故障与原因配对",
+        "pairs": [
+          {
+            "left": "LED 不亮",
+            "right": "引脚未配置为推挽输出或限流电阻断路"
+          },
+          {
+            "left": "按键无响应",
+            "right": "未使能内部上拉或消抖逻辑缺失"
+          },
+          {
+            "left": "引脚电平不稳定",
+            "right": "浮空输入未接上拉/下拉"
+          },
+          {
+            "left": "多个 LED 亮度不一致",
+            "right": "各路限流电阻阻值不同"
+          }
+        ]
+      }
+    }
+  ],
+  "ch3-ext": [
+    {
+      "id": "ch3-ext-auto-i2",
+      "spec": {
+        "kind": "classification",
+        "prompt": "GPIO 应用常见问题分类",
+        "categories": [
+          {
+            "id": "hw",
+            "label": "硬件问题"
+          },
+          {
+            "id": "sw",
+            "label": "软件问题"
+          },
+          {
+            "id": "cfg",
+            "label": "配置问题"
+          }
+        ],
+        "items": [
+          {
+            "id": "e1",
+            "text": "LED 接反（正负极反）导致不亮",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e2",
+            "text": "忘记调用 HAL_GPIO_WritePin 设置电平",
+            "correctCategory": "sw"
+          },
+          {
+            "id": "e3",
+            "text": "CubeMX 中 GPIO 速率设为 Low 导致高频翻转失败",
+            "correctCategory": "cfg"
+          },
+          {
+            "id": "e4",
+            "text": "限流电阻阻值过大 LED 暗淡",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e5",
+            "text": "GPIO 模式选错（输入配成了模拟）",
+            "correctCategory": "cfg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch3-ext-auto-i3",
+      "spec": {
+        "kind": "matching",
+        "prompt": "GPIO 故障与原因配对",
+        "pairs": [
+          {
+            "left": "LED 不亮",
+            "right": "引脚未配置为推挽输出或限流电阻断路"
+          },
+          {
+            "left": "按键无响应",
+            "right": "未使能内部上拉或消抖逻辑缺失"
+          },
+          {
+            "left": "引脚电平不稳定",
+            "right": "浮空输入未接上拉/下拉"
+          },
+          {
+            "left": "多个 LED 亮度不一致",
+            "right": "各路限流电阻阻值不同"
+          }
+        ]
+      }
+    }
+  ],
+  "ch4-intro": [
+    {
+      "id": "ch4-intro-auto-i1",
+      "spec": {
+        "prompt": "定时器核心概念",
+        "options": [
+          {
+            "id": "a",
+            "text": "定时器本质是可编程计数器，每个时钟脉冲计数+1"
+          },
+          {
+            "id": "b",
+            "text": "定时器只能用来延时，不能产生PWM"
+          },
+          {
+            "id": "c",
+            "text": "所有定时器都是16位的"
+          },
+          {
+            "id": "d",
+            "text": "定时器中断不需要NVIC使能"
+          }
+        ],
+        "answer": "a",
+        "explanation": "定时器是硬件计数器，计满溢出产生中断或触发事件",
+        "kind": "single-choice"
+      }
+    },
+    {
+      "id": "ch4-intro-auto-i2",
+      "spec": {
+        "prompt": "定时器原理判断",
+        "statements": [
+          {
+            "id": "s1",
+            "text": "TIM2 是通用定时器，挂在 APB1 总线上",
+            "correct": true,
+            "rationale": "TIM2/3/4 挂 APB1，TIM1/8 挂 APB2"
+          },
+          {
+            "id": "s2",
+            "text": "预分频器 PSC=71 时，72MHz 时钟变为 1MHz",
+            "correct": true,
+            "rationale": "72MHz/(71+1)=1MHz，每个计数 1μs"
+          },
+          {
+            "id": "s3",
+            "text": "自动重装载值 ARR 设为 999 时，定时周期为 1s",
+            "correct": false,
+            "rationale": "1MHz 时 ARR=999 → 周期=1000μs=1ms，不是1s"
+          }
+        ],
+        "kind": "true-false"
+      }
+    },
+    {
+      "id": "ch4-intro-auto-i3",
+      "spec": {
+        "prompt": "定时器核心术语",
+        "cards": [
+          {
+            "id": "c1",
+            "front": "PSC (预分频器)",
+            "back": "将时钟源分频：f_cnt = f_clk / (PSC+1)",
+            "hint": "Prescaler"
+          },
+          {
+            "id": "c2",
+            "front": "ARR (自动重装载)",
+            "back": "计数器上限值，计到 ARR 时溢出产生更新事件",
+            "hint": "Auto-Reload Register"
+          },
+          {
+            "id": "c3",
+            "front": "更新中断(UIE)",
+            "back": "计数器溢出时触发的中断，需在 DIER 寄存器使能",
+            "hint": "Update Interrupt Enable"
+          }
+        ],
+        "kind": "flashcard"
+      }
+    }
+  ],
+  "p4-ws-timer": [
+    {
+      "id": "p4-ws-timer-auto-i3",
+      "spec": {
+        "prompt": "定时器中断配置步骤",
+        "items": [
+          {
+            "id": "s1",
+            "text": "CubeMX 中使能 TIM2 并设置时钟源为内部"
+          },
+          {
+            "id": "s2",
+            "text": "设置预分频器 PSC = 7199（72MHz÷7200=10kHz）"
+          },
+          {
+            "id": "s3",
+            "text": "设置自动重装载 ARR = 9999（10kHz÷10000=1Hz）"
+          },
+          {
+            "id": "s4",
+            "text": "在 NVIC 中使能 TIM2 全局中断"
+          },
+          {
+            "id": "s5",
+            "text": "生成代码，在 main 中调用 HAL_TIM_Base_Start_IT"
+          },
+          {
+            "id": "s6",
+            "text": "实现 HAL_TIM_PeriodElapsedCallback 回调"
+          }
+        ],
+        "correctOrder": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ],
+        "kind": "ordering"
+      }
+    }
+  ],
+  "ch4-ext": [
+    {
+      "id": "ch4-ext-auto-i2",
+      "spec": {
+        "prompt": "定时器类型分类",
+        "categories": [
+          {
+            "id": "basic",
+            "label": "基本定时器"
+          },
+          {
+            "id": "general",
+            "label": "通用定时器"
+          },
+          {
+            "id": "advanced",
+            "label": "高级定时器"
+          }
+        ],
+        "items": [
+          {
+            "id": "e1",
+            "text": "TIM6/TIM7 — 只有基本计时功能",
+            "correctCategory": "basic"
+          },
+          {
+            "id": "e2",
+            "text": "TIM2/TIM3/TIM4 — 支持输入捕获和PWM输出",
+            "correctCategory": "general"
+          },
+          {
+            "id": "e3",
+            "text": "TIM1/TIM8 — 支持互补输出和死区控制",
+            "correctCategory": "advanced"
+          },
+          {
+            "id": "e4",
+            "text": "没有输入捕获通道",
+            "correctCategory": "basic"
+          },
+          {
+            "id": "e5",
+            "text": "4个独立捕获/比较通道",
+            "correctCategory": "general"
+          }
+        ],
+        "kind": "classification"
+      }
+    },
+    {
+      "id": "ch4-ext-auto-i3",
+      "spec": {
+        "prompt": "定时器参数与效果配对",
+        "pairs": [
+          {
+            "left": "PSC=71, ARR=999",
+            "right": "72MHz→1ms周期"
+          },
+          {
+            "left": "PSC=7199, ARR=9999",
+            "right": "72MHz→1s周期"
+          },
+          {
+            "left": "TIM_IT_Update",
+            "right": "溢出中断标志"
+          },
+          {
+            "left": "HAL_TIM_Base_Start_IT",
+            "right": "启动定时器中断模式"
+          }
+        ],
+        "kind": "matching"
+      }
+    }
+  ],
+  "ch5-intro": [
+    {
+      "id": "ch5-intro-auto-i1",
+      "spec": {
+        "kind": "single-choice",
+        "prompt": "PWM输出核心概念",
+        "options": [
+          {
+            "id": "a",
+            "text": "占空比是PWM输出的核心参数"
+          },
+          {
+            "id": "b",
+            "text": "PWM输出不需要时钟配置"
+          },
+          {
+            "id": "c",
+            "text": "HAL_TIM_PWM_Start用于读取GPIO"
+          },
+          {
+            "id": "d",
+            "text": "所有外设共用同一个中断"
+          }
+        ],
+        "answer": "a",
+        "explanation": "PWM输出的核心在于理解占空比/频率/呼吸灯/舵机"
+      }
+    },
+    {
+      "id": "ch5-intro-auto-i2",
+      "spec": {
+        "kind": "true-false",
+        "prompt": "PWM输出原理判断",
+        "statements": [
+          {
+            "id": "s1",
+            "text": "HAL_TIM_PWM_Start() 是启动PWM输出的HAL库函数",
+            "correct": true,
+            "rationale": "HAL库统一API"
+          },
+          {
+            "id": "s2",
+            "text": "TIMx->CCR1 是PWM输出的数据寄存器",
+            "correct": true
+          },
+          {
+            "id": "s3",
+            "text": "CCR=500时占空比50%",
+            "correct": true,
+            "rationale": "关键参数"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch5-intro-auto-i3",
+      "spec": {
+        "kind": "flashcard",
+        "prompt": "PWM输出核心术语",
+        "cards": [
+          {
+            "id": "c1",
+            "front": "占空比",
+            "back": "PWM输出的核心参数，决定输出特性",
+            "hint": "PWM输出"
+          },
+          {
+            "id": "c2",
+            "front": "HAL_TIM_PWM_Start",
+            "back": "HAL库中启动PWM输出的函数",
+            "hint": "HAL API"
+          },
+          {
+            "id": "c3",
+            "front": "TIMx->CCR1",
+            "back": "PWM输出的数据/控制寄存器",
+            "hint": "寄存器"
+          }
+        ]
+      }
+    }
+  ],
+  "p5-ws-pwm": [
+    {
+      "id": "p5-ws-pwm-auto-i3",
+      "spec": {
+        "kind": "ordering",
+        "prompt": "PWM输出配置步骤排序",
+        "items": [
+          {
+            "id": "s1",
+            "text": "配置TIM通道为PWM模式"
+          },
+          {
+            "id": "s2",
+            "text": "设置PSC和ARR确定频率"
+          },
+          {
+            "id": "s3",
+            "text": "设置CCR确定占空比"
+          },
+          {
+            "id": "s4",
+            "text": "使能PWM输出通道"
+          },
+          {
+            "id": "s5",
+            "text": "调用HAL_TIM_PWM_Start"
+          },
+          {
+            "id": "s6",
+            "text": "修改CCR值实现呼吸效果"
+          }
+        ],
+        "correctOrder": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ]
+      }
+    }
+  ],
+  "ch5-ext": [
+    {
+      "id": "ch5-ext-auto-i2",
+      "spec": {
+        "kind": "classification",
+        "prompt": "PWM输出常见问题分类",
+        "categories": [
+          {
+            "id": "hw",
+            "label": "硬件问题"
+          },
+          {
+            "id": "sw",
+            "label": "软件问题"
+          },
+          {
+            "id": "cfg",
+            "label": "配置问题"
+          }
+        ],
+        "items": [
+          {
+            "id": "e1",
+            "text": "舵机抖动——PWM频率不是50Hz",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e2",
+            "text": "呼吸灯不亮——忘记启动PWM通道",
+            "correctCategory": "sw"
+          },
+          {
+            "id": "e3",
+            "text": "占空比反转——极性配置错误",
+            "correctCategory": "cfg"
+          },
+          {
+            "id": "e4",
+            "text": "开发板供电不足导致工作异常",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e5",
+            "text": "CubeMX中PWM输出参数设置错误",
+            "correctCategory": "cfg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch5-ext-auto-i3",
+      "spec": {
+        "kind": "matching",
+        "prompt": "PWM输出故障与原因配对",
+        "pairs": [
+          {
+            "left": "舵机抖动",
+            "right": "PWM频率不是50Hz"
+          },
+          {
+            "left": "呼吸灯不亮",
+            "right": "忘记启动PWM通道"
+          },
+          {
+            "left": "占空比反转",
+            "right": "极性配置错误"
+          },
+          {
+            "left": "程序无法下载",
+            "right": "SWD接线错误或芯片锁死"
+          }
+        ]
+      }
+    }
+  ],
+  "p6-uart-code": [
+    {
+      "id": "p6-uart-code-auto-i2",
+      "spec": {
+        "kind": "code-cloze",
+        "prompt": "补全UART串口关键代码",
+        "language": "c",
+        "template": "// 启动UART串口\n{{start-call}};\n\n// 主循环处理\nwhile(1) {\n  {{process}};\n}",
+        "blanks": [
+          {
+            "id": "start-call",
+            "accepted": [
+              "HAL_UART_Transmit(&htim2)",
+              "HAL_UART_Transmit(&hadc1)",
+              "HAL_UART_Transmit(&hdac1, DAC_CHANNEL_1)",
+              "HAL_UART_Transmit(&huart1, buf, len)"
+            ],
+            "rationale": "启动UART串口"
+          },
+          {
+            "id": "process",
+            "accepted": [
+              "HAL_Delay(1000)",
+              "HAL_ADC_GetValue(&hadc1)"
+            ],
+            "rationale": "主循环处理逻辑"
+          }
+        ],
+        "validate": "normalized"
+      }
+    },
+    {
+      "id": "p6-uart-code-auto-i3",
+      "spec": {
+        "kind": "timed-quiz",
+        "prompt": "UART串口快答 · 限时45秒",
+        "seconds": 45,
+        "questions": [
+          {
+            "id": "q1",
+            "stem": "UART 8N1 中 N 表示？",
+            "options": [
+              "无校验位",
+              "偶校验",
+              "奇校验",
+              "无停止位"
+            ],
+            "answer": 0
+          },
+          {
+            "id": "q2",
+            "stem": "115200波特率下1字节传输时间约？",
+            "options": [
+              "87μs",
+              "1ms",
+              "10μs",
+              "1s"
+            ],
+            "answer": 0
+          },
+          {
+            "id": "q3",
+            "stem": "串口接收中断标志是？",
+            "options": [
+              "USART_IT_RXNE",
+              "USART_IT_TXE",
+              "TIM_IT_Update",
+              "EXTI_Line0"
+            ],
+            "answer": 0
+          }
+        ]
+      }
+    }
+  ],
+  "p6-ws-uart": [
+    {
+      "id": "p6-ws-uart-auto-i3",
+      "spec": {
+        "kind": "ordering",
+        "prompt": "UART串口配置步骤排序",
+        "items": [
+          {
+            "id": "s1",
+            "text": "CubeMX配置USART1为异步模式"
+          },
+          {
+            "id": "s2",
+            "text": "设置波特率115200,8N1"
+          },
+          {
+            "id": "s3",
+            "text": "使能USART1全局中断"
+          },
+          {
+            "id": "s4",
+            "text": "调用HAL_UART_Receive_IT启动接收"
+          },
+          {
+            "id": "s5",
+            "text": "在RxCpltCallback处理数据"
+          },
+          {
+            "id": "s6",
+            "text": "重新调用Receive_IT继续接收"
+          }
+        ],
+        "correctOrder": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ]
+      }
+    }
+  ],
+  "ch6-ext": [
+    {
+      "id": "ch6-ext-auto-i2",
+      "spec": {
+        "kind": "classification",
+        "prompt": "UART串口常见问题分类",
+        "categories": [
+          {
+            "id": "hw",
+            "label": "硬件问题"
+          },
+          {
+            "id": "sw",
+            "label": "软件问题"
+          },
+          {
+            "id": "cfg",
+            "label": "配置问题"
+          }
+        ],
+        "items": [
+          {
+            "id": "e1",
+            "text": "串口无输出——TX/RX接反",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e2",
+            "text": "接收乱码——波特率不匹配",
+            "correctCategory": "sw"
+          },
+          {
+            "id": "e3",
+            "text": "中断接收不触发——未调用HAL_UART_Receive_IT",
+            "correctCategory": "cfg"
+          },
+          {
+            "id": "e4",
+            "text": "开发板供电不足导致工作异常",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e5",
+            "text": "CubeMX中UART串口参数设置错误",
+            "correctCategory": "cfg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch6-ext-auto-i3",
+      "spec": {
+        "kind": "matching",
+        "prompt": "UART串口故障与原因配对",
+        "pairs": [
+          {
+            "left": "串口无输出",
+            "right": "TX/RX接反"
+          },
+          {
+            "left": "接收乱码",
+            "right": "波特率不匹配"
+          },
+          {
+            "left": "中断接收不触发",
+            "right": "未调用HAL_UART_Receive_IT"
+          },
+          {
+            "left": "程序无法下载",
+            "right": "SWD接线错误或芯片锁死"
+          }
+        ]
+      }
+    }
+  ],
+  "ch7-intro": [
+    {
+      "id": "ch7-intro-auto-i1",
+      "spec": {
+        "kind": "single-choice",
+        "prompt": "ADC模数转换核心概念",
+        "options": [
+          {
+            "id": "a",
+            "text": "分辨率是ADC模数转换的核心参数"
+          },
+          {
+            "id": "b",
+            "text": "ADC模数转换不需要时钟配置"
+          },
+          {
+            "id": "c",
+            "text": "HAL_ADC_Start用于读取GPIO"
+          },
+          {
+            "id": "d",
+            "text": "所有外设共用同一个中断"
+          }
+        ],
+        "answer": "a",
+        "explanation": "ADC模数转换的核心在于理解分辨率/采样/通道/参考电压"
+      }
+    },
+    {
+      "id": "ch7-intro-auto-i2",
+      "spec": {
+        "kind": "true-false",
+        "prompt": "ADC模数转换原理判断",
+        "statements": [
+          {
+            "id": "s1",
+            "text": "HAL_ADC_Start() 是启动ADC模数转换的HAL库函数",
+            "correct": true,
+            "rationale": "HAL库统一API"
+          },
+          {
+            "id": "s2",
+            "text": "ADC->DR 是ADC模数转换的数据寄存器",
+            "correct": true
+          },
+          {
+            "id": "s3",
+            "text": "12位分辨率0-4095",
+            "correct": true,
+            "rationale": "关键参数"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch7-intro-auto-i3",
+      "spec": {
+        "kind": "flashcard",
+        "prompt": "ADC模数转换核心术语",
+        "cards": [
+          {
+            "id": "c1",
+            "front": "分辨率",
+            "back": "ADC模数转换的核心参数，决定输出特性",
+            "hint": "ADC模数转换"
+          },
+          {
+            "id": "c2",
+            "front": "HAL_ADC_Start",
+            "back": "HAL库中启动ADC模数转换的函数",
+            "hint": "HAL API"
+          },
+          {
+            "id": "c3",
+            "front": "ADC->DR",
+            "back": "ADC模数转换的数据/控制寄存器",
+            "hint": "寄存器"
+          }
+        ]
+      }
+    }
+  ],
+  "p7-ws-adc": [
+    {
+      "id": "p7-ws-adc-auto-i3",
+      "spec": {
+        "kind": "ordering",
+        "prompt": "ADC模数转换配置步骤排序",
+        "items": [
+          {
+            "id": "s1",
+            "text": "CubeMX配置ADC1通道0(PA0)"
+          },
+          {
+            "id": "s2",
+            "text": "设置采样时间和分辨率12bit"
+          },
+          {
+            "id": "s3",
+            "text": "使能连续转换模式"
+          },
+          {
+            "id": "s4",
+            "text": "调用HAL_ADC_Start启动转换"
+          },
+          {
+            "id": "s5",
+            "text": "用HAL_ADC_GetValue读取结果"
+          },
+          {
+            "id": "s6",
+            "text": "将0-4095映射为实际物理量"
+          }
+        ],
+        "correctOrder": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ]
+      }
+    }
+  ],
+  "ch7-ext": [
+    {
+      "id": "ch7-ext-auto-i2",
+      "spec": {
+        "kind": "classification",
+        "prompt": "ADC模数转换常见问题分类",
+        "categories": [
+          {
+            "id": "hw",
+            "label": "硬件问题"
+          },
+          {
+            "id": "sw",
+            "label": "软件问题"
+          },
+          {
+            "id": "cfg",
+            "label": "配置问题"
+          }
+        ],
+        "items": [
+          {
+            "id": "e1",
+            "text": "ADC读数跳变——输入端未接滤波电容",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e2",
+            "text": "ADC值始终为0——未使能ADC时钟",
+            "correctCategory": "sw"
+          },
+          {
+            "id": "e3",
+            "text": "通道选错——CubeMX中IN0对应PA0",
+            "correctCategory": "cfg"
+          },
+          {
+            "id": "e4",
+            "text": "开发板供电不足导致工作异常",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e5",
+            "text": "CubeMX中ADC模数转换参数设置错误",
+            "correctCategory": "cfg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch7-ext-auto-i3",
+      "spec": {
+        "kind": "matching",
+        "prompt": "ADC模数转换故障与原因配对",
+        "pairs": [
+          {
+            "left": "ADC读数跳变",
+            "right": "输入端未接滤波电容"
+          },
+          {
+            "left": "ADC值始终为0",
+            "right": "未使能ADC时钟"
+          },
+          {
+            "left": "通道选错",
+            "right": "CubeMX中IN0对应PA0"
+          },
+          {
+            "left": "程序无法下载",
+            "right": "SWD接线错误或芯片锁死"
+          }
+        ]
+      }
+    }
+  ],
+  "ch8-intro": [
+    {
+      "id": "ch8-intro-auto-i1",
+      "spec": {
+        "kind": "single-choice",
+        "prompt": "DAC数模转换核心概念",
+        "options": [
+          {
+            "id": "a",
+            "text": "输出电压是DAC数模转换的核心参数"
+          },
+          {
+            "id": "b",
+            "text": "DAC数模转换不需要时钟配置"
+          },
+          {
+            "id": "c",
+            "text": "HAL_DAC_Start用于读取GPIO"
+          },
+          {
+            "id": "d",
+            "text": "所有外设共用同一个中断"
+          }
+        ],
+        "answer": "a",
+        "explanation": "DAC数模转换的核心在于理解输出电压/波形/DMA/三角波"
+      }
+    },
+    {
+      "id": "ch8-intro-auto-i2",
+      "spec": {
+        "kind": "true-false",
+        "prompt": "DAC数模转换原理判断",
+        "statements": [
+          {
+            "id": "s1",
+            "text": "HAL_DAC_Start() 是启动DAC数模转换的HAL库函数",
+            "correct": true,
+            "rationale": "HAL库统一API"
+          },
+          {
+            "id": "s2",
+            "text": "DAC->DHR12R1 是DAC数模转换的数据寄存器",
+            "correct": true
+          },
+          {
+            "id": "s3",
+            "text": "12位输出0-3.3V",
+            "correct": true,
+            "rationale": "关键参数"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch8-intro-auto-i3",
+      "spec": {
+        "kind": "flashcard",
+        "prompt": "DAC数模转换核心术语",
+        "cards": [
+          {
+            "id": "c1",
+            "front": "输出电压",
+            "back": "DAC数模转换的核心参数，决定输出特性",
+            "hint": "DAC数模转换"
+          },
+          {
+            "id": "c2",
+            "front": "HAL_DAC_Start",
+            "back": "HAL库中启动DAC数模转换的函数",
+            "hint": "HAL API"
+          },
+          {
+            "id": "c3",
+            "front": "DAC->DHR12R1",
+            "back": "DAC数模转换的数据/控制寄存器",
+            "hint": "寄存器"
+          }
+        ]
+      }
+    }
+  ],
+  "ch8-ext": [
+    {
+      "id": "ch8-ext-auto-i2",
+      "spec": {
+        "kind": "classification",
+        "prompt": "DAC数模转换常见问题分类",
+        "categories": [
+          {
+            "id": "hw",
+            "label": "硬件问题"
+          },
+          {
+            "id": "sw",
+            "label": "软件问题"
+          },
+          {
+            "id": "cfg",
+            "label": "配置问题"
+          }
+        ],
+        "items": [
+          {
+            "id": "e1",
+            "text": "DAC输出电压不对——未接负载匹配",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e2",
+            "text": "波形失真——DMA缓冲区大小不够",
+            "correctCategory": "sw"
+          },
+          {
+            "id": "e3",
+            "text": "DAC通道未使能——忘记在CubeMX勾选",
+            "correctCategory": "cfg"
+          },
+          {
+            "id": "e4",
+            "text": "开发板供电不足导致工作异常",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e5",
+            "text": "CubeMX中DAC数模转换参数设置错误",
+            "correctCategory": "cfg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch8-ext-auto-i3",
+      "spec": {
+        "kind": "matching",
+        "prompt": "DAC数模转换故障与原因配对",
+        "pairs": [
+          {
+            "left": "DAC输出电压不对",
+            "right": "未接负载匹配"
+          },
+          {
+            "left": "波形失真",
+            "right": "DMA缓冲区大小不够"
+          },
+          {
+            "left": "DAC通道未使能",
+            "right": "忘记在CubeMX勾选"
+          },
+          {
+            "left": "程序无法下载",
+            "right": "SWD接线错误或芯片锁死"
+          }
+        ]
+      }
+    }
+  ],
+  "ch9-intro": [
+    {
+      "id": "ch9-intro-auto-i1",
+      "spec": {
+        "kind": "single-choice",
+        "prompt": "环境监测/I2C传感器核心概念",
+        "options": [
+          {
+            "id": "a",
+            "text": "I2C协议是环境监测/I2C传感器的核心参数"
+          },
+          {
+            "id": "b",
+            "text": "环境监测/I2C传感器不需要时钟配置"
+          },
+          {
+            "id": "c",
+            "text": "HAL_I2C_Mem_Read用于读取GPIO"
+          },
+          {
+            "id": "d",
+            "text": "所有外设共用同一个中断"
+          }
+        ],
+        "answer": "a",
+        "explanation": "环境监测/I2C传感器的核心在于理解I2C协议/SDA/SCL/DHT11/BMP280"
+      }
+    },
+    {
+      "id": "ch9-intro-auto-i2",
+      "spec": {
+        "kind": "true-false",
+        "prompt": "环境监测/I2C传感器原理判断",
+        "statements": [
+          {
+            "id": "s1",
+            "text": "HAL_I2C_Mem_Read() 是启动环境监测/I2C传感器的HAL库函数",
+            "correct": true,
+            "rationale": "HAL库统一API"
+          },
+          {
+            "id": "s2",
+            "text": "I2C->DR 是环境监测/I2C传感器的数据寄存器",
+            "correct": true
+          },
+          {
+            "id": "s3",
+            "text": "I2C地址7位+读写位",
+            "correct": true,
+            "rationale": "关键参数"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch9-intro-auto-i3",
+      "spec": {
+        "kind": "flashcard",
+        "prompt": "环境监测/I2C传感器核心术语",
+        "cards": [
+          {
+            "id": "c1",
+            "front": "I2C协议",
+            "back": "环境监测/I2C传感器的核心参数，决定输出特性",
+            "hint": "环境监测/I2C传感器"
+          },
+          {
+            "id": "c2",
+            "front": "HAL_I2C_Mem_Read",
+            "back": "HAL库中启动环境监测/I2C传感器的函数",
+            "hint": "HAL API"
+          },
+          {
+            "id": "c3",
+            "front": "I2C->DR",
+            "back": "环境监测/I2C传感器的数据/控制寄存器",
+            "hint": "寄存器"
+          }
+        ]
+      }
+    }
+  ],
+  "p9-i2c-proto": [
+    {
+      "id": "p9-i2c-proto-auto-i2",
+      "spec": {
+        "kind": "code-cloze",
+        "prompt": "补全环境监测/I2C传感器关键代码",
+        "language": "c",
+        "template": "// 启动环境监测/I2C传感器\n{{start-call}};\n\n// 主循环处理\nwhile(1) {\n  {{process}};\n}",
+        "blanks": [
+          {
+            "id": "start-call",
+            "accepted": [
+              "HAL_I2C_Mem_Read(&htim2)",
+              "HAL_I2C_Mem_Read(&hadc1)",
+              "HAL_I2C_Mem_Read(&hdac1, DAC_CHANNEL_1)",
+              "HAL_I2C_Mem_Read(&huart1, buf, len)"
+            ],
+            "rationale": "启动环境监测/I2C传感器"
+          },
+          {
+            "id": "process",
+            "accepted": [
+              "HAL_Delay(1000)",
+              "HAL_ADC_GetValue(&hadc1)"
+            ],
+            "rationale": "主循环处理逻辑"
+          }
+        ],
+        "validate": "normalized"
+      }
+    },
+    {
+      "id": "p9-i2c-proto-auto-i3",
+      "spec": {
+        "kind": "timed-quiz",
+        "prompt": "环境监测/I2C传感器快答 · 限时45秒",
+        "seconds": 45,
+        "questions": [
+          {
+            "id": "q1",
+            "stem": "I2C总线需要几根信号线？",
+            "options": [
+              "2根(SDA+SCL)",
+              "1根",
+              "4根",
+              "8根"
+            ],
+            "answer": 0
+          },
+          {
+            "id": "q2",
+            "stem": "I2C从机地址通常是？",
+            "options": [
+              "7位",
+              "8位",
+              "16位",
+              "32位"
+            ],
+            "answer": 0
+          },
+          {
+            "id": "q3",
+            "stem": "I2C通信开始的标志是？",
+            "options": [
+              "SCL高电平时SDA下降沿",
+              "SCL低电平",
+              "SDA高电平",
+              "时钟停止"
+            ],
+            "answer": 0
+          }
+        ]
+      }
+    }
+  ],
+  "p9-ws-env": [
+    {
+      "id": "p9-ws-env-auto-i3",
+      "spec": {
+        "kind": "ordering",
+        "prompt": "环境监测/I2C传感器配置步骤排序",
+        "items": [
+          {
+            "id": "s1",
+            "text": "CubeMX配置I2C1(PB6-SCL,PB7-SDA)"
+          },
+          {
+            "id": "s2",
+            "text": "设置I2C速率100kHz标准模式"
+          },
+          {
+            "id": "s3",
+            "text": "查询传感器I2C地址(如0x76)"
+          },
+          {
+            "id": "s4",
+            "text": "发送寄存器地址读取数据"
+          },
+          {
+            "id": "s5",
+            "text": "解析温湿度原始数据"
+          },
+          {
+            "id": "s6",
+            "text": "LCD/串口显示环境参数"
+          }
+        ],
+        "correctOrder": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ]
+      }
+    }
+  ],
+  "ch9-ext": [
+    {
+      "id": "ch9-ext-auto-i2",
+      "spec": {
+        "kind": "classification",
+        "prompt": "环境监测/I2C传感器常见问题分类",
+        "categories": [
+          {
+            "id": "hw",
+            "label": "硬件问题"
+          },
+          {
+            "id": "sw",
+            "label": "软件问题"
+          },
+          {
+            "id": "cfg",
+            "label": "配置问题"
+          }
+        ],
+        "items": [
+          {
+            "id": "e1",
+            "text": "I2C无应答——上拉电阻缺失",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e2",
+            "text": "温度数据错误——高低字节顺序反",
+            "correctCategory": "sw"
+          },
+          {
+            "id": "e3",
+            "text": "I2C速率过高——传感器不支持400kHz",
+            "correctCategory": "cfg"
+          },
+          {
+            "id": "e4",
+            "text": "开发板供电不足导致工作异常",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e5",
+            "text": "CubeMX中环境监测/I2C传感器参数设置错误",
+            "correctCategory": "cfg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch9-ext-auto-i3",
+      "spec": {
+        "kind": "matching",
+        "prompt": "环境监测/I2C传感器故障与原因配对",
+        "pairs": [
+          {
+            "left": "I2C无应答",
+            "right": "上拉电阻缺失"
+          },
+          {
+            "left": "温度数据错误",
+            "right": "高低字节顺序反"
+          },
+          {
+            "left": "I2C速率过高",
+            "right": "传感器不支持400kHz"
+          },
+          {
+            "left": "程序无法下载",
+            "right": "SWD接线错误或芯片锁死"
+          }
+        ]
+      }
+    }
+  ],
+  "ch10-intro": [
+    {
+      "id": "ch10-intro-auto-i1",
+      "spec": {
+        "kind": "single-choice",
+        "prompt": "停车场系统/超声波核心概念",
+        "options": [
+          {
+            "id": "a",
+            "text": "HC-SR04是停车场系统/超声波的核心参数"
+          },
+          {
+            "id": "b",
+            "text": "停车场系统/超声波不需要时钟配置"
+          },
+          {
+            "id": "c",
+            "text": "HAL_TIM_IC_Start_IT用于读取GPIO"
+          },
+          {
+            "id": "d",
+            "text": "所有外设共用同一个中断"
+          }
+        ],
+        "answer": "a",
+        "explanation": "停车场系统/超声波的核心在于理解HC-SR04/距离测量/舵机/显示"
+      }
+    },
+    {
+      "id": "ch10-intro-auto-i2",
+      "spec": {
+        "kind": "true-false",
+        "prompt": "停车场系统/超声波原理判断",
+        "statements": [
+          {
+            "id": "s1",
+            "text": "HAL_TIM_IC_Start_IT() 是启动停车场系统/超声波的HAL库函数",
+            "correct": true,
+            "rationale": "HAL库统一API"
+          },
+          {
+            "id": "s2",
+            "text": "TIMx->CCR 是停车场系统/超声波的数据寄存器",
+            "correct": true
+          },
+          {
+            "id": "s3",
+            "text": "声速340m/s÷2",
+            "correct": true,
+            "rationale": "关键参数"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch10-intro-auto-i3",
+      "spec": {
+        "kind": "flashcard",
+        "prompt": "停车场系统/超声波核心术语",
+        "cards": [
+          {
+            "id": "c1",
+            "front": "HC-SR04",
+            "back": "停车场系统/超声波的核心参数，决定输出特性",
+            "hint": "停车场系统/超声波"
+          },
+          {
+            "id": "c2",
+            "front": "HAL_TIM_IC_Start_IT",
+            "back": "HAL库中启动停车场系统/超声波的函数",
+            "hint": "HAL API"
+          },
+          {
+            "id": "c3",
+            "front": "TIMx->CCR",
+            "back": "停车场系统/超声波的数据/控制寄存器",
+            "hint": "寄存器"
+          }
+        ]
+      }
+    }
+  ],
+  "p10-ws-parking": [
+    {
+      "id": "p10-ws-parking-auto-i3",
+      "spec": {
+        "kind": "ordering",
+        "prompt": "停车场系统/超声波配置步骤排序",
+        "items": [
+          {
+            "id": "s1",
+            "text": "Trig引脚输出10μs高脉冲"
+          },
+          {
+            "id": "s2",
+            "text": "启动输入捕获等待Echo回响"
+          },
+          {
+            "id": "s3",
+            "text": "捕获上升沿记录起始时间"
+          },
+          {
+            "id": "s4",
+            "text": "捕获下降沿记录结束时间"
+          },
+          {
+            "id": "s5",
+            "text": "计算距离=时间差×170cm/ms"
+          },
+          {
+            "id": "s6",
+            "text": "根据距离控制舵机抬杆"
+          }
+        ],
+        "correctOrder": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ]
+      }
+    }
+  ],
+  "ch10-ext": [
+    {
+      "id": "ch10-ext-auto-i2",
+      "spec": {
+        "kind": "classification",
+        "prompt": "停车场系统/超声波常见问题分类",
+        "categories": [
+          {
+            "id": "hw",
+            "label": "硬件问题"
+          },
+          {
+            "id": "sw",
+            "label": "软件问题"
+          },
+          {
+            "id": "cfg",
+            "label": "配置问题"
+          }
+        ],
+        "items": [
+          {
+            "id": "e1",
+            "text": "测距不准——超声波传感器角度偏",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e2",
+            "text": "距离计算溢出——未用32位变量",
+            "correctCategory": "sw"
+          },
+          {
+            "id": "e3",
+            "text": "输入捕获通道配错——应选上升沿+下降沿",
+            "correctCategory": "cfg"
+          },
+          {
+            "id": "e4",
+            "text": "开发板供电不足导致工作异常",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e5",
+            "text": "CubeMX中停车场系统/超声波参数设置错误",
+            "correctCategory": "cfg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch10-ext-auto-i3",
+      "spec": {
+        "kind": "matching",
+        "prompt": "停车场系统/超声波故障与原因配对",
+        "pairs": [
+          {
+            "left": "测距不准",
+            "right": "超声波传感器角度偏"
+          },
+          {
+            "left": "距离计算溢出",
+            "right": "未用32位变量"
+          },
+          {
+            "left": "输入捕获通道配错",
+            "right": "应选上升沿+下降沿"
+          },
+          {
+            "left": "程序无法下载",
+            "right": "SWD接线错误或芯片锁死"
+          }
+        ]
+      }
+    }
+  ],
+  "ch11-intro": [
+    {
+      "id": "ch11-intro-auto-i1",
+      "spec": {
+        "kind": "single-choice",
+        "prompt": "运动手环/加速度计核心概念",
+        "options": [
+          {
+            "id": "a",
+            "text": "MPU6050是运动手环/加速度计的核心参数"
+          },
+          {
+            "id": "b",
+            "text": "运动手环/加速度计不需要时钟配置"
+          },
+          {
+            "id": "c",
+            "text": "HAL_SPI_Transmit用于读取GPIO"
+          },
+          {
+            "id": "d",
+            "text": "所有外设共用同一个中断"
+          }
+        ],
+        "answer": "a",
+        "explanation": "运动手环/加速度计的核心在于理解MPU6050/SPI/计步算法/OLED"
+      }
+    },
+    {
+      "id": "ch11-intro-auto-i2",
+      "spec": {
+        "kind": "true-false",
+        "prompt": "运动手环/加速度计原理判断",
+        "statements": [
+          {
+            "id": "s1",
+            "text": "HAL_SPI_Transmit() 是启动运动手环/加速度计的HAL库函数",
+            "correct": true,
+            "rationale": "HAL库统一API"
+          },
+          {
+            "id": "s2",
+            "text": "SPI->DR 是运动手环/加速度计的数据寄存器",
+            "correct": true
+          },
+          {
+            "id": "s3",
+            "text": "加速度量程±2g/±4g",
+            "correct": true,
+            "rationale": "关键参数"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch11-intro-auto-i3",
+      "spec": {
+        "kind": "flashcard",
+        "prompt": "运动手环/加速度计核心术语",
+        "cards": [
+          {
+            "id": "c1",
+            "front": "MPU6050",
+            "back": "运动手环/加速度计的核心参数，决定输出特性",
+            "hint": "运动手环/加速度计"
+          },
+          {
+            "id": "c2",
+            "front": "HAL_SPI_Transmit",
+            "back": "HAL库中启动运动手环/加速度计的函数",
+            "hint": "HAL API"
+          },
+          {
+            "id": "c3",
+            "front": "SPI->DR",
+            "back": "运动手环/加速度计的数据/控制寄存器",
+            "hint": "寄存器"
+          }
+        ]
+      }
+    }
+  ],
+  "p11-ws-band": [
+    {
+      "id": "p11-ws-band-auto-i3",
+      "spec": {
+        "kind": "ordering",
+        "prompt": "运动手环/加速度计配置步骤排序",
+        "items": [
+          {
+            "id": "s1",
+            "text": "配置SPI接口连接MPU6050"
+          },
+          {
+            "id": "s2",
+            "text": "初始化加速度计量程和采样率"
+          },
+          {
+            "id": "s3",
+            "text": "循环读取XYZ三轴加速度"
+          },
+          {
+            "id": "s4",
+            "text": "用峰值检测算法识别步伐"
+          },
+          {
+            "id": "s5",
+            "text": "累计步数并计算卡路里"
+          },
+          {
+            "id": "s6",
+            "text": "OLED显示步数和运动数据"
+          }
+        ],
+        "correctOrder": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ]
+      }
+    }
+  ],
+  "ch11-ext": [
+    {
+      "id": "ch11-ext-auto-i2",
+      "spec": {
+        "kind": "classification",
+        "prompt": "运动手环/加速度计常见问题分类",
+        "categories": [
+          {
+            "id": "hw",
+            "label": "硬件问题"
+          },
+          {
+            "id": "sw",
+            "label": "软件问题"
+          },
+          {
+            "id": "cfg",
+            "label": "配置问题"
+          }
+        ],
+        "items": [
+          {
+            "id": "e1",
+            "text": "SPI通信失败——CS片选未拉低",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e2",
+            "text": "计步数偏大——阈值设置过低",
+            "correctCategory": "sw"
+          },
+          {
+            "id": "e3",
+            "text": "SPI时钟极性错——CPOL/CPHA与传感器不匹配",
+            "correctCategory": "cfg"
+          },
+          {
+            "id": "e4",
+            "text": "开发板供电不足导致工作异常",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e5",
+            "text": "CubeMX中运动手环/加速度计参数设置错误",
+            "correctCategory": "cfg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch11-ext-auto-i3",
+      "spec": {
+        "kind": "matching",
+        "prompt": "运动手环/加速度计故障与原因配对",
+        "pairs": [
+          {
+            "left": "SPI通信失败",
+            "right": "CS片选未拉低"
+          },
+          {
+            "left": "计步数偏大",
+            "right": "阈值设置过低"
+          },
+          {
+            "left": "SPI时钟极性错",
+            "right": "CPOL/CPHA与传感器不匹配"
+          },
+          {
+            "left": "程序无法下载",
+            "right": "SWD接线错误或芯片锁死"
+          }
+        ]
+      }
+    }
+  ],
+  "ch12-intro": [
+    {
+      "id": "ch12-intro-auto-i1",
+      "spec": {
+        "kind": "single-choice",
+        "prompt": "追光系统/PID核心概念",
+        "options": [
+          {
+            "id": "a",
+            "text": "光敏电阻是追光系统/PID的核心参数"
+          },
+          {
+            "id": "b",
+            "text": "追光系统/PID不需要时钟配置"
+          },
+          {
+            "id": "c",
+            "text": "HAL_ADC_GetValue用于读取GPIO"
+          },
+          {
+            "id": "d",
+            "text": "所有外设共用同一个中断"
+          }
+        ],
+        "answer": "a",
+        "explanation": "追光系统/PID的核心在于理解光敏电阻/舵机/PID控制/闭环"
+      }
+    },
+    {
+      "id": "ch12-intro-auto-i2",
+      "spec": {
+        "kind": "true-false",
+        "prompt": "追光系统/PID原理判断",
+        "statements": [
+          {
+            "id": "s1",
+            "text": "HAL_ADC_GetValue() 是启动追光系统/PID的HAL库函数",
+            "correct": true,
+            "rationale": "HAL库统一API"
+          },
+          {
+            "id": "s2",
+            "text": "TIMx->CCR 是追光系统/PID的数据寄存器",
+            "correct": true
+          },
+          {
+            "id": "s3",
+            "text": "Kp/Ki/Kd参数",
+            "correct": true,
+            "rationale": "关键参数"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch12-intro-auto-i3",
+      "spec": {
+        "kind": "flashcard",
+        "prompt": "追光系统/PID核心术语",
+        "cards": [
+          {
+            "id": "c1",
+            "front": "光敏电阻",
+            "back": "追光系统/PID的核心参数，决定输出特性",
+            "hint": "追光系统/PID"
+          },
+          {
+            "id": "c2",
+            "front": "HAL_ADC_GetValue",
+            "back": "HAL库中启动追光系统/PID的函数",
+            "hint": "HAL API"
+          },
+          {
+            "id": "c3",
+            "front": "TIMx->CCR",
+            "back": "追光系统/PID的数据/控制寄存器",
+            "hint": "寄存器"
+          }
+        ]
+      }
+    }
+  ],
+  "p12-pid-code": [
+    {
+      "id": "p12-pid-code-auto-i2",
+      "spec": {
+        "kind": "code-cloze",
+        "prompt": "补全追光系统/PID关键代码",
+        "language": "c",
+        "template": "// 启动追光系统/PID\n{{start-call}};\n\n// 主循环处理\nwhile(1) {\n  {{process}};\n}",
+        "blanks": [
+          {
+            "id": "start-call",
+            "accepted": [
+              "HAL_ADC_GetValue(&htim2)",
+              "HAL_ADC_GetValue(&hadc1)",
+              "HAL_ADC_GetValue(&hdac1, DAC_CHANNEL_1)",
+              "HAL_ADC_GetValue(&huart1, buf, len)"
+            ],
+            "rationale": "启动追光系统/PID"
+          },
+          {
+            "id": "process",
+            "accepted": [
+              "HAL_Delay(1000)",
+              "HAL_ADC_GetValue(&hadc1)"
+            ],
+            "rationale": "主循环处理逻辑"
+          }
+        ],
+        "validate": "normalized"
+      }
+    },
+    {
+      "id": "p12-pid-code-auto-i3",
+      "spec": {
+        "kind": "timed-quiz",
+        "prompt": "追光系统/PID快答 · 限时45秒",
+        "seconds": 45,
+        "questions": [
+          {
+            "id": "q1",
+            "stem": "PID中P(比例)项过大会导致？",
+            "options": [
+              "系统震荡",
+              "响应太慢",
+              "无影响",
+              "稳态误差"
+            ],
+            "answer": 0
+          },
+          {
+            "id": "q2",
+            "stem": "I(积分)项的作用是？",
+            "options": [
+              "消除稳态误差",
+              "加快响应",
+              "减小超调",
+              "滤波"
+            ],
+            "answer": 0
+          },
+          {
+            "id": "q3",
+            "stem": "追光系统属于什么类型的控制？",
+            "options": [
+              "闭环反馈控制",
+              "开环控制",
+              "手动控制",
+              "定时控制"
+            ],
+            "answer": 0
+          }
+        ]
+      }
+    }
+  ],
+  "ch12-ext": [
+    {
+      "id": "ch12-ext-auto-i2",
+      "spec": {
+        "kind": "classification",
+        "prompt": "追光系统/PID常见问题分类",
+        "categories": [
+          {
+            "id": "hw",
+            "label": "硬件问题"
+          },
+          {
+            "id": "sw",
+            "label": "软件问题"
+          },
+          {
+            "id": "cfg",
+            "label": "配置问题"
+          }
+        ],
+        "items": [
+          {
+            "id": "e1",
+            "text": "舵机抖动——PID参数未调好",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e2",
+            "text": "追光震荡——Kd微分项缺失",
+            "correctCategory": "sw"
+          },
+          {
+            "id": "e3",
+            "text": "ADC通道与光敏接线不对应",
+            "correctCategory": "cfg"
+          },
+          {
+            "id": "e4",
+            "text": "开发板供电不足导致工作异常",
+            "correctCategory": "hw"
+          },
+          {
+            "id": "e5",
+            "text": "CubeMX中追光系统/PID参数设置错误",
+            "correctCategory": "cfg"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ch12-ext-auto-i3",
+      "spec": {
+        "kind": "matching",
+        "prompt": "追光系统/PID故障与原因配对",
+        "pairs": [
+          {
+            "left": "舵机抖动",
+            "right": "PID参数未调好"
+          },
+          {
+            "left": "追光震荡",
+            "right": "Kd微分项缺失"
+          },
+          {
+            "left": "ADC通道与光敏接线不对应",
+            "right": "ADC通道与光敏接线不对应"
+          },
+          {
+            "left": "程序无法下载",
+            "right": "SWD接线错误或芯片锁死"
+          }
+        ]
+      }
+    }
+  ],
+  "p12-ws-suntrack": [
+    {
+      "id": "p12-ws-suntrack-auto-i3",
+      "spec": {
+        "kind": "ordering",
+        "prompt": "追光系统/PID配置步骤排序",
+        "items": [
+          {
+            "id": "s1",
+            "text": "4路光敏电阻接ADC采样"
+          },
+          {
+            "id": "s2",
+            "text": "计算光照差值作为误差"
+          },
+          {
+            "id": "s3",
+            "text": "PID算法计算舵机修正量"
+          },
+          {
+            "id": "s4",
+            "text": "输出PWM驱动水平/俯仰舵机"
+          },
+          {
+            "id": "s5",
+            "text": "持续闭环调节对准光源"
+          },
+          {
+            "id": "s6",
+            "text": "串口输出PID调参数据"
+          }
+        ],
+        "correctOrder": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6"
+        ]
+      }
+    }
+  ]
+}

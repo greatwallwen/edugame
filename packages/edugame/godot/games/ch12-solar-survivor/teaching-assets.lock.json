@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "gameId": "ch12-solar-survivor",
+  "authority": "courses/stm32f10x",
+  "generated": [
+    {
+      "id": "ch12-questions",
+      "source": "courses/stm32f10x/knowledge/ch12-solar-survivor.questions.json",
+      "publicTarget": "apps/player/public/assets/courses/stm32-course/knowledge/ch12-solar-survivor.questions.json",
+      "localTarget": "packages/edugame/godot/games/ch12-solar-survivor/data/questions.local.json",
+      "sha256": "820de774c55a5e47d28c1ec11a769802519dd2864b6284c76a0c7e4a89cb7d7a"
+    },
+    {
+      "id": "ch12-upgrades",
+      "source": "courses/stm32f10x/knowledge/ch12-solar-survivor.upgrades.json",
+      "publicTarget": "apps/player/public/assets/courses/stm32-course/knowledge/ch12-solar-survivor.upgrades.json",
+      "localTarget": "packages/edugame/godot/games/ch12-solar-survivor/data/upgrades.local.json",
+      "sha256": "1ec3ff2f2a4e21e598837a3eb1f3d6c4d0a494ade41d27af213672a3fc511171"
+    },
+    {
+      "id": "ch12-binding",
+      "source": "courses/stm32f10x/game-bindings/ch12-solar-survivor.binding.json",
+      "publicTarget": "apps/player/public/assets/courses/stm32-course/game-bindings/ch12-solar-survivor.binding.json",
+      "localTarget": null,
+      "sha256": "c5e7887728db27a8b5e1efaa8af678b5c28914be54954ede2030da7b485367de"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "id": "ch12-solar-survivor-binding",
+  "courseId": "stm32f10x-complete",
+  "chapterId": "ch12",
+  "gameId": "ch12-solar-survivor",
+  "description": "将第 12 章太阳追踪控制系统知识点映射到追光幸存者的题目模块、升级池和结算反馈。",
+  "moduleBindings": [
+    {
+      "module": "quad_sensor",
+      "knowledgeArea": "四象限光敏传感器",
+      "upgradeTags": ["Q4", "FOV"],
+      "feedbackLabel": "四象限光敏与方向误差"
+    },
+    {
+      "module": "servo_pwm",
+      "knowledgeArea": "舵机 PWM 控制",
+      "upgradeTags": ["PWM", "LIM"],
+      "feedbackLabel": "舵机 PWM 与机构限位"
+    },
+    {
+      "module": "pid",
+      "knowledgeArea": "PID 控制",
+      "upgradeTags": ["P", "I", "D"],
+      "feedbackLabel": "Kp / Ki / Kd 调参与稳定性"
+    },
+    {
+      "module": "stability",
+      "knowledgeArea": "死区、限幅与抗饱和",
+      "upgradeTags": ["DZ", "LIM", "D"],
+      "feedbackLabel": "死区、输出限幅和积分限幅"
+    },
+    {
+      "module": "anti_interference",
+      "knowledgeArea": "采样与抗干扰",
+      "upgradeTags": ["RATE", "MUX", "FOV"],
+      "feedbackLabel": "滤波、采样和外界干扰"
+    },
+    {
+      "module": "performance",
+      "knowledgeArea": "控制性能评估",
+      "upgradeTags": ["P", "I", "D", "PWM"],
+      "feedbackLabel": "追光效率、稳态误差和响应速度"
+    }
+  ]
+}

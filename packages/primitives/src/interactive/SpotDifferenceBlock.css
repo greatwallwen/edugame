@@ -1,0 +1,26 @@
+@import './interactive-tokens.css';
+.dgb-spotdiff { max-width: none; width: 100%; padding: 16px; }
+.dgb-spotdiff-title { font-size: 15px; font-weight: 600; color: var(--dg-color-text-primary); margin: 0 0 12px; }
+.dgb-spotdiff-hint { font-size: 12.5px; color: var(--dg-color-text-tertiary); margin-bottom: 14px; }
+.dgb-spotdiff-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .dgb-spotdiff-cols { grid-template-columns: 1fr; } }
+.dgb-spotdiff-panel { background: var(--dg-color-surface-card); border: 1px solid var(--dg-color-surface-border); border-radius: 10px; padding: 14px; }
+.dgb-spotdiff-label { font-size: 11px; font-weight: 600; color: var(--ig-primary); margin-bottom: 8px; letter-spacing: .06em; text-transform: uppercase; }
+.dgb-spotdiff-content { font-size: 13.5px; line-height: 1.8; color: var(--dg-color-text-primary); white-space: pre-wrap; font-family: var(--dg-font-mono, ui-monospace, monospace); }
+.dgb-spotdiff-line { display: block; padding: 2px 4px; border-radius: 4px; transition: background .15s; }
+.dgb-spotdiff-line:hover { background: var(--dg-color-surface-muted); }
+.dgb-spotdiff-line.selected { background: var(--ig-warn); outline: 1px solid var(--ig-warn); }
+.dgb-spotdiff-line.correct { background: var(--ig-ok-bg); outline: 1px solid var(--ig-ok); }
+.dgb-spotdiff-line.wrong { background: var(--ig-ng-bg); outline: 1px solid var(--ig-ng); }
+.dgb-spotdiff-ctrl { display: flex; gap: 10px; margin-top: 14px; }
+.dgb-spotdiff-btn {
+  padding: 8px 18px; border-radius: 8px; border: 1px solid var(--dg-color-surface-border);
+  background: var(--dg-color-surface-card); color: var(--dg-color-text-primary);
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.dgb-spotdiff-btn:hover { border-color: var(--ig-primary); color: var(--ig-primary); }
+.dgb-spotdiff-btn.primary { background: var(--ig-primary); color: var(--ig-surface); border-color: var(--ig-primary); }
+.dgb-spotdiff-btn.primary:hover { background: var(--ig-primary-hover); }
+.dgb-spotdiff-result { margin-top: 10px; font-size: 13px; padding: 10px 14px; border-radius: 8px; }
+.dgb-spotdiff-result.ok { background: #f0fdf4; color: var(--ig-primary); }
+.dgb-spotdiff-result.err { background: var(--ig-ng-bg); color: var(--ig-ng); }

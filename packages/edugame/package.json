@@ -1,0 +1,36 @@
+{
+  "name": "@dgbook/game",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./host": "./src/core/EduGameHost.tsx",
+    "./modes/bit-flip-quest": "./src/modes/bit-flip-quest/index.ts",
+    "./modes/godot-game": "./src/modes/godot-game/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rimraf .turbo"
+  },
+  "dependencies": {
+    "@dgbook/types": "workspace:*",
+    "pixi.js": "^8.6.6"
+  },
+  "peerDependencies": {
+    "react": ">=18 <20",
+    "react-dom": ">=18 <20"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "rimraf": "^6.0.1",
+    "typescript": "~5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

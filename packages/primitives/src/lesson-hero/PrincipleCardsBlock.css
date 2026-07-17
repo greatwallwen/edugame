@@ -1,0 +1,137 @@
+/* PrincipleCardsBlock — 教材风规则/要点并列卡 */
+
+.dgb-principle-cards {
+  margin: 16px 0 22px;
+}
+.dgb-principle-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg,
+    var(--dg-color-brand-600, #0C6A3F),
+    var(--dg-color-brand-500, #0E7C4A));
+  margin-bottom: 14px;
+  box-shadow: 0 8px 20px rgba(14, 124, 74, 0.14);
+}
+
+.dgb-principle-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.dgb-principle-grid[data-count="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 860px) {
+  .dgb-principle-grid[data-count="2"] {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Iter-40-E · 横向编号变体（对标 5G 教材"概念解释"5 张等高卡）。
+   N ≤ 5 时强制 N 列等宽；padding 更紧凑，编号 chip 移到卡顶；
+   <860px 自动退回单列堆叠避免溢出。 */
+.dgb-principle-grid[data-layout="horizontal"] {
+  grid-template-columns: repeat(var(--dgb-principle-cols, 4), minmax(0, 1fr));
+  gap: 12px;
+}
+.dgb-principle-grid[data-layout="horizontal"][data-count="1"] { --dgb-principle-cols: 1; }
+.dgb-principle-grid[data-layout="horizontal"][data-count="2"] { --dgb-principle-cols: 2; }
+.dgb-principle-grid[data-layout="horizontal"][data-count="3"] { --dgb-principle-cols: 3; }
+.dgb-principle-grid[data-layout="horizontal"][data-count="4"] { --dgb-principle-cols: 4; }
+.dgb-principle-grid[data-layout="horizontal"][data-count="5"] { --dgb-principle-cols: 5; }
+
+.dgb-principle-cards--horizontal .dgb-principle-card {
+  padding: 14px 14px 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(14, 124, 74, 0.04);
+}
+.dgb-principle-cards--horizontal .dgb-principle-numeral {
+  position: static;
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border-width: 1.2px;
+}
+.dgb-principle-cards--horizontal .dgb-principle-card-title {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.dgb-principle-cards--horizontal .dgb-principle-card-content {
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+@media (max-width: 860px) {
+  .dgb-principle-grid[data-layout="horizontal"] {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dgb-principle-card {
+  position: relative;
+  padding: 22px 22px 18px 60px;
+  background: var(--dg-color-surface-card, #fff);
+  border: 1.5px solid var(--dg-color-brand-100, #C8E4D0);
+  border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(14, 124, 74, 0.05);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.dgb-principle-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--dg-color-brand-500, #0E7C4A);
+  box-shadow: 0 14px 32px rgba(14, 124, 74, 0.12);
+}
+
+.dgb-principle-numeral {
+  position: absolute;
+  top: 18px;
+  left: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--dg-color-brand-700, #0A5132);
+  background: var(--dg-color-brand-50, #E6F1EA);
+  border: 1.5px solid var(--dg-color-brand-500, #0E7C4A);
+}
+
+.dgb-principle-card-body {
+  min-width: 0;
+}
+.dgb-principle-card-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--dg-color-brand-700, #0A5132);
+  line-height: 1.3;
+}
+
+.dgb-principle-card-content {
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--dg-color-text-primary, #1F2937);
+}
+.dgb-principle-card-content p { margin: 0 0 6px; }
+.dgb-principle-card-content p:last-child { margin-bottom: 0; }
+.dgb-principle-card-content strong {
+  color: var(--dg-color-brand-700, #0A5132);
+}
+.dgb-principle-card-content code {
+  font-family: var(--dg-font-mono, 'JetBrains Mono', monospace);
+  background: var(--dg-color-brand-50, #E6F1EA);
+  color: var(--dg-color-brand-700, #0A5132);
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 13px;
+}

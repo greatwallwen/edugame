@@ -1,0 +1,68 @@
+[
+    {
+        "name": "step1 \u4f20\u611f\u5668\u91c7\u96c6\u73af\u5883\u91cf",
+        "type": "default.normal",
+        "video": "EnvSensing_0000_step1 \u4f20\u611f\u5668\u91c7\u96c6\u73af\u5883\u91cf.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.400000",
+        "nb_frames": "132"
+    },
+    {
+        "name": "step2 ADC \u628a\u6a21\u62df\u91cf\u8f6c\u6570\u5b57",
+        "type": "default.normal",
+        "video": "EnvSensing_0001_step2 ADC \u628a\u6a21\u62df\u91cf\u8f6c\u6570\u5b57.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "2.600000",
+        "nb_frames": "78"
+    },
+    {
+        "name": "step3 \u4e0e\u8bbe\u5b9a\u9608\u503c\u6bd4\u8f83",
+        "type": "default.normal",
+        "video": "EnvSensing_0002_step3 \u4e0e\u8bbe\u5b9a\u9608\u503c\u6bd4\u8f83.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "2.600000",
+        "nb_frames": "78"
+    },
+    {
+        "name": "step4 \u8d85\u9608\u503c\u89e6\u53d1\u6267\u884c",
+        "type": "default.normal",
+        "video": "EnvSensing_0003_step4 \u8d85\u9608\u503c\u89e6\u53d1\u6267\u884c.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "2.600000",
+        "nb_frames": "78"
+    },
+    {
+        "name": "step5 \u5f62\u6210\u611f\u77e5\u51b3\u7b56\u6267\u884c\u95ed\u73af",
+        "type": "default.normal",
+        "video": "EnvSensing_0004_step5 \u5f62\u6210\u611f\u77e5\u51b3\u7b56\u6267\u884c\u95ed\u73af.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.000000",
+        "nb_frames": "90"
+    },
+    {
+        "name": "step6 \u603b\u7ed3\u73af\u5883\u76d1\u6d4b\u6570\u636e\u6d41",
+        "type": "default.normal",
+        "video": "EnvSensing_0005_step6 \u603b\u7ed3\u73af\u5883\u76d1\u6d4b\u6570\u636e\u6d41.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.200000",
+        "nb_frames": "96"
+    }
+]

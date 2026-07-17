@@ -1,0 +1,46 @@
+[
+    {
+        "name": "\u5f15\u51fa LED \u4e0e GPIO \u5f15\u811a",
+        "type": "default.normal",
+        "video": "LedBlink_0000_\u5f15\u51fa LED \u4e0e GPIO \u5f15\u811a.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.400000",
+        "nb_frames": "102"
+    },
+    {
+        "name": "\u8c03\u7528 GPIO_SetBits \u2192 \u5f15\u811a\u62c9\u9ad8 \u2192 LED \u4eae",
+        "type": "default.normal",
+        "video": "LedBlink_0001_\u8c03\u7528 GPIO_SetBits \u2192 \u5f15\u811a\u62c9\u9ad8 \u2192 LED \u4eae.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.000000",
+        "nb_frames": "90"
+    },
+    {
+        "name": "\u8c03\u7528 GPIO_ResetBits \u2192 \u5f15\u811a\u62c9\u4f4e \u2192 LED \u706d",
+        "type": "default.normal",
+        "video": "LedBlink_0002_\u8c03\u7528 GPIO_ResetBits \u2192 \u5f15\u811a\u62c9\u4f4e \u2192 LED \u706d.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.000000",
+        "nb_frames": "120"
+    },
+    {
+        "name": "\u5468\u671f\u7ffb\u8f6c \u2192 PC13 \u5f62\u6210 1Hz \u65b9\u6ce2 \u2192 LED \u95ea\u70c1",
+        "type": "default.normal",
+        "video": "LedBlink_0003_\u5468\u671f\u7ffb\u8f6c \u2192 PC13 \u5f62\u6210 1Hz \u65b9\u6ce2 \u2192 LED \u95ea\u70c1.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "5.000000",
+        "nb_frames": "150"
+    }
+]

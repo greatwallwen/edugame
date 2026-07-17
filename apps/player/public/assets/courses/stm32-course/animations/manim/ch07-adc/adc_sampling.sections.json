@@ -1,0 +1,68 @@
+[
+    {
+        "name": "\u5c55\u793a\u8fde\u7eed\u6a21\u62df\u4fe1\u53f7",
+        "type": "default.normal",
+        "video": "AdcSampling_0000_\u5c55\u793a\u8fde\u7eed\u6a21\u62df\u4fe1\u53f7.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.600000",
+        "nb_frames": "108"
+    },
+    {
+        "name": "\u5f15\u5165\u91c7\u6837\u65f6\u949f",
+        "type": "default.normal",
+        "video": "AdcSampling_0001_\u5f15\u5165\u91c7\u6837\u65f6\u949f.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "1.200000",
+        "nb_frames": "36"
+    },
+    {
+        "name": "\u5b8c\u6210\u6b63\u5e38\u91c7\u6837",
+        "type": "default.normal",
+        "video": "AdcSampling_0002_\u5b8c\u6210\u6b63\u5e38\u91c7\u6837.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "2.600000",
+        "nb_frames": "78"
+    },
+    {
+        "name": "\u7ed9\u51fa Nyquist \u516c\u5f0f",
+        "type": "default.normal",
+        "video": "AdcSampling_0003_\u7ed9\u51fa Nyquist \u516c\u5f0f.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.400000",
+        "nb_frames": "102"
+    },
+    {
+        "name": "\u6f14\u793a\u6b20\u91c7\u6837\u6df7\u53e0",
+        "type": "default.normal",
+        "video": "AdcSampling_0004_\u6f14\u793a\u6b20\u91c7\u6837\u6df7\u53e0.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.000000",
+        "nb_frames": "90"
+    },
+    {
+        "name": "\u603b\u7ed3\u56de\u5230 STM32 ADC",
+        "type": "default.normal",
+        "video": "AdcSampling_0005_\u603b\u7ed3\u56de\u5230 STM32 ADC.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.400000",
+        "nb_frames": "102"
+    }
+]

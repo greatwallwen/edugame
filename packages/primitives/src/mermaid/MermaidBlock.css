@@ -1,0 +1,118 @@
+/* Phase G1.3 · MermaidBlock 样式
+ *
+ * 教材主题色基线：
+ *   节点描边走 #0E7C4A（与 mindmap MARKMAP_COLOR[0] 一致），
+ *   箭头线 #334155（slate-700），文字 #0f172a（slate-900）。
+ *
+ * 节点高亮（G3 Spotlight 联动）：
+ *   .dgb-mermaid-node[data-mermaid-active="true"] 时，边框加亮 + box-shadow，
+ *   G3 SpotlightOverlay 落地后由 ActionRunner 切换该属性。
+ *
+ * 错误兜底：渲染失败时整体退化为 <pre> 源码块。
+ */
+
+.dgb-mermaid {
+  width: 100%;
+  margin: 12px 0;
+  padding: 14px 16px 12px;
+  background: linear-gradient(180deg, #fafaf7 0%, #f6f4ee 100%);
+  border: 1px solid #e8e1cf;
+  border-radius: 10px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+  box-sizing: border-box;
+}
+
+.dgb-mermaid__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.dgb-mermaid__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #ffffff;
+  background: #0E7C4A;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.dgb-mermaid__title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: 0.01em;
+}
+
+.dgb-mermaid__type {
+  font-size: 10px;
+  color: #6b7280;
+  font-variant: small-caps;
+}
+
+.dgb-mermaid__canvas {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 120px;
+  padding: 8px 4px;
+  overflow-x: auto;
+}
+
+.dgb-mermaid__canvas svg {
+  max-width: 100%;
+  height: auto;
+  font-family: inherit;
+}
+
+/* 节点高亮联动占位（G3 ActionRunner 落地后激活） */
+.dgb-mermaid__canvas g.node[data-mermaid-active="true"] rect,
+.dgb-mermaid__canvas g.node[data-mermaid-active="true"] polygon,
+.dgb-mermaid__canvas g.node[data-mermaid-active="true"] circle,
+.dgb-mermaid__canvas g.node[data-mermaid-active="true"] ellipse {
+  stroke: #d97706;
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 0 6px rgba(217, 119, 6, 0.5));
+  transition: stroke 0.2s ease, filter 0.2s ease;
+}
+
+/* 渲染中的占位 skeleton */
+.dgb-mermaid__loading {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* 错误兜底 */
+.dgb-mermaid__error {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.dgb-mermaid__source-fallback {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 240px;
+  overflow: auto;
+}

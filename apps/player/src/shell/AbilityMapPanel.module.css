@@ -1,0 +1,270 @@
+﻿/* AbilityMapPanel.module.css */
+
+/* ─── 外层面板（含工具栏）─── */
+.panel {
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid #d1e8fb;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif;
+}
+/* 全屏态 */
+.panelFullscreen {
+  border-radius: 0;
+  border: none;
+}
+.panelFullscreen .viewport {
+  height: 100vh !important;
+  flex: 1;
+}
+
+/* ─── 工具栏 ─── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+.toolbarTitle { font-size: 13px; font-weight: 800; color: #0f3155; }
+.toolbarHint  { font-size: 11px; color: #64748b; flex: 1; }
+.toolbarControls { display: flex; align-items: center; gap: 4px; }
+.tbBtn {
+  width: 26px; height: 26px;
+  border: 1px solid #d1d5db; border-radius: 6px;
+  background: #fff; font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+  color: #374151;
+}
+.tbBtn:hover { background: #e0f2fe; border-color: #0ea5e9; color: #0369a1; }
+.tbScale { font-size: 11px; font-weight: 700; color: #374151; min-width: 38px; text-align: center; }
+.tbBtnClear {
+  height: 26px; padding: 0 8px;
+  border: 1px solid #fca5a5; border-radius: 6px;
+  background: #fff5f5; color: #dc2626;
+  font-size: 11px; cursor: pointer;
+}
+.tbBtnClear:hover { background: #fee2e2; }
+
+/* ─── 视口（自适应高度，overflow hidden）─── */
+.viewport {
+  height: auto;
+  min-height: 280px;
+  max-height: 580px;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
+
+/* ─── 内层画布（transform 缩放层）─── */
+.canvas {
+  display: inline-block;
+  position: relative;
+  will-change: transform;
+  transition: none;
+}
+
+/* ─── 地图根容器（实际内容宽度）─── */
+.mapRoot {
+  width: 1320px;
+  padding: 16px 14px 12px;
+  box-sizing: border-box;
+}
+
+/* ─── 入场动画 ─── */
+.canvas { opacity: 0; transition: opacity .35s ease; }
+.canvasEntered { opacity: 1; }
+
+/* ─── 大标题 ─── */
+.mainTitle {
+  text-align: center;
+  font-size: 14px; font-weight: 850; color: #0f3155;
+  border: 2px solid #0b63ce; border-radius: 8px;
+  padding: 9px 16px; margin: 0 auto 12px;
+  max-width: 840px;
+}
+
+/* ─── 列头行 ─── */
+.colHeaders {
+  display: grid;
+  grid-template-columns: 140px 164px 160px 176px 1fr 176px 140px;
+  gap: 5px;
+  margin-bottom: 7px;
+}
+.colHeader {
+  text-align: center; font-size: 10.5px; font-weight: 800;
+  padding: 5px 3px; border-radius: 5px; border: 1.2px solid;
+  background: #f8fbff;
+}
+.colH0, .colH6 { border-color: #e85b5b; color: #912323; }
+.colH1, .colH2, .colH3 { border-color: #009688; color: #004c48; }
+.colH4 { border-color: #3c8bd6; color: #17324d; }
+.colH5 { border-color: #e46a26; color: #7c2d12; }
+
+/* ─── 七列主体 ─── */
+.body {
+  display: grid;
+  grid-template-columns: 140px 164px 160px 176px 1fr 176px 140px;
+  gap: 5px;
+  align-items: start;
+}
+.col { display: flex; flex-direction: column; gap: 5px; }
+
+/* ─── 来源依据卡片 ─── */
+.sourceCard {
+  border-radius: 7px; padding: 8px 9px;
+}
+.sourceLeft, .sourceRight {
+  background: #fffafa; border: 1.3px solid #f45b5b;
+}
+.sourceTitle { font-size: 11px; font-weight: 850; color: #912323; margin-bottom: 3px; }
+.sourceLine  { font-size: 9.5px; color: #912323; line-height: 1.5; }
+.sourceTag {
+  display: inline-block; font-size: 8px; font-weight: 800;
+  color: #912323; border: 1px solid #f45b5b;
+  border-radius: 3px; padding: 1px 4px; margin-top: 3px; background: #fff;
+}
+
+/* ─── 典型任务块 ─── */
+.taskBlock {
+  background: #e8fff8; border: 1.25px solid #00a38a;
+  border-radius: 7px; padding: 8px 10px;
+  cursor: pointer;
+  transition: box-shadow .18s, border-color .18s, background .18s;
+  animation: rowFadeIn .5s ease both;
+}
+.taskBlock:hover { box-shadow: 0 2px 10px rgba(0,163,138,.25); }
+.taskBlockActive {
+  background: #c8f8ee; border-color: #007a6a;
+  box-shadow: 0 0 0 2px #00a38a55;
+}
+.taskTag {
+  display: inline-block; font-size: 9px; font-weight: 800;
+  color: #00a38a; border: 1px solid #00a38a; border-radius: 3px;
+  padding: 1px 5px; margin-bottom: 3px; background: #eef6ff;
+}
+.taskName     { font-size: 10.5px; font-weight: 850; color: #00665a; margin-bottom: 5px; }
+.taskProjects { display: flex; flex-wrap: wrap; gap: 3px; }
+.projectBadge {
+  display: flex; flex-direction: column;
+  border: 1px solid #00a38a; border-radius: 4px;
+  background: #f8fffb; padding: 2px 5px;
+}
+.projectId   { font-size: 7.5px; font-weight: 800; color: #00665a; }
+.projectName { font-size: 8px; color: #00665a; }
+
+/* ─── 工作过程 / 技能点分组格 ─── */
+.cellGroup {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 3px; border-radius: 5px;
+  border: 1px solid transparent;
+  animation: rowFadeIn .5s ease both;
+  transition: border-color .18s;
+}
+.cellGroupActive { border-color: #00a38a44; background: #f0fff8; }
+.processItem {
+  background: #f2fffd; border: 1px solid #009688;
+  border-radius: 4px; font-size: 9px; font-weight: 700;
+  color: #004c48; padding: 4px 5px; text-align: center;
+}
+.skillItem {
+  background: #fff7eb; border: 1px solid #ff8a00;
+  border-radius: 4px; font-size: 8.5px; font-weight: 700;
+  color: #7c3c00; padding: 4px 5px; text-align: center;
+}
+
+/* ─── 核心能力列（中央）─── */
+.coursePositionBox {
+  border: 1.3px solid #3c8bd6; border-radius: 7px;
+  background: #f6fbff; padding: 9px 12px; margin-bottom: 5px;
+}
+.capSection {
+  border: 1.4px solid #2aa66a; border-radius: 8px;
+  background: #f8fffb; padding: 10px 12px;
+}
+.capSectionTitle {
+  font-size: 11px; font-weight: 850; color: #105d39;
+  text-align: center; margin-bottom: 7px;
+}
+.capRow {
+  display: flex; align-items: center; gap: 5px;
+  border: 1px solid #2aa66a; border-radius: 5px;
+  background: #fff; padding: 5px 7px; margin-bottom: 3px;
+  animation: rowFadeIn .4s ease both;
+  transition: background .2s, box-shadow .2s;
+}
+.capRowHighlight {
+  background: #e8fff4 !important;
+  border-color: #00a38a !important;
+  box-shadow: 0 0 0 2px #00a38a44;
+}
+.capId     { font-size: 8.5px; font-weight: 850; color: #0f6b43; min-width: 50px; }
+.capName   { font-size: 10px; font-weight: 700; color: #105d39; flex: 1; }
+.capEvidence {
+  font-size: 8px; font-weight: 700; color: #105d39;
+  background: #eefbf5; border: 0.8px solid #2aa66a;
+  border-radius: 3px; padding: 1px 4px; white-space: nowrap;
+}
+.outcomesBox, .supportBox {
+  border: 1.2px solid #3c8bd6; border-radius: 7px;
+  background: #f8fbff; padding: 7px 10px; margin-top: 5px;
+}
+.boxTitle { font-size: 10.5px; font-weight: 700; color: #17324d; text-align: center; margin-bottom: 3px; }
+.boxLine  { font-size: 9.5px; color: #17324d; line-height: 1.6; text-align: center; }
+
+/* ─── 知识点列 ─── */
+.knowledgeGroup {
+  border: 1.2px solid #e46a26; border-radius: 6px;
+  background: #fff5ef; padding: 7px 8px;
+  animation: rowFadeIn .5s ease both;
+}
+.knowledgeGroupName {
+  font-size: 10px; font-weight: 850; color: #7c2d12; margin-bottom: 3px;
+}
+.pill {
+  background: #fffaf3; border: 1px solid #ffb26b;
+  border-radius: 4px; font-size: 8.5px; font-weight: 650;
+  color: #7c2d12; padding: 2px 5px; margin-bottom: 2px; text-align: center;
+}
+
+/* ─── 底部区域 ─── */
+.footer { margin-top: 10px; }
+.ethicsBox {
+  border: 1.2px solid #c78b22; border-radius: 7px;
+  background: #fffdf7; padding: 8px 14px; text-align: center; margin-bottom: 6px;
+}
+.ethicsTitle   { font-size: 11.5px; font-weight: 800; color: #7c4a03; margin-right: 8px; }
+.ethicsContent { font-size: 10.5px; color: #7c4a03; }
+.abilityPath {
+  text-align: center; font-size: 11px; font-weight: 850; color: #17324d;
+  padding: 7px; border-top: 1px solid #d9e8fb;
+}
+.versionNote {
+  text-align: center; font-size: 9.5px; color: #64748b; margin-top: 4px;
+}
+
+/* ─── SVG 连线层 ─── */
+.lineOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: visible;
+}
+
+/* 描线动画由 inline transition 控制（不用 @keyframes，避免 CSS var 兼容问题） */
+
+/* ─── 元素入场动画 ─── */
+.animFade {
+  animation: rowFadeIn 0.5s ease both;
+}
+@keyframes rowFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

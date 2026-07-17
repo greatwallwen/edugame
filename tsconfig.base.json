@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@dgbook/types": ["packages/types/src/index.ts"],
+      "@dgbook/types/*": ["packages/types/src/*"],
+      "@dgbook/ui": ["packages/ui/src/index.ts"],
+      "@dgbook/ui/*": ["packages/ui/src/*"],
+      "@dgbook/primitives": ["packages/primitives/src/index.ts"],
+      "@dgbook/primitives/*": ["packages/primitives/src/*"],
+      "@dgbook/game": ["packages/edugame/src/index.ts"],
+      "@dgbook/game/host": ["packages/edugame/src/core/EduGameHost.tsx"],
+      "@dgbook/game/*": ["packages/edugame/src/*"],
+      "@dgbook/renderer-sdk": ["packages/renderer-sdk/src/index.ts"],
+      "@dgbook/renderer-sdk/*": ["packages/renderer-sdk/src/*"],
+      "@dgbook/generator": ["packages/generator/src/index.ts"],
+      "@dgbook/generator/*": ["packages/generator/src/*"]
+    }
+  }
+}

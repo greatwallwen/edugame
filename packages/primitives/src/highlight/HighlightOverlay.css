@@ -1,0 +1,93 @@
+/* Phase G3.4 · HighlightOverlay 样式
+ *
+ * 全屏覆盖层使用 position:fixed，pointer-events:none，不打断业务交互。
+ * Iter-22 · 视觉对齐 OpenMAIC HighlightOverlay：
+ *   - glow / pulse 改双层（同色背景 + 外发光 + 内反光）
+ *   - pulse 用 breathe（呼吸缩放）+ ::after ping（脉冲扩散）双轨动画
+ */
+
+.dgb-hl-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9000;
+}
+
+/* spotlight SVG mask（节点级：graphics/mermaid/anim-step） */
+.dgb-hl-overlay-spotlight {
+  width: 100vw;
+  height: 100vh;
+}
+
+/* 标题级 spotlight 方框（dgb-text-{bid}-s{N}）
+ * 动画由 framer-motion 驱动（入场/退场/位置移动），CSS 只管视觉样式。
+ */
+.dgb-hl-heading-spotlight {
+  inset: auto;
+  border: 2.5px solid #0E7C4A;
+  background-color: rgba(14, 124, 74, 0.06);
+  box-shadow: 0 0 12px rgba(14, 124, 74, 0.18), inset 0 0 6px rgba(14, 124, 74, 0.06);
+}
+
+/* glow / pulse 共享：实心 border + 同色透明背景 + 双层 box-shadow（外发光 + 内反光） */
+.dgb-hl-overlay-glow,
+.dgb-hl-overlay-pulse {
+  inset: auto;
+  border: 3px solid var(--dgb-hl-color, #ffd166);
+  background-color: color-mix(in srgb, var(--dgb-hl-color, #ffd166) 22%, transparent);
+  box-shadow:
+    /* 外发光 */
+    0 0 9px 0 var(--dgb-hl-color, #ffd166),
+    /* 内反光（白色 ~ 50% 透明）*/
+    inset 0 0 6px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* pulse: breathe 呼吸 + ::after ping 扩散 */
+.dgb-hl-overlay-pulse {
+  animation: dgb-hl-breathe 2s ease-in-out infinite;
+}
+.dgb-hl-overlay-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 3px solid var(--dgb-hl-color, #ffd166);
+  opacity: 0.5;
+  animation: dgb-hl-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes dgb-hl-breathe {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes dgb-hl-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  75%, 100% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+}
+
+/* 旧 dgb-hl-pulse 关键帧保留为别名（防止外部 CSS 引用打断） */
+@keyframes dgb-hl-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.85; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dgb-hl-overlay-pulse,
+  .dgb-hl-overlay-pulse::after {
+    animation: none;
+  }
+}

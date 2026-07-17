@@ -1,0 +1,40 @@
+{
+  "gameId": "ch12-solar-survivor",
+  "assetLibraryRoot": "packages/edugame/assets/games/ch12-solar-survivor",
+  "runtimeReferencePrefix": "res://assets/",
+  "exportOutputRoot": "apps/player/public/assets/godot/ch12-solar-survivor",
+  "categories": {
+    "sprites": [
+      "sprites/actuator_oscillation_core.png",
+      "sprites/control_saturation_block.png",
+      "sprites/energy_panel.png",
+      "sprites/error_block.png",
+      "sprites/light_orb.png",
+      "sprites/noise_pulse.png",
+      "sprites/offset_band.png",
+      "sprites/player_rover.png",
+      "sprites/sampling_noise_source.png",
+      "sprites/shadow_cloud.png",
+      "sprites/stray_light.png"
+    ],
+    "reference": [
+      "reference/light-asset-sheet-reference.png",
+      "reference/light-pcb-background-reference.png"
+    ],
+    "concept": [
+      "concept/solar-survivor-asset-style-sheet-v1.png",
+      "concept/solar-survivor-asset-style-sheet-v2-hardware-icons.png",
+      "concept/solar-survivor-circuit-background-v1.png"
+    ],
+    "fonts": [
+      "fonts/NotoSansSC-VF.ttf"
+    ]
+  },
+  "rules": [
+    "Runtime source assets must live under this assetLibraryRoot.",
+    "The Godot project assets directory is a junction to this assetLibraryRoot.",
+    "Godot resource paths should continue to use res://assets/... within this game project.",
+    "Do not reference another game's assets directory directly.",
+    "Exported Web files are build artifacts and are not the source asset library."
+  ]
+}

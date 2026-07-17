@@ -1,0 +1,5 @@
+[
+  { "wave": 1, "hpMultiplier": 0.75, "speedMultiplier": 0.80, "enemies": [{ "type": "config", "count": 2 }, { "type": "noise", "count": 2 }] },
+  { "wave": 2, "hpMultiplier": 0.80, "speedMultiplier": 0.82, "enemies": [{ "type": "noise", "count": 2 }, { "type": "false_peak", "count": 2 }] },
+  { "wave": 3, "hpMultiplier": 0.85, "speedMultiplier": 0.85, "enemies": [{ "type": "power_spike", "count": 2 }, { "type": "false_peak", "count": 2 }, { "type": "config", "count": 1 }] }
+]

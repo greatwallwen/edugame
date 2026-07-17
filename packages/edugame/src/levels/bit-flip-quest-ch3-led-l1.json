@@ -1,0 +1,22 @@
+{
+  "modeId": "bit-flip-quest",
+  "levelId": "ch3-led-l1",
+  "title": "点亮 LED：第一关",
+  "objective": "理解 GPIO ODR 寄存器位的写入",
+  "difficulty": 1,
+  "starThresholds": [50, 80, 95],
+  "timeLimit": 60,
+  "data": {
+    "width": 16,
+    "initial": 0,
+    "target": 8192,
+    "cardLimit": 1,
+    "operations": [
+      { "op": "or",  "mask": 8192 },
+      { "op": "or",  "mask": 4096 },
+      { "op": "and", "mask": 65535 },
+      { "op": "xor", "mask": 8192 }
+    ],
+    "explanation": "GPIOC->ODR |= (1<<13) — 把第 13 位置 1 即可点亮 PC13 上的 LED"
+  }
+}

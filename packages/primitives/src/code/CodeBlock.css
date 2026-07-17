@@ -1,0 +1,200 @@
+/* ================================================================
+ * CodeBlock — GitHub Light 亮色主题 + 全屏模式
+ * ================================================================ */
+
+.dgb-code {
+  border: 1px solid var(--dg-color-surface-border, #e2e8f0);
+  background: #f8fafc;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 12px 0;
+  box-shadow: 0 2px 10px rgba(15,23,42,0.06);
+}
+.dgb-code-cap {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+}
+.dgb-code-lang {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+  color: #475569; text-transform: uppercase;
+  background: #e2e8f0; padding: 2px 8px; border-radius: 4px;
+}
+.dgb-code-file {
+  font-size: 12px; color: #64748b; font-family: ui-monospace, monospace;
+}
+.dgb-code-grow { flex: 1; }
+.dgb-code-copy {
+  font-size: 11px; padding: 4px 10px; border-radius: 6px;
+  border: 1px solid #cbd5e1; background: transparent;
+  color: #64748b; cursor: pointer; transition: all .15s ease;
+}
+.dgb-code-copy:hover { background: #e2e8f0; color: #1e293b; border-color: #94a3b8; }
+
+/* 全屏按钮 */
+.dgb-code-fullscreen {
+  font-size: 11px; padding: 4px 8px; border-radius: 6px;
+  border: 1px solid #cbd5e1; background: transparent;
+  color: #64748b; cursor: pointer; transition: all .15s ease;
+  display: inline-flex; align-items: center; gap: 4px;
+  flex-shrink: 0;
+}
+.dgb-code-fullscreen:hover { background: #e2e8f0; color: #1e293b; border-color: #94a3b8; }
+
+.dgb-code-pre { margin: 0; padding: 10px 0; overflow-x: auto; background: #f8fafc; }
+.dgb-code-body { display: block; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, monospace; font-size: 13px; line-height: 1.7; }
+.dgb-code-line { display: flex; padding: 0 12px; transition: background .12s ease; }
+.dgb-code-line:hover { background: rgba(15,23,42,0.03); }
+.dgb-code-line.highlight { background: rgba(14,124,74,0.08); border-left: 2px solid var(--dg-color-brand-500, #0E7C4A); }
+.dgb-code-lineno {
+  width: 36px; flex-shrink: 0; text-align: right;
+  color: #cbd5e1; font-size: 11px; padding-right: 14px;
+  user-select: none;
+}
+/* 亮色语法颜色 — GitHub Light 风格 */
+.dgb-code-content { color: #1e293b; white-space: pre; }
+.dgb-code-plain   { color: #1e293b; }
+.dgb-code-keyword { color: #0A5132; font-weight: 600; }
+.dgb-code-string  { color: #16a34a; }
+.dgb-code-comment { color: #94a3b8; font-style: italic; }
+.dgb-code-number  { color: #ea580c; }
+.dgb-code-builtin { color: #0369a1; }
+
+.dgb-code-exp { border-top: 1px solid #e2e8f0; background: #f1f5f9; }
+.dgb-code-exp-toggle {
+  width: 100%; text-align: left; padding: 8px 14px;
+  background: none; border: none; color: #64748b;
+  font-size: 12px; cursor: pointer; transition: color .15s ease;
+}
+.dgb-code-exp-toggle:hover { color: #1e293b; }
+.dgb-code-exp-body {
+  padding: 8px 14px 12px;
+  font-size: 13px; color: #475569; line-height: 1.6;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* ── 全屏 Modal（复用 dgb-practice-modal-overlay 动画） ── */
+.dgb-code-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(10, 15, 30, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: dgb-modal-in 0.16s ease;
+}
+.dgb-code-modal {
+  background: #f8fafc;
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.24);
+  width: min(1000px, 96vw);
+  max-height: 92vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  animation: dgb-modal-slide 0.18s ease;
+}
+.dgb-code-modal .dgb-code { border-radius: 0; margin: 0; border: none; flex: 1; overflow: auto; }
+.dgb-code-modal .dgb-code-pre { max-height: none; }
+
+
+/* ================================================================
+ * Phase 4 · code-flow 双列 layout（mermaid pane + code pane）
+ *   命名空间：.dgb-codeflow-* —— 与 .dgb-code-* 兼容并存
+ *   触发：CodeBlockProps.flow 存在时启用
+ * ================================================================ */
+
+.dgb-codeflow-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 38%) 1fr;
+  gap: 0;
+  background: #f8fafc;
+}
+
+.dgb-codeflow-pane {
+  border-right: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  padding: 12px 12px 8px;
+  display: flex; flex-direction: column; gap: 10px;
+  min-width: 0;
+}
+
+.dgb-codeflow-mermaid {
+  width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  overflow-x: auto;
+}
+.dgb-codeflow-mermaid svg { max-width: 100%; height: auto; }
+
+.dgb-codeflow-error {
+  margin: 0;
+  padding: 10px 12px;
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+.dgb-codeflow-steps {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+.dgb-codeflow-step { margin: 0; }
+.dgb-codeflow-step-btn {
+  width: 100%;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  text-align: left; cursor: pointer;
+  color: #475569; font-size: 12px;
+  transition: background .12s ease, border-color .12s ease, color .12s ease;
+}
+.dgb-codeflow-step-btn:hover {
+  background: #e2e8f0; color: #1e293b;
+}
+.dgb-codeflow-step.is-active .dgb-codeflow-step-btn {
+  background: rgba(14, 124, 74, 0.08);
+  border-color: var(--dg-color-brand-500, #0E7C4A);
+  color: #0A5132;
+  font-weight: 600;
+}
+.dgb-codeflow-step-idx {
+  width: 20px; height: 20px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: #e2e8f0; color: #64748b;
+  font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+.dgb-codeflow-step.is-active .dgb-codeflow-step-idx {
+  background: var(--dg-color-brand-500, #0E7C4A);
+  color: #fff;
+}
+.dgb-codeflow-step-title { flex: 1; min-width: 0; }
+
+.dgb-codeflow-codepane {
+  margin: 0;
+  background: #f8fafc;
+  min-width: 0;
+}
+
+/* 窄屏：双列堆叠，mermaid 在上 */
+@media (max-width: 720px) {
+  .dgb-codeflow-layout {
+    grid-template-columns: 1fr;
+  }
+  .dgb-codeflow-pane {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+}

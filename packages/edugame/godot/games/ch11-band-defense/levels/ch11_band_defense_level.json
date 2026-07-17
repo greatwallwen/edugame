@@ -1,0 +1,18 @@
+{
+  "modeId": "godot-game",
+  "levelId": "ch11-band-defense-mvp",
+  "title": "手环数据链路防线",
+  "objective": "复习 IMU、计步算法、PPG、OLED 与低功耗设计",
+  "difficulty": 3,
+  "starThresholds": [50, 75, 90],
+  "timeLimit": 0,
+  "data": {
+    "gameId": "ch11-band-defense",
+    "entryUrl": "/assets/godot/ch11-band-defense/index.html?v=63b6c0e60cd2",
+    "aspectRatio": "16 / 9",
+    "maxLeaks": 5,
+    "waveCount": 9,
+    "knowledgeSource": "external",
+    "questionsUrl": "/assets/courses/stm32-course/knowledge/ch11-band-defense.questions.json?v=038e961fb803"
+  }
+}

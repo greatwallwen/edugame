@@ -1,0 +1,67 @@
+﻿.dgb-summary {
+  border: 1px solid var(--dg-color-surface-border, #e2e8f0);
+  background: linear-gradient(135deg, var(--dg-color-surface-card, #fff), var(--dg-color-brand-50, #E6F1EA));
+  border-radius: 12px; padding: 14px 16px 16px;
+  max-width: none;
+  width: 100%;
+  box-shadow: 0 2px 6px rgba(15,23,42,0.04);
+}
+.dgb-summary-head { margin-bottom: 10px; }
+.dgb-summary-badge {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+  color: var(--dg-color-brand-600, #2f6cf6);
+  background: var(--dg-color-brand-50, #E6F1EA);
+  padding: 3px 8px; border-radius: 999px;
+}
+.dgb-summary-points { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.dgb-summary-point { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 8px; background: #fff; border: 1px solid var(--dg-color-surface-border, #e2e8f0); transition: transform .1s ease, box-shadow .1s ease; }
+.dgb-summary-point:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(15,23,42,0.06); }
+.dgb-summary-num {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  background: var(--dg-color-brand-500, #0E7C4A); color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.dgb-summary-text { font-size: 13.5px; color: var(--dg-color-text-primary, #0f172a); line-height: 1.5; }
+.dgb-summary-review { margin-top: 12px; padding: 10px 12px; border-radius: 8px; background: #fff; border: 1px solid var(--dg-color-surface-border, #e2e8f0); }
+.dgb-summary-review-title { font-size: 13px; color: var(--dg-color-text-primary, #0f172a); display: block; margin-bottom: 6px; }
+.dgb-summary-review-list { padding-left: 18px; margin: 0; }
+.dgb-summary-review-item { font-size: 13px; color: var(--dg-color-text-secondary, #475569); line-height: 1.6; margin: 3px 0; }
+.dgb-summary-next { margin-top: 10px; font-size: 12.5px; color: var(--dg-color-brand-600, #2f6cf6); font-weight: 600; }
+
+/* 页底「下一课」CTA 按钮区域 */
+.dgb-summary-next-cta {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1.5px solid #86efac;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dgb-summary-next-label {
+  font-size: 13px;
+  color: #166534;
+  font-weight: 600;
+  flex: 1;
+}
+.dgb-summary-next-btn {
+  padding: 8px 20px;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s, transform .1s;
+  box-shadow: 0 2px 8px rgba(22,163,74,0.25);
+}
+.dgb-summary-next-btn:hover {
+  background: #15803d;
+  transform: translateX(2px);
+}
+.dgb-summary-next-btn:active { transform: scale(0.97); }

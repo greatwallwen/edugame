@@ -1,0 +1,73 @@
+[
+  {
+    "level": 3,
+    "wave": 1,
+    "brief": "综合验收开始：连接配置与噪声干扰同时进入数据链路。",
+    "focusType": "config",
+    "pressureLabel": "综合双源压力",
+    "spawnInterval": 0.54,
+    "speedMultiplier": 1.08,
+    "hpMultiplier": 1.03,
+    "enemies": [
+      { "type": "config", "count": 4 },
+      { "type": "noise", "count": 4 },
+      { "type": "false_peak", "count": 2 }
+    ]
+  },
+  {
+    "level": 3,
+    "wave": 2,
+    "brief": "运动、计步和低功耗问题叠加，需要根据症状切换防线重点。",
+    "focusType": "power_spike",
+    "pressureLabel": "多模块切换压力",
+    "spawnInterval": 0.52,
+    "speedMultiplier": 1.10,
+    "hpMultiplier": 1.04,
+    "enemies": [
+      { "type": "power_spike", "count": 4 },
+      { "type": "false_peak", "count": 4 },
+      { "type": "noise", "count": 3 },
+      {
+        "type": "hybrid_fault",
+        "count": 2,
+        "hpMultiplier": 1.6,
+        "rewardMultiplier": 1.8,
+        "switches": [
+          { "progress": 0.0, "type": "hybrid_fault" },
+          { "progress": 0.24, "type": "noise" },
+          { "progress": 0.52, "type": "false_peak" },
+          { "progress": 0.78, "type": "power_spike" }
+        ]
+      }
+    ]
+  },
+  {
+    "level": 3,
+    "wave": 3,
+    "brief": "最终综合验收：配置、滤波、峰值判断和低功耗策略全部混合出现。",
+    "focusType": "false_peak",
+    "pressureLabel": "最终综合验收压力",
+    "spawnInterval": 0.52,
+    "speedMultiplier": 1.12,
+    "hpMultiplier": 1.05,
+    "enemies": [
+      { "type": "config", "count": 3 },
+      { "type": "noise", "count": 3 },
+      { "type": "false_peak", "count": 4 },
+      { "type": "power_spike", "count": 3 },
+      {
+        "type": "hybrid_fault",
+        "count": 2,
+        "hpMultiplier": 1.75,
+        "rewardMultiplier": 2.0,
+        "switches": [
+          { "progress": 0.0, "type": "hybrid_fault" },
+          { "progress": 0.22, "type": "config" },
+          { "progress": 0.42, "type": "noise" },
+          { "progress": 0.62, "type": "false_peak" },
+          { "progress": 0.82, "type": "power_spike" }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,107 @@
+@import './interactive-tokens.css';
+﻿/* Iter-48 · 拖拽词块填空游戏 */
+.dgb-fillblank-game {
+  border: 1px solid var(--dg-color-surface-border, var(--ig-border));
+  background: linear-gradient(180deg, var(--ig-surface), var(--ig-primary-soft));
+  border-radius: 14px; padding: 16px 18px 18px;
+  width: 100%;
+  box-shadow: 0 4px 14px rgba(14, 124, 74, 0.06);
+}
+
+/* ── 头部：徽章 + 提示 + 实时统计 ── */
+.dgb-fbg-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.dgb-fbg-badge {
+  font-size: 12px; font-weight: 700; letter-spacing: .03em;
+  color: var(--ig-surface); background: linear-gradient(135deg, var(--ig-primary), var(--ig-primary-hover));
+  padding: 4px 11px; border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(14,124,74,.25);
+}
+.dgb-fbg-prompt { font-size: 13.5px; color: var(--dg-color-text-secondary, var(--ig-text-sub)); line-height: 1.55; flex: 1; min-width: 160px; }
+.dgb-fbg-stats { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+.dgb-fbg-score { font-size: 13px; font-weight: 800; color: var(--ig-primary); background: var(--ig-primary-soft); padding: 4px 12px; border-radius: 999px; }
+.dgb-fbg-combo {
+  font-size: 12px; font-weight: 800; color: var(--ig-warn); background: #FFF8EC;
+  padding: 4px 10px; border-radius: 999px; animation: dgb-fbg-pop .35s cubic-bezier(.34,1.56,.64,1);
+}
+
+/* ── 填空正文 ── */
+.dgb-fbg-body { font-size: 15px; line-height: 2.6; color: var(--dg-color-text-primary, var(--ig-text)); }
+.dgb-fbg-text { margin: 0 1px; }
+
+/* 投放槽 */
+.dgb-fbg-slot {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 72px; min-height: 30px; padding: 2px 10px; margin: 0 4px;
+  border: 2px dashed var(--dg-color-surface-border, var(--ig-border-strong));
+  border-radius: 9px; background: var(--ig-surface); vertical-align: middle;
+  cursor: pointer; transition: all .2s cubic-bezier(.34,1.56,.64,1);
+  font-weight: 600;
+}
+.dgb-fbg-slot.droppable { border-color: var(--ig-primary); background: #F0FDF4; box-shadow: 0 0 0 3px rgba(14,124,74,.1); }
+.dgb-fbg-slot.filled {
+  border-style: solid; border-color: var(--ig-ok);
+  background: linear-gradient(135deg, var(--ig-ok-bg), #F0FDF4); color: var(--ig-ok);
+  animation: dgb-fbg-drop-in .4s cubic-bezier(.34,1.56,.64,1);
+}
+.dgb-fbg-slot.wrong { animation: dgb-fbg-shake .5s; border-color: var(--ig-ng); background: var(--ig-ng-bg); }
+.dgb-fbg-slot-ph { color: #94a3b8; font-size: 13px; }
+.dgb-fbg-slot-val { display: inline-flex; align-items: center; gap: 4px; }
+.dgb-fbg-slot-x { font-size: 11px; color: var(--ig-text-muted); opacity: .6; }
+.dgb-fbg-slot.filled:hover .dgb-fbg-slot-x { opacity: 1; color: var(--ig-ng); }
+
+/* ── 词库区 ── */
+.dgb-fbg-pool {
+  display: flex; flex-wrap: wrap; gap: 9px;
+  margin-top: 16px; padding: 14px; border-radius: 12px;
+  background: rgba(14,124,74,.04); border: 1px dashed rgba(14,124,74,.18);
+}
+.dgb-fbg-token {
+  font-size: 14px; font-weight: 700; padding: 8px 16px;
+  border: 0; border-radius: 10px; cursor: grab;
+  color: var(--ig-primary); background: linear-gradient(135deg, var(--ig-surface), var(--ig-primary-soft));
+  box-shadow: 0 3px 10px rgba(14,124,74,.14), inset 0 1px 0 rgba(255,255,255,.7);
+  transition: transform .15s, box-shadow .15s;
+  user-select: none;
+}
+.dgb-fbg-token:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(14,124,74,.22); }
+.dgb-fbg-token:active { cursor: grabbing; transform: scale(.96); }
+.dgb-fbg-token.picked {
+  background: linear-gradient(135deg, var(--ig-primary), var(--ig-primary-hover)); color: var(--ig-surface);
+  box-shadow: 0 6px 18px rgba(14,124,74,.4); transform: translateY(-2px) scale(1.05);
+}
+
+/* ── 底部操作 / 胜利 ── */
+.dgb-fbg-actions { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+.dgb-fbg-hint { font-size: 12px; color: #94a3b8; flex: 1; }
+.dgb-fbg-reset {
+  padding: 7px 16px; border: 1px solid var(--dg-color-surface-border, var(--ig-border));
+  border-radius: 9px; background: var(--ig-surface); color: var(--dg-color-text-secondary, var(--ig-text-sub));
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.dgb-fbg-reset:hover { border-color: var(--ig-primary); color: var(--ig-primary); }
+
+.dgb-fbg-win {
+  position: relative; display: flex; align-items: center; gap: 14px;
+  margin-top: 16px; padding: 14px 18px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--ig-ok-bg), #FFF8EC);
+  border: 1px solid var(--ig-primary-border); overflow: hidden;
+  animation: dgb-fbg-drop-in .5s cubic-bezier(.34,1.56,.64,1);
+}
+.dgb-fbg-win-text { font-size: 15px; font-weight: 800; color: var(--ig-primary); flex: 1; }
+
+/* 撒花粒子 */
+.dgb-fbg-confetti { position: absolute; left: 50%; top: 0; pointer-events: none; }
+.dgb-fbg-confetti i {
+  position: absolute; width: 8px; height: 8px; border-radius: 2px;
+  background: hsl(calc(var(--x, 0) * 3 + 140), 70%, 55%);
+  animation: dgb-fbg-confetti 1.1s ease-out var(--d, 0s) forwards;
+}
+
+/* ── 动画关键帧 ── */
+@keyframes dgb-fbg-drop-in { 0% { transform: scale(.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes dgb-fbg-shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+@keyframes dgb-fbg-pop { 0%{transform:scale(.5)} 100%{transform:scale(1)} }
+@keyframes dgb-fbg-confetti {
+  0% { transform: translate(0,0) rotate(0); opacity: 1; }
+  100% { transform: translate(var(--x, 0), 90px) rotate(540deg); opacity: 0; }
+}

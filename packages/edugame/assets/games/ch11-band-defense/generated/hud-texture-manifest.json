@@ -1,0 +1,21 @@
+{
+  "visual_cues": [
+    "light smartwatch hidden debug mode",
+    "real smartwatch glass system UI",
+    "capsule controls",
+    "ring progress and compact telemetry",
+    "soft iOS card depth",
+    "clean glass panels without background grid texture",
+    "cyan green status with amber warnings"
+  ],
+  "assets": [
+    "hud_panel_frame.png",
+    "hud_button_plate.png",
+    "hud_button_plate_primary.png",
+    "hud_status_tray.png",
+    "hud_dialog_frame.png",
+    "hud_text_plate.png",
+    "hud_text_chip.png",
+    "hud_section_card.png"
+  ]
+}

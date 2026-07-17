@@ -1,0 +1,10 @@
+config_version=5
+
+[application]
+
+config/name="DGBook PCK Inspector"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+

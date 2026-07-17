@@ -1,0 +1,65 @@
+[
+  {
+    "level": 2,
+    "wave": 1,
+    "brief": "夜跑开始后，步数偶尔跳变，但设备连接正常。",
+    "focusType": "noise",
+    "pressureLabel": "夜跑噪声压力",
+    "spawnInterval": 0.58,
+    "speedMultiplier": 1.05,
+    "enemies": [
+      { "type": "noise", "count": 4 },
+      { "type": "drift_noise", "count": 2 },
+      { "type": "config", "count": 2 }
+    ]
+  },
+  {
+    "level": 2,
+    "wave": 2,
+    "brief": "每次手臂大幅摆动后，步数会短时间连跳。",
+    "focusType": "false_peak",
+    "pressureLabel": "大幅摆臂连跳",
+    "spawnInterval": 0.56,
+    "speedMultiplier": 1.06,
+    "enemies": [
+      { "type": "false_peak", "count": 4 },
+      {
+        "type": "drift_noise",
+        "count": 2,
+        "hpMultiplier": 1.25,
+        "rewardMultiplier": 1.25,
+        "switches": [
+          { "progress": 0.0, "type": "drift_noise" },
+          { "progress": 0.62, "type": "false_peak" }
+        ]
+      },
+      { "type": "noise", "count": 3 }
+    ]
+  },
+  {
+    "level": 2,
+    "wave": 3,
+    "brief": "设备静止时耗电异常，恢复运动后又夹杂步数误判。",
+    "focusType": "power_spike",
+    "pressureLabel": "夜跑混合压力",
+    "spawnInterval": 0.56,
+    "speedMultiplier": 1.07,
+    "hpMultiplier": 1.03,
+    "enemies": [
+      { "type": "power_spike", "count": 4 },
+      { "type": "false_peak", "count": 3 },
+      { "type": "config", "count": 2 },
+      {
+        "type": "hybrid_fault",
+        "count": 1,
+        "hpMultiplier": 1.8,
+        "rewardMultiplier": 2.0,
+        "switches": [
+          { "progress": 0.0, "type": "hybrid_fault" },
+          { "progress": 0.28, "type": "power_spike" },
+          { "progress": 0.62, "type": "false_peak" }
+        ]
+      }
+    ]
+  }
+]

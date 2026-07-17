@@ -1,0 +1,79 @@
+/* Iter-53 · 13 种新题型共享样式（game-kit 风格统一） */
+@import './interactive-tokens.css';
+
+.dgb-ig { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px;
+  display: flex; flex-direction: column; gap: 14px; position: relative; }
+.dgb-ig-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.dgb-ig-badge { font-weight: 800; color: #0E7C4A; background: #ECFDF5; border: 1px solid #A7F3D0;
+  border-radius: 999px; padding: 3px 12px; font-size: 13px; }
+.dgb-ig-prompt { font-size: 15px; color: #1f2937; font-weight: 600; flex: 1; }
+.dgb-ig-hint { font-size: 12px; color: #6b7280; }
+.dgb-ig-opts { display: flex; flex-direction: column; gap: 10px; }
+.dgb-ig-opt { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 10px;
+  border: 2px solid #e2e8f0; background: #f8fafc; cursor: pointer; transition: .2s; font-size: 14px; color: #1f2937;
+  text-align: left; }
+.dgb-ig-opt:hover { border-color: #10915A; background: #f0fbf5; }
+.dgb-ig-opt.sel { border-color: #0E7C4A; background: #ECFDF5; font-weight: 600; }
+.dgb-ig-opt.ok { border-color: #16a34a; background: #dcfce7; }
+.dgb-ig-opt.ng { border-color: #dc2626; background: #fee2e2; }
+.dgb-ig-opt .mk { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #cbd5e1;
+  display: grid; place-items: center; font-size: 13px; flex-shrink: 0; }
+.dgb-ig-opt.radio .mk { border-radius: 50%; }
+.dgb-ig-opt.sel .mk { background: #0E7C4A; border-color: #0E7C4A; color: #fff; }
+.dgb-ig-opt.ok .mk { background: #16a34a; border-color: #16a34a; color: #fff; }
+.dgb-ig-opt.ng .mk { background: #dc2626; border-color: #dc2626; color: #fff; }
+.dgb-ig-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dgb-ig-btn { background: #0E7C4A; color: #fff; border: none; border-radius: 9px; padding: 9px 22px;
+  font-size: 14px; font-weight: 700; cursor: pointer; transition: .2s; }
+.dgb-ig-btn:hover { background: #10915A; }
+.dgb-ig-btn:disabled { opacity: .5; cursor: not-allowed; }
+.dgb-ig-btn.ghost { background: #f1f5f9; color: #475569; }
+.dgb-ig-res { font-weight: 700; font-size: 14px; }
+.dgb-ig-res.ok { color: #16a34a; }
+.dgb-ig-res.ng { color: #dc2626; }
+.dgb-ig-expl { font-size: 13px; color: #475569; background: #f8fafc; border-left: 3px solid #0E7C4A;
+  padding: 8px 12px; border-radius: 6px; line-height: 1.6; }
+/* 滑块 */
+.dgb-ig-slider { display: flex; flex-direction: column; gap: 6px; }
+.dgb-ig-slider label { font-size: 13px; color: #334155; font-weight: 600; display: flex; justify-content: space-between; }
+.dgb-ig-slider input[type=range] { width: 100%; accent-color: #0E7C4A; }
+.dgb-ig-val { font-variant-numeric: tabular-nums; color: #0E7C4A; font-weight: 800; }
+/* 计时器 */
+.dgb-ig-timer { font-variant-numeric: tabular-nums; font-weight: 800; color: #D97706; font-size: 15px; }
+.dgb-ig-timer.low { color: #dc2626; }
+/* 真值表 */
+.dgb-ig-table { border-collapse: collapse; font-size: 13px; }
+.dgb-ig-table th, .dgb-ig-table td { border: 1px solid #e2e8f0; padding: 6px 12px; text-align: center; }
+.dgb-ig-table th { background: #f1f5f9; font-weight: 700; color: #334155; }
+.dgb-ig-table .out-cell button { width: 34px; height: 30px; border: 2px solid #cbd5e1; border-radius: 6px;
+  background: #fff; cursor: pointer; font-weight: 800; }
+.dgb-ig-table .out-cell button.set { background: #0E7C4A; color: #fff; border-color: #0E7C4A; }
+.dgb-ig-table .out-cell.ok button { border-color: #16a34a; }
+.dgb-ig-table .out-cell.ng button { border-color: #dc2626; background: #fee2e2; }
+/* 进制转换 / 寄存器输入 */
+.dgb-ig-field { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.dgb-ig-field .q { font-size: 14px; color: #1f2937; }
+.dgb-ig-field input, .dgb-ig-field select { padding: 7px 10px; border: 2px solid #cbd5e1; border-radius: 8px;
+  font-size: 14px; font-family: ui-monospace, monospace; }
+.dgb-ig-field input.ok, .dgb-ig-field select.ok { border-color: #16a34a; background: #dcfce7; }
+.dgb-ig-field input.ng, .dgb-ig-field select.ng { border-color: #dc2626; background: #fee2e2; }
+/* 画布/热点/拖标签 */
+.dgb-ig-canvas { position: relative; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+  background: #f8fafc; min-height: 200px; }
+.dgb-ig-spot { position: absolute; transform: translate(-50%, -50%); border-radius: 50%;
+  border: 2px dashed #0E7C4A; display: grid; place-items: center; cursor: pointer; color: #0E7C4A;
+  font-weight: 800; background: rgba(16,145,90,.08); }
+.dgb-ig-spot.hit { background: #16a34a; color: #fff; border-style: solid; border-color: #16a34a; }
+.dgb-ig-anchor { position: absolute; transform: translate(-50%,-50%); min-width: 70px; min-height: 32px;
+  border: 2px dashed #94a3b8; border-radius: 8px; display: grid; place-items: center; background: rgba(255,255,255,.7);
+  font-size: 12px; color: #64748b; }
+.dgb-ig-anchor.filled { border-style: solid; border-color: #0E7C4A; color: #0E7C4A; background: #ECFDF5; font-weight: 700; }
+.dgb-ig-anchor.ok { border-color: #16a34a; background: #dcfce7; color: #166534; }
+.dgb-ig-anchor.ng { border-color: #dc2626; background: #fee2e2; color: #991b1b; }
+.dgb-ig-labels { display: flex; flex-wrap: wrap; gap: 8px; }
+.dgb-ig-label { padding: 6px 14px; border-radius: 999px; border: 2px solid #cbd5e1; background: #fff;
+  cursor: grab; font-size: 13px; font-weight: 600; color: #334155; }
+.dgb-ig-label.used { opacity: .4; }
+.dgb-ig-label.sel { border-color: #0E7C4A; background: #ECFDF5; }
+/* 波形预览 */
+.dgb-ig-wave { width: 100%; height: 90px; background: #0f172a; border-radius: 8px; }

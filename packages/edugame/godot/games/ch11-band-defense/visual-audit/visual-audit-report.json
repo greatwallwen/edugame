@@ -1,0 +1,711 @@
+{
+  "assets": {
+    "map_layer": "assets\\backgrounds\\band-defense-map-level1-watch-debug-map-layer.png",
+    "hud_layer": "assets\\backgrounds\\band-defense-hud-level1-watch-debug-layer.png",
+    "composite": "assets\\backgrounds\\band-defense-map-level1-watch-debug.png",
+    "game_hud_shot": ".superpowers\\visual-qa\\hud\\03-game-hud.png",
+    "slot_menu_shot": ".superpowers\\visual-qa\\hud\\04-slot-menu.png"
+  },
+  "layout": {
+    "path": [
+      [
+        68.0,
+        321.0
+      ],
+      [
+        126.0,
+        321.0
+      ],
+      [
+        185.0,
+        260.0
+      ],
+      [
+        340.0,
+        260.0
+      ],
+      [
+        520.0,
+        260.0
+      ],
+      [
+        639.0,
+        322.0
+      ],
+      [
+        639.0,
+        385.0
+      ],
+      [
+        695.0,
+        440.0
+      ],
+      [
+        734.0,
+        440.0
+      ],
+      [
+        815.0,
+        350.0
+      ],
+      [
+        878.0,
+        350.0
+      ]
+    ],
+    "tower_slots": [
+      [
+        214.0,
+        207.0
+      ],
+      [
+        470.0,
+        207.0
+      ],
+      [
+        550.0,
+        405.0
+      ],
+      [
+        762.0,
+        257.0
+      ]
+    ],
+    "slot_route_min_distance": 53.0,
+    "slot_route_distances": [
+      53.0,
+      53.0,
+      91.22,
+      107.04
+    ]
+  },
+  "layer_separation": {
+    "map_alpha_in_right_hud_area": 0.0,
+    "hud_alpha_in_left_map_area": 0.0,
+    "composite_alpha_in_canvas": 1.0
+  },
+  "right_watch": {
+    "top_bright_ratio": 0.0,
+    "outer_edge_bright_ratio": 0.0,
+    "white_panel_bounds": {
+      "x": [
+        973,
+        1267
+      ],
+      "y": [
+        25,
+        694
+      ],
+      "center_x": 1120.0,
+      "width": 295,
+      "height": 670
+    }
+  },
+  "tower_slots": [
+    {
+      "center": [
+        214.0,
+        207.0
+      ],
+      "cyan_pixels": 4,
+      "centroid": [
+        214.0,
+        207.0
+      ],
+      "max_centroid_offset": 0.0
+    },
+    {
+      "center": [
+        470.0,
+        207.0
+      ],
+      "cyan_pixels": 4,
+      "centroid": [
+        470.0,
+        207.0
+      ],
+      "max_centroid_offset": 0.0
+    },
+    {
+      "center": [
+        550.0,
+        405.0
+      ],
+      "cyan_pixels": 4,
+      "centroid": [
+        550.0,
+        405.0
+      ],
+      "max_centroid_offset": 0.0
+    },
+    {
+      "center": [
+        762.0,
+        257.0
+      ],
+      "cyan_pixels": 4,
+      "centroid": [
+        762.0,
+        257.0
+      ],
+      "max_centroid_offset": 0.0
+    }
+  ],
+  "levels": {
+    "1": {
+      "path": [
+        [
+          68.0,
+          321.0
+        ],
+        [
+          126.0,
+          321.0
+        ],
+        [
+          185.0,
+          260.0
+        ],
+        [
+          340.0,
+          260.0
+        ],
+        [
+          520.0,
+          260.0
+        ],
+        [
+          639.0,
+          322.0
+        ],
+        [
+          639.0,
+          385.0
+        ],
+        [
+          695.0,
+          440.0
+        ],
+        [
+          734.0,
+          440.0
+        ],
+        [
+          815.0,
+          350.0
+        ],
+        [
+          878.0,
+          350.0
+        ]
+      ],
+      "tower_slots": [
+        [
+          214.0,
+          207.0
+        ],
+        [
+          470.0,
+          207.0
+        ],
+        [
+          550.0,
+          405.0
+        ],
+        [
+          762.0,
+          257.0
+        ]
+      ],
+      "slot_route_min_distance": 53.0,
+      "slot_route_distances": [
+        53.0,
+        53.0,
+        91.22,
+        107.04
+      ],
+      "map_alpha_in_right_hud_area": 0.0,
+      "hud_panel_center_x": 1120.0,
+      "hud_panel_width": 295,
+      "tower_slot_crosses": [
+        {
+          "center": [
+            214.0,
+            207.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            214.0,
+            207.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            470.0,
+            207.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            470.0,
+            207.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            550.0,
+            405.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            550.0,
+            405.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            762.0,
+            257.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            762.0,
+            257.0
+          ],
+          "max_centroid_offset": 0.0
+        }
+      ]
+    },
+    "2": {
+      "path": [
+        [
+          68.0,
+          334.0
+        ],
+        [
+          132.0,
+          334.0
+        ],
+        [
+          190.0,
+          332.0
+        ],
+        [
+          262.0,
+          278.0
+        ],
+        [
+          250.0,
+          440.0
+        ],
+        [
+          410.0,
+          440.0
+        ],
+        [
+          410.0,
+          278.0
+        ],
+        [
+          434.0,
+          210.0
+        ],
+        [
+          552.0,
+          210.0
+        ],
+        [
+          622.0,
+          286.0
+        ],
+        [
+          622.0,
+          372.0
+        ],
+        [
+          690.0,
+          426.0
+        ],
+        [
+          816.0,
+          426.0
+        ],
+        [
+          840.0,
+          347.0
+        ],
+        [
+          880.0,
+          347.0
+        ]
+      ],
+      "tower_slots": [
+        [
+          214.0,
+          207.0
+        ],
+        [
+          476.0,
+          142.0
+        ],
+        [
+          332.0,
+          354.0
+        ],
+        [
+          550.0,
+          405.0
+        ],
+        [
+          762.0,
+          257.0
+        ],
+        [
+          806.0,
+          487.0
+        ]
+      ],
+      "slot_route_min_distance": 61.0,
+      "slot_route_distances": [
+        85.7,
+        68.0,
+        75.42,
+        79.2,
+        119.1,
+        61.0
+      ],
+      "map_alpha_in_right_hud_area": 0.0,
+      "hud_panel_center_x": 1120.0,
+      "hud_panel_width": 295,
+      "tower_slot_crosses": [
+        {
+          "center": [
+            214.0,
+            207.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            214.0,
+            207.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            476.0,
+            142.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            476.0,
+            142.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            332.0,
+            354.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            332.0,
+            354.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            550.0,
+            405.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            550.0,
+            405.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            762.0,
+            257.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            762.0,
+            257.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            806.0,
+            487.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            806.0,
+            487.0
+          ],
+          "max_centroid_offset": 0.0
+        }
+      ]
+    },
+    "3": {
+      "path": [
+        [
+          68.0,
+          350.0
+        ],
+        [
+          124.0,
+          350.0
+        ],
+        [
+          178.0,
+          342.0
+        ],
+        [
+          256.0,
+          292.0
+        ],
+        [
+          256.0,
+          470.0
+        ],
+        [
+          454.0,
+          470.0
+        ],
+        [
+          454.0,
+          350.0
+        ],
+        [
+          506.0,
+          350.0
+        ],
+        [
+          578.0,
+          270.0
+        ],
+        [
+          656.0,
+          270.0
+        ],
+        [
+          712.0,
+          342.0
+        ],
+        [
+          712.0,
+          410.0
+        ],
+        [
+          792.0,
+          410.0
+        ],
+        [
+          838.0,
+          350.0
+        ],
+        [
+          880.0,
+          350.0
+        ]
+      ],
+      "tower_slots": [
+        [
+          212.0,
+          227.0
+        ],
+        [
+          362.0,
+          398.0
+        ],
+        [
+          476.0,
+          240.0
+        ],
+        [
+          562.0,
+          432.0
+        ],
+        [
+          644.0,
+          212.0
+        ],
+        [
+          772.0,
+          288.0
+        ],
+        [
+          826.0,
+          472.0
+        ]
+      ],
+      "slot_route_min_distance": 58.0,
+      "slot_route_distances": [
+        78.47,
+        72.0,
+        95.88,
+        99.3,
+        58.0,
+        80.51,
+        70.71
+      ],
+      "map_alpha_in_right_hud_area": 0.0,
+      "hud_panel_center_x": 1120.0,
+      "hud_panel_width": 295,
+      "tower_slot_crosses": [
+        {
+          "center": [
+            212.0,
+            227.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            212.0,
+            227.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            362.0,
+            398.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            362.0,
+            398.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            476.0,
+            240.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            476.0,
+            240.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            562.0,
+            432.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            562.0,
+            432.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            644.0,
+            212.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            644.0,
+            212.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            772.0,
+            288.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            772.0,
+            288.0
+          ],
+          "max_centroid_offset": 0.0
+        },
+        {
+          "center": [
+            826.0,
+            472.0
+          ],
+          "cyan_pixels": 4,
+          "centroid": [
+            826.0,
+            472.0
+          ],
+          "max_centroid_offset": 0.0
+        }
+      ]
+    }
+  },
+  "slot_menu": {
+    "right_watch_top_bright_ratio": 0.0,
+    "right_outer_edge_bright_ratio": 0.0
+  },
+  "dialog_screens": [
+    {
+      "name": "main_menu",
+      "bright_panel_bounds": {
+        "x": [
+          293,
+          850
+        ],
+        "y": [
+          127,
+          504
+        ],
+        "center_x": 571.5,
+        "width": 558,
+        "height": 378
+      },
+      "right_watch_top_bright_ratio": 0.0,
+      "right_outer_edge_bright_ratio": 0.0
+    },
+    {
+      "name": "level_select",
+      "bright_panel_bounds": {
+        "x": [
+          279,
+          880
+        ],
+        "y": [
+          117,
+          604
+        ],
+        "center_x": 579.5,
+        "width": 602,
+        "height": 488
+      },
+      "right_watch_top_bright_ratio": 0.0,
+      "right_outer_edge_bright_ratio": 0.0
+    },
+    {
+      "name": "quiz_dialog",
+      "bright_panel_bounds": {
+        "x": [
+          185,
+          928
+        ],
+        "y": [
+          94,
+          598
+        ],
+        "center_x": 556.5,
+        "width": 744,
+        "height": 505
+      },
+      "right_watch_top_bright_ratio": 0.0,
+      "right_outer_edge_bright_ratio": 0.0
+    }
+  ]
+}

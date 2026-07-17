@@ -1,0 +1,68 @@
+﻿.dgb-experiment {
+  border: 1px solid var(--dg-color-surface-border, #e2e8f0);
+  background: var(--dg-color-surface-card, #fff);
+  border-radius: 12px; padding: 14px 16px 16px;
+  max-width: none;
+  width: 100%;
+  box-shadow: 0 2px 6px rgba(15,23,42,0.04);
+}
+.dgb-experiment-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.dgb-experiment-badge {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+  color: var(--dg-color-brand-600, #2f6cf6);
+  background: var(--dg-color-brand-50, #E6F1EA);
+  padding: 3px 8px; border-radius: 999px;
+}
+.dgb-experiment-title { font-size: 14px; font-weight: 600; color: var(--dg-color-text-primary, #0f172a); }
+.dgb-experiment-progress { margin-left: auto; font-size: 12px; color: var(--dg-color-text-tertiary, #94a3b8); }
+.dgb-experiment-bar-outer { height: 4px; border-radius: 2px; background: var(--dg-color-surface-muted, #f1f5f9); margin-bottom: 12px; overflow: hidden; }
+.dgb-experiment-bar-inner { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--dg-color-brand-500, #0E7C4A), var(--dg-color-brand-700, #0A5132)); transition: width .3s ease; }
+.dgb-experiment-steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.dgb-experiment-step { display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--dg-color-surface-border, #e2e8f0); background: var(--dg-color-surface-base, #fff); transition: background .12s ease, border-color .12s ease; }
+.dgb-experiment-step:hover { background: var(--dg-color-surface-muted, #f8fafc); }
+.dgb-experiment-step.done { border-color: #16a34a; background: #f0fdf4; }
+.dgb-experiment-check {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--dg-color-surface-border, #cbd5e1);
+  background: #fff; color: var(--dg-color-text-secondary, #475569);
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s ease;
+}
+.dgb-experiment-check:hover { border-color: var(--dg-color-brand-500, #0E7C4A); color: var(--dg-color-brand-500, #0E7C4A); }
+.dgb-experiment-step.done .dgb-experiment-check { border-color: #16a34a; background: #16a34a; color: #fff; }
+.dgb-experiment-body { flex: 1; }
+.dgb-experiment-step-title { font-size: 13.5px; color: var(--dg-color-text-primary, #0f172a); display: block; margin-bottom: 4px; }
+.dgb-experiment-step-desc { font-size: 13px; color: var(--dg-color-text-secondary, #475569); line-height: 1.5; margin: 0; }
+.dgb-experiment-code {
+  margin: 6px 0 0; padding: 8px 10px; border-radius: 6px;
+  background: #0f172a; color: #e2e8f0;
+  font-family: ui-monospace, monospace; font-size: 11.5px;
+  overflow-x: auto;
+}
+.dgb-experiment-checkpoint {
+  display: inline-block; margin-top: 6px;
+  font-size: 11.5px; color: #b45309; background: #fef9c3;
+  padding: 3px 8px; border-radius: 6px; font-weight: 500;
+}
+.dgb-experiment-result {
+  margin-top: 12px; padding: 10px 12px;
+  border-radius: 8px; background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  font-size: 13px; color: #166534; line-height: 1.5;
+}
+.dgb-experiment-ts { margin-top: 10px; }
+.dgb-experiment-ts-toggle {
+  width: 100%; text-align: left;
+  padding: 8px 10px; border-radius: 8px;
+  border: 1px solid var(--dg-color-surface-border, #e2e8f0);
+  background: var(--dg-color-surface-muted, #f8fafc);
+  color: var(--dg-color-text-secondary, #475569);
+  font-size: 12.5px; cursor: pointer; font-weight: 600;
+  transition: background .12s ease;
+}
+.dgb-experiment-ts-toggle:hover { background: var(--dg-color-surface-base, #fff); }
+.dgb-experiment-ts-list { list-style: none; padding: 8px 0 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.dgb-experiment-ts-item { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca; }
+.dgb-experiment-ts-symptom { font-size: 12.5px; color: #991b1b; font-weight: 500; }
+.dgb-experiment-ts-solution { font-size: 12.5px; color: #166534; }

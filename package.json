@@ -1,0 +1,33 @@
+{
+  "name": "dgbook",
+  "version": "0.0.0",
+  "private": true,
+  "description": "DGBook — 数字教材生产线 + 播放器",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rimraf node_modules",
+    "dg": "pnpm -F @dgbook/cli dg",
+    "dg:lint": "pnpm -F @dgbook/cli dg lint",
+    "godot:runtime:sync": "node packages/edugame/godot/tools/sync_runtime.mjs sync",
+    "godot:runtime:check": "node packages/edugame/godot/tools/sync_runtime.mjs check",
+    "godot:teaching:sync": "node packages/edugame/godot/tools/sync_teaching_assets.mjs sync",
+    "godot:teaching:check": "node packages/edugame/godot/tools/sync_teaching_assets.mjs check",
+    "godot:web:export": "node packages/edugame/godot/tools/export_web.mjs all",
+    "gorest:generate": "node ../.codex-tools/gorest-2d-animation-spritesheet-generator/scripts/gorest-cli.mjs generate",
+    "gorest:latest": "node ../.codex-tools/gorest-2d-animation-spritesheet-generator/scripts/gorest-cli.mjs latest",
+    "gorest:health": "node ../.codex-tools/gorest-2d-animation-spritesheet-generator/scripts/gorest-cli.mjs health"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "~5.6.3",
+    "rimraf": "^6.0.1"
+  }
+}

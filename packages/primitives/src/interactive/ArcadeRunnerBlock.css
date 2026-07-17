@@ -1,0 +1,62 @@
+.dgb-arcade-runner {
+  border-radius: 16px;
+  overflow: hidden;
+  background: #1a1a2e;
+  padding: 16px;
+  color: #fff;
+}
+.dgb-arcade-prompt {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.dgb-arcade-start {
+  text-align: center;
+  padding: 32px;
+}
+.dgb-arcade-start .correct { color: #4ade80; font-weight: 700; }
+.dgb-arcade-start .wrong { color: #f87171; font-weight: 700; }
+.dgb-arcade-start button {
+  margin-top: 16px;
+  padding: 12px 32px;
+  font-size: 18px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  cursor: pointer;
+}
+.dgb-arcade-hud {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.dgb-arcade-canvas {
+  width: 100%;
+  max-width: 600px;
+  height: 300px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.dgb-arcade-result {
+  text-align: center;
+  padding: 24px;
+}
+.dgb-arcade-result.won h3 { color: #4ade80; }
+.dgb-arcade-result.lost h3 { color: #fbbf24; }
+.dgb-arcade-result button {
+  margin-top: 12px;
+  padding: 8px 24px;
+  border: none;
+  border-radius: 8px;
+  background: #667eea;
+  color: #fff;
+  cursor: pointer;
+}
+.dgb-arcade-result .explanation {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #a0a0b0;
+}

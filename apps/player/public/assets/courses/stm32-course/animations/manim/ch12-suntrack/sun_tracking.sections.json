@@ -1,0 +1,68 @@
+[
+    {
+        "name": "step1 \u4e24\u4e2a\u5149\u654f\u7535\u963b\u5206\u7f6e\u4e24\u4fa7",
+        "type": "default.normal",
+        "video": "SunTracking_0000_step1 \u4e24\u4e2a\u5149\u654f\u7535\u963b\u5206\u7f6e\u4e24\u4fa7.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.400000",
+        "nb_frames": "132"
+    },
+    {
+        "name": "step2 \u5149\u5f3a\u5dee\u53cd\u6620\u504f\u8f6c\u65b9\u5411",
+        "type": "default.normal",
+        "video": "SunTracking_0001_step2 \u5149\u5f3a\u5dee\u53cd\u6620\u504f\u8f6c\u65b9\u5411.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "2.800000",
+        "nb_frames": "84"
+    },
+    {
+        "name": "step3 ADC \u8bfb\u5dee\u503c\u9001\u5165 MCU",
+        "type": "default.normal",
+        "video": "SunTracking_0002_step3 ADC \u8bfb\u5dee\u503c\u9001\u5165 MCU.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "2.600000",
+        "nb_frames": "78"
+    },
+    {
+        "name": "step4 PID \u8ba1\u7b97\u8c03\u6574\u91cf",
+        "type": "default.normal",
+        "video": "SunTracking_0003_step4 PID \u8ba1\u7b97\u8c03\u6574\u91cf.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.800000",
+        "nb_frames": "144"
+    },
+    {
+        "name": "step5 \u8235\u673a\u8f6c\u52a8\u6d88\u9664\u504f\u5dee",
+        "type": "default.normal",
+        "video": "SunTracking_0004_step5 \u8235\u673a\u8f6c\u52a8\u6d88\u9664\u504f\u5dee.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "2.800000",
+        "nb_frames": "84"
+    },
+    {
+        "name": "step6 \u95ed\u73af\u8ba9\u677f\u9762\u6b63\u5bf9\u592a\u9633",
+        "type": "default.normal",
+        "video": "SunTracking_0005_step6 \u95ed\u73af\u8ba9\u677f\u9762\u6b63\u5bf9\u592a\u9633.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.200000",
+        "nb_frames": "96"
+    }
+]

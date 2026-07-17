@@ -1,0 +1,68 @@
+[
+    {
+        "name": "step1 \u7cfb\u7edf\u65f6\u949f\u8fdb\u5165\u5b9a\u65f6\u5668",
+        "type": "default.normal",
+        "video": "TimerOverflow_0000_step1 \u7cfb\u7edf\u65f6\u949f\u8fdb\u5165\u5b9a\u65f6\u5668.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "5.700000",
+        "nb_frames": "171"
+    },
+    {
+        "name": "step2 PSC \u9884\u5206\u9891\u5f97\u5230 1MHz",
+        "type": "default.normal",
+        "video": "TimerOverflow_0001_step2 PSC \u9884\u5206\u9891\u5f97\u5230 1MHz.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.000000",
+        "nb_frames": "90"
+    },
+    {
+        "name": "step3 CNT \u6309\u8282\u62cd\u9012\u589e",
+        "type": "default.normal",
+        "video": "TimerOverflow_0002_step3 CNT \u6309\u8282\u62cd\u9012\u589e.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.000000",
+        "nb_frames": "90"
+    },
+    {
+        "name": "step4 \u8fbe\u5230 ARR \u6ea2\u51fa\u5f52\u96f6",
+        "type": "default.normal",
+        "video": "TimerOverflow_0003_step4 \u8fbe\u5230 ARR \u6ea2\u51fa\u5f52\u96f6.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.000000",
+        "nb_frames": "90"
+    },
+    {
+        "name": "step5 \u6ea2\u51fa\u7f6e\u4f4d UIF \u89e6\u53d1\u4e2d\u65ad",
+        "type": "default.normal",
+        "video": "TimerOverflow_0004_step5 \u6ea2\u51fa\u7f6e\u4f4d UIF \u89e6\u53d1\u4e2d\u65ad.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.000000",
+        "nb_frames": "120"
+    },
+    {
+        "name": "step6 \u5468\u671f\u516c\u5f0f 1ms \u5b9a\u65f6",
+        "type": "default.normal",
+        "video": "TimerOverflow_0005_step6 \u5468\u671f\u516c\u5f0f 1ms \u5b9a\u65f6.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.500000",
+        "nb_frames": "135"
+    }
+]

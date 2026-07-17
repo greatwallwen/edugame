@@ -1,0 +1,471 @@
+[
+  {
+    "id": "ch11-i2c-whoami-001",
+    "module": "i2c",
+    "knowledgePoint": "WHO_AM_I 检测",
+    "prompt": "初始化 IMU 时读取 WHO_AM_I 寄存器的主要目的是什么？",
+    "choices": [
+      "确认器件连接和地址正确",
+      "直接计算步数",
+      "刷新 OLED 画面",
+      "进入 STOP 模式"
+    ],
+    "answerIndex": 0,
+    "explanation": "WHO_AM_I 返回固定器件 ID，用来确认 I2C 通信、地址和器件连接正常。",
+    "unlockTag": "i2c"
+  },
+  {
+    "id": "ch11-i2c-odr-001",
+    "module": "i2c",
+    "knowledgePoint": "采样率配置",
+    "prompt": "加速度计 ODR 配置主要决定什么？",
+    "choices": [
+      "传感器输出数据率",
+      "OLED 屏幕宽度",
+      "蓝牙名称",
+      "电池容量"
+    ],
+    "answerIndex": 0,
+    "explanation": "ODR 是输出数据率，决定传感器多久产生一次新数据。",
+    "unlockTag": "i2c"
+  },
+  {
+    "id": "ch11-filter-noise-001",
+    "module": "filter",
+    "knowledgePoint": "滤波抗噪",
+    "prompt": "计步前对加速度信号做滤波，最直接的作用是什么？",
+    "choices": [
+      "减少噪声和抖动造成的误判",
+      "改变 I2C 地址",
+      "提高 OLED 亮度",
+      "关闭中断"
+    ],
+    "answerIndex": 0,
+    "explanation": "滤波能让原始加速度曲线更平滑，减少瞬时噪声触发假峰值。",
+    "unlockTag": "filter"
+  },
+  {
+    "id": "ch11-filter-threshold-001",
+    "module": "filter",
+    "knowledgePoint": "阈值判断",
+    "prompt": "计步阈值设置过低最可能导致什么？",
+    "choices": [
+      "轻微晃动也被误计为步数",
+      "无法读取 WHO_AM_I",
+      "OLED 无法显示中文",
+      "STOP 模式无法唤醒"
+    ],
+    "answerIndex": 0,
+    "explanation": "阈值过低会把小幅晃动当成有效步态峰值，造成计步偏大。",
+    "unlockTag": "filter"
+  },
+  {
+    "id": "ch11-peak-interval-001",
+    "module": "step",
+    "knowledgePoint": "步间隔防抖",
+    "prompt": "计步算法中为什么要设置最小步间隔？",
+    "choices": [
+      "避免一次晃动被重复计为多步",
+      "提高 I2C 时钟频率",
+      "降低 OLED 分辨率",
+      "关闭加速度计"
+    ],
+    "answerIndex": 0,
+    "explanation": "最小步间隔相当于时间防抖，能避免同一次摆动产生多个峰值被重复计步。",
+    "unlockTag": "peak"
+  },
+  {
+    "id": "ch11-peak-mag-001",
+    "module": "step",
+    "knowledgePoint": "合加速度",
+    "prompt": "用三轴加速度计计步时，常计算合加速度 |a| 的原因是什么？",
+    "choices": [
+      "减少手环佩戴方向变化的影响",
+      "直接控制蜂鸣器",
+      "替代所有传感器供电",
+      "让 I2C 变成 SPI"
+    ],
+    "answerIndex": 0,
+    "explanation": "合加速度综合 ax、ay、az，比单轴更不依赖手环具体朝向。",
+    "unlockTag": "peak"
+  },
+  {
+    "id": "ch11-power-stop-001",
+    "module": "power",
+    "knowledgePoint": "STOP 模式",
+    "prompt": "运动手环静止时进入 STOP 模式的主要收益是什么？",
+    "choices": [
+      "降低 MCU 功耗、延长续航",
+      "提高屏幕刷新率",
+      "增加假峰值数量",
+      "改变加速度量程"
+    ],
+    "answerIndex": 0,
+    "explanation": "STOP 模式会关闭大部分时钟并保留必要状态，适合可穿戴设备省电。",
+    "unlockTag": "power"
+  },
+  {
+    "id": "ch11-power-wom-001",
+    "module": "power",
+    "knowledgePoint": "WOM 运动唤醒",
+    "prompt": "WOM 运动唤醒适合解决什么问题？",
+    "choices": [
+      "静止低功耗，运动时再唤醒 MCU",
+      "把 OLED 变成触摸屏",
+      "让 PPG 不需要光源",
+      "跳过 I2C 初始化"
+    ],
+    "answerIndex": 0,
+    "explanation": "WOM 由 IMU 检测运动并产生中断，能让 MCU 平时休眠，运动时恢复工作。",
+    "unlockTag": "power"
+  },
+  {
+    "id": "ch11-i2c-pullup-001",
+    "module": "i2c",
+    "knowledgePoint": "I2C 上拉电阻",
+    "prompt": "I2C 总线上的 SCL/SDA 通常需要上拉电阻，主要原因是什么？",
+    "choices": [
+      "让开漏输出能回到稳定高电平",
+      "让 OLED 分辨率翻倍",
+      "让电池容量增加",
+      "让计步阈值自动归零"
+    ],
+    "answerIndex": 0,
+    "explanation": "I2C 常见为开漏/开集输出，器件只能主动拉低，总线回到高电平依赖上拉电阻。",
+    "unlockTag": "i2c"
+  },
+  {
+    "id": "ch11-filter-window-001",
+    "module": "filter",
+    "knowledgePoint": "滑动平均窗口",
+    "prompt": "滑动平均滤波窗口取得过大，最可能带来什么副作用？",
+    "choices": [
+      "动作峰值响应变慢，真实步态可能被抹平",
+      "I2C 地址自动改变",
+      "MCU 无法进入中断",
+      "OLED 字体丢失"
+    ],
+    "answerIndex": 0,
+    "explanation": "窗口越大越平滑，但延迟也更明显，过度平滑会削弱真实步态峰值。",
+    "unlockTag": "filter"
+  },
+  {
+    "id": "ch11-peak-threshold-high-001",
+    "module": "step",
+    "knowledgePoint": "峰值阈值过高",
+    "prompt": "计步峰值阈值设置过高，最容易出现哪种现象？",
+    "choices": [
+      "轻微或慢速步态被漏计",
+      "WHO_AM_I 读数变大",
+      "屏幕颜色反相",
+      "STOP 模式无法保存 RAM"
+    ],
+    "answerIndex": 0,
+    "explanation": "阈值过高会让幅度较小的有效步态达不到触发条件，导致漏计。",
+    "unlockTag": "peak"
+  },
+  {
+    "id": "ch11-power-interrupt-001",
+    "module": "power",
+    "knowledgePoint": "中断唤醒",
+    "prompt": "低功耗设计中使用传感器中断唤醒 MCU，相比轮询最直接的好处是什么？",
+    "choices": [
+      "减少 MCU 长时间空转等待",
+      "让 I2C 不需要时钟线",
+      "让 OLED 自动变亮",
+      "让阈值判断失效"
+    ],
+    "answerIndex": 0,
+    "explanation": "中断唤醒让 MCU 在无事件时休眠，有事件再恢复处理，比持续轮询更省电。",
+    "unlockTag": "power"
+  },
+  {
+    "id": "ch11-night-run-i2c-odr-001",
+    "level": 2,
+    "module": "i2c",
+    "knowledgePoint": "ODR 采样率配置",
+    "prompt": "夜跑时 WHO_AM_I 正常，但运动数据更新过慢，最应该优先检查哪项配置？",
+    "choices": [
+      "加速度计 ODR 输出数据率",
+      "OLED 字体大小",
+      "蜂鸣器频率",
+      "电池外壳颜色"
+    ],
+    "answerIndex": 0,
+    "explanation": "WHO_AM_I 正常只能说明器件通信和地址基本正确，运动数据更新节奏还要看 ODR 等采样配置。",
+    "unlockTag": "i2c"
+  },
+  {
+    "id": "ch11-night-run-filter-noise-001",
+    "level": 2,
+    "module": "filter",
+    "knowledgePoint": "滤波抗噪",
+    "prompt": "夜跑中步数偶尔跳变，但设备连接稳定，滤波最直接解决的是什么？",
+    "choices": [
+      "减少噪声和抖动造成的误判",
+      "改变 I2C 器件地址",
+      "提高 OLED 亮度",
+      "关闭所有中断"
+    ],
+    "answerIndex": 0,
+    "explanation": "滤波让原始加速度曲线更平滑，可以减少瞬时噪声触发错误判断。",
+    "unlockTag": "filter"
+  },
+  {
+    "id": "ch11-night-run-peak-interval-001",
+    "level": 2,
+    "module": "step",
+    "knowledgePoint": "最小步间隔防抖",
+    "prompt": "一次大幅摆臂后步数短时间连跳，最直接的算法修正是什么？",
+    "choices": [
+      "设置最小步间隔，避免同一次摆动重复计步",
+      "跳过 WHO_AM_I 检查",
+      "提高 OLED 亮度",
+      "永久关闭加速度计"
+    ],
+    "answerIndex": 0,
+    "explanation": "最小步间隔相当于时间防抖，可以避免同一次运动峰值被重复计为多步。",
+    "unlockTag": "peak"
+  },
+  {
+    "id": "ch11-night-run-peak-magnitude-001",
+    "level": 2,
+    "module": "step",
+    "knowledgePoint": "合加速度峰值判断",
+    "prompt": "计步时常计算三轴合加速度 |a|，主要是为了降低什么影响？",
+    "choices": [
+      "手环佩戴方向变化",
+      "I2C 地址冲突",
+      "OLED 显示延迟",
+      "STOP 模式电流"
+    ],
+    "answerIndex": 0,
+    "explanation": "合加速度综合 ax、ay、az，比单轴阈值更不依赖手环当时的具体朝向。",
+    "unlockTag": "peak"
+  },
+  {
+    "id": "ch11-night-run-power-wom-001",
+    "level": 2,
+    "module": "power",
+    "knowledgePoint": "WOM 与 STOP 唤醒",
+    "prompt": "手环静止时希望 MCU 休眠，运动时自动恢复采样，哪种策略最贴近这个目标？",
+    "choices": [
+      "IMU WOM 运动唤醒配合 MCU STOP 模式",
+      "持续刷新 OLED",
+      "一直提高采样率",
+      "取消所有阈值判断"
+    ],
+    "answerIndex": 0,
+    "explanation": "WOM 可以由 IMU 检测运动并唤醒 MCU，STOP 模式则能降低静止时功耗。",
+    "unlockTag": "power"
+  },
+  {
+    "id": "ch11-night-run-mixed-diagnosis-001",
+    "level": 2,
+    "module": "mixed",
+    "knowledgePoint": "综合异常诊断",
+    "prompt": "如果前半段表现为耗电异常，后半段表现为重复计步，最合理的处理思路是什么？",
+    "choices": [
+      "先用低功耗策略处理休眠唤醒，再用峰值防抖处理重复计步",
+      "只检查 OLED 颜色",
+      "只修改 I2C 地址",
+      "把所有传感器永久关闭"
+    ],
+    "answerIndex": 0,
+    "explanation": "真实故障可能跨模块出现，应根据症状阶段分别对应低功耗和计步算法知识点。",
+    "unlockTag": "power"
+  },
+  {
+    "id": "ch11-night-run-i2c-bus-001",
+    "level": 2,
+    "module": "i2c",
+    "knowledgePoint": "I2C 总线排查",
+    "prompt": "夜跑采样偶发丢帧，同时 WHO_AM_I 偶尔读不到，优先应检查哪一类问题？",
+    "choices": [
+      "I2C 连线、上拉和总线时序稳定性",
+      "步数显示字体",
+      "蜂鸣器音量",
+      "地图路线长度"
+    ],
+    "answerIndex": 0,
+    "explanation": "WHO_AM_I 偶发失败说明基础通信链路不稳定，应先排查 I2C 线缆、上拉、电平和时序。",
+    "unlockTag": "i2c"
+  },
+  {
+    "id": "ch11-night-run-filter-lag-001",
+    "level": 2,
+    "module": "filter",
+    "knowledgePoint": "滤波延迟取舍",
+    "prompt": "夜跑时步频变化很快，滤波后计步反应明显滞后，最合理的调整方向是什么？",
+    "choices": [
+      "减小滤波窗口或选择延迟更低的滤波策略",
+      "永久关闭 IMU",
+      "提高 OLED 刷新率",
+      "删除最小步间隔"
+    ],
+    "answerIndex": 0,
+    "explanation": "滤波要在抗噪和响应速度之间取舍，窗口过大时应降低平滑强度或换低延迟策略。",
+    "unlockTag": "filter"
+  },
+  {
+    "id": "ch11-night-run-power-duty-001",
+    "level": 2,
+    "module": "power",
+    "knowledgePoint": "动态采样与续航",
+    "prompt": "夜跑结束后手环仍保持高频采样，最可能造成什么实际问题？",
+    "choices": [
+      "静止阶段耗电偏高，续航缩短",
+      "I2C 地址被清空",
+      "峰值阈值自动升高",
+      "OLED 无法显示中文"
+    ],
+    "answerIndex": 0,
+    "explanation": "运动结束后仍高频采样会让 MCU 和传感器持续耗电，应结合静止检测切换到低功耗策略。",
+    "unlockTag": "power"
+  },
+  {
+    "id": "ch11-final-chain-diagnosis-001",
+    "level": 3,
+    "module": "mixed",
+    "knowledgePoint": "综合链路诊断",
+    "prompt": "手环数据异常时，应该怎样排序排查思路最稳妥？",
+    "choices": [
+      "先确认通信与配置，再看滤波、峰值算法和低功耗策略",
+      "只调整 OLED 字体",
+      "直接关闭所有传感器",
+      "只看电池外壳颜色"
+    ],
+    "answerIndex": 0,
+    "explanation": "综合题先排除基础通信和寄存器配置，再根据症状判断噪声、假峰值或功耗唤醒问题。",
+    "unlockTag": "i2c"
+  },
+  {
+    "id": "ch11-final-filter-peak-001",
+    "level": 3,
+    "module": "mixed",
+    "knowledgePoint": "滤波与峰值配合",
+    "prompt": "如果步数既有随机抖动，又有一次动作重复计步，最合理的组合是？",
+    "choices": [
+      "滤波降低噪声，再用最小步间隔和峰值阈值抑制重复计步",
+      "只改 I2C 地址",
+      "只提高 OLED 亮度",
+      "永久停止采样"
+    ],
+    "answerIndex": 0,
+    "explanation": "噪声和重复计步属于不同层面，通常需要滤波与峰值/时间防抖组合处理。",
+    "unlockTag": "peak"
+  },
+  {
+    "id": "ch11-final-power-wakeup-001",
+    "level": 3,
+    "module": "power",
+    "knowledgePoint": "低功耗唤醒策略",
+    "prompt": "最终验收中设备静止耗电偏高，但运动后又要恢复采样，最合适的策略是？",
+    "choices": [
+      "WOM 运动唤醒配合 MCU STOP 模式",
+      "持续满速采样",
+      "只重画 UI",
+      "取消所有中断"
+    ],
+    "answerIndex": 0,
+    "explanation": "WOM 负责运动唤醒，STOP 模式降低静止功耗，是可穿戴设备常见组合。",
+    "unlockTag": "power"
+  },
+  {
+    "id": "ch11-final-i2c-register-map-001",
+    "level": 3,
+    "module": "i2c",
+    "knowledgePoint": "寄存器配置链路",
+    "prompt": "验收时 IMU 能读到 WHO_AM_I，但输出量程与预期不符，最该检查什么？",
+    "choices": [
+      "量程、ODR 和使能位等寄存器配置是否写入成功",
+      "地图背景是否更换",
+      "题目数量是否为偶数",
+      "按钮圆角是否一致"
+    ],
+    "answerIndex": 0,
+    "explanation": "WHO_AM_I 正常只说明器件可通信，采样行为还取决于量程、ODR、使能位等寄存器配置。",
+    "unlockTag": "i2c"
+  },
+  {
+    "id": "ch11-final-filter-threshold-order-001",
+    "level": 3,
+    "module": "mixed",
+    "knowledgePoint": "滤波与阈值顺序",
+    "prompt": "综合调试中，为什么通常先处理信号滤波，再微调计步阈值？",
+    "choices": [
+      "先降低噪声基线，阈值调参才更稳定",
+      "因为滤波能修改 I2C 地址",
+      "因为阈值只影响 OLED",
+      "因为 STOP 模式必须最后编译"
+    ],
+    "answerIndex": 0,
+    "explanation": "如果噪声基线不稳定，阈值会被迫追着噪声变化；先滤波能让后续阈值调参更可靠。",
+    "unlockTag": "filter"
+  },
+  {
+    "id": "ch11-final-step-false-negative-001",
+    "level": 3,
+    "module": "step",
+    "knowledgePoint": "漏计诊断",
+    "prompt": "如果慢走时经常漏计，但快跑时基本准确，最可能需要调整哪一项？",
+    "choices": [
+      "峰值阈值或最小幅度条件",
+      "I2C 器件地址",
+      "OLED 字号",
+      "电池外壳颜色"
+    ],
+    "answerIndex": 0,
+    "explanation": "慢走峰值幅度较小，漏计通常与阈值、幅度条件或滤波过强有关。",
+    "unlockTag": "peak"
+  },
+  {
+    "id": "ch11-final-power-state-machine-001",
+    "level": 3,
+    "module": "power",
+    "knowledgePoint": "功耗状态机",
+    "prompt": "综合验收中，低功耗策略最好设计成状态机，主要是为了什么？",
+    "choices": [
+      "明确运动、静止、唤醒和采样之间的切换条件",
+      "让题库随机排序",
+      "让路径变得更亮",
+      "让按钮文字变短"
+    ],
+    "answerIndex": 0,
+    "explanation": "状态机能清晰描述不同功耗状态和触发条件，减少静止误唤醒或运动不采样的问题。",
+    "unlockTag": "power"
+  },
+  {
+    "id": "ch11-final-system-test-001",
+    "level": 3,
+    "module": "mixed",
+    "knowledgePoint": "系统级验收",
+    "prompt": "最终验收时，哪组指标最能综合判断手环数据链路是否可靠？",
+    "choices": [
+      "通信成功率、计步误差、静止功耗和唤醒延迟",
+      "背景图片尺寸、按钮颜色、字体名称和音量",
+      "只看 WHO_AM_I 一项",
+      "只看 OLED 是否点亮"
+    ],
+    "answerIndex": 0,
+    "explanation": "系统级验收要覆盖通信、算法准确性和功耗体验，单一指标不足以判断整体可靠性。",
+    "unlockTag": "i2c"
+  },
+  {
+    "id": "ch11-final-priority-tradeoff-001",
+    "level": 3,
+    "module": "mixed",
+    "knowledgePoint": "调参优先级",
+    "prompt": "如果滤波更强能减少误计，但会增加漏计风险，最合理的调参方式是什么？",
+    "choices": [
+      "结合样本数据逐步调窗口、阈值和步间隔，观察误计与漏计的平衡",
+      "直接把滤波开到最大",
+      "完全取消阈值",
+      "只修改 UI 文案"
+    ],
+    "answerIndex": 0,
+    "explanation": "滤波、阈值和步间隔互相影响，应基于真实样本逐步调参，而不是单项拉满。",
+    "unlockTag": "peak"
+  }
+]
+

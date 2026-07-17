@@ -1,0 +1,41 @@
+ # STM32F10x 课程配置（完整版 Iter-71）
+ courseId: stm32f10x-complete
+ version: "1.0.0"
+ title: "嵌入式系统开发与应用（STM32F10x）"
+ subtitle: "基于ARM Cortex-M3·12个项目·从基础到综合"
+ author: "DGBook Team"
+ 
+ chip:
+   model: STM32F103C8T6
+   core: ARM Cortex-M3
+   clock: 72MHz
+ 
+ theme:
+   primary: "#0E7C4A"
+   variant: textbook
+ 
+ # 渐进式分离：源文件仍在 player/ 下
+ sources:
+   manifest_builder: "../../apps/player/public/manifest/manifest_builder.py"
+   chapters_dir: "../../apps/player/public/manifest/chapters"
+   inject_dir: "../../apps/player/public/manifest"
+ 
+ # 12 章清单
+ chapters:
+   - {id: ch1,  title: "认识单片机",       pages: 5}
+   - {id: ch2,  title: "STM32F1开发流程",  pages: 3}
+   - {id: ch3,  title: "GPIO应用",         pages: 7}
+   - {id: ch4,  title: "定时器应用",       pages: 4}
+   - {id: ch5,  title: "PWM输出",          pages: 4}
+   - {id: ch6,  title: "串口通信",         pages: 5}
+   - {id: ch7,  title: "ADC实验",          pages: 4}
+   - {id: ch8,  title: "DAC实验",          pages: 3}
+   - {id: ch9,  title: "环境监测系统",     pages: 5}
+   - {id: ch10, title: "无人停车场",       pages: 4}
+   - {id: ch11, title: "运动手环",         pages: 4}
+   - {id: ch12, title: "追光系统",         pages: 5}
+ 
+ # Renode 仿真预留
+ simulation:
+   backend_url: "http://localhost:5002"
+   ws_url: "ws://localhost:5002"

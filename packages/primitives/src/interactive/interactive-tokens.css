@@ -1,0 +1,40 @@
+/* Iter-66 · 互动题型统一设计令牌（Design Tokens）
+ * 全部 25 种题型 CSS 引用这些变量，确保配色/圆角/反馈视觉一致。
+ * 基准取自 game-kit (games-iter53.css) 绿色体系。 */
+:root {
+  /* 主色（品牌绿） */
+  --ig-primary: #0E7C4A;
+  --ig-primary-hover: #10915A;
+  --ig-primary-soft: #ECFDF5;
+  --ig-primary-border: #A7F3D0;
+
+  /* 容器 */
+  --ig-surface: #fff;
+  --ig-surface-muted: #f8fafc;
+  --ig-border: #e2e8f0;
+  --ig-border-strong: #cbd5e1;
+
+  /* 文字 */
+  --ig-text: #1f2937;
+  --ig-text-muted: #6b7280;
+  --ig-text-sub: #475569;
+  --ig-text-label: #334155;
+
+  /* 答对/答错反馈 */
+  --ig-ok: #16a34a;
+  --ig-ok-bg: #dcfce7;
+  --ig-ng: #dc2626;
+  --ig-ng-bg: #fee2e2;
+
+  /* 计时/警示 */
+  --ig-warn: #D97706;
+
+  /* 圆角（统一三档） */
+  --ig-radius-lg: 14px;  /* 容器 */
+  --ig-radius-md: 10px;  /* 选项/卡片 */
+  --ig-radius-sm: 8px;   /* 小元素/输入 */
+  --ig-radius-pill: 999px;
+
+  /* 阴影 */
+  --ig-shadow: 0 2px 6px rgba(15,23,42,0.04);
+}

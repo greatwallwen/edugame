@@ -1,0 +1,68 @@
+[
+    {
+        "name": "step1 \u6bcf\u4e2a\u8f66\u4f4d\u88c5\u68c0\u6d4b\u4f20\u611f\u5668",
+        "type": "default.normal",
+        "video": "ParkingDetect_0000_step1 \u6bcf\u4e2a\u8f66\u4f4d\u88c5\u68c0\u6d4b\u4f20\u611f\u5668.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.400000",
+        "nb_frames": "132"
+    },
+    {
+        "name": "step2 \u65e0\u8f66\u53cd\u5c04\u5f31 \u7a7a\u95f2",
+        "type": "default.normal",
+        "video": "ParkingDetect_0001_step2 \u65e0\u8f66\u53cd\u5c04\u5f31 \u7a7a\u95f2.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "2.600000",
+        "nb_frames": "78"
+    },
+    {
+        "name": "step3 \u6709\u8f66\u53cd\u5c04\u5f3a \u5360\u7528",
+        "type": "default.normal",
+        "video": "ParkingDetect_0002_step3 \u6709\u8f66\u53cd\u5c04\u5f3a \u5360\u7528.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "2.800000",
+        "nb_frames": "84"
+    },
+    {
+        "name": "step4 MCU \u6c47\u603b\u5404\u8f66\u4f4d\u72b6\u6001",
+        "type": "default.normal",
+        "video": "ParkingDetect_0003_step4 MCU \u6c47\u603b\u5404\u8f66\u4f4d\u72b6\u6001.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "2.800000",
+        "nb_frames": "84"
+    },
+    {
+        "name": "step5 \u663e\u793a\u5c4f\u4e0e\u4e0a\u4f4d\u673a\u5c55\u793a",
+        "type": "default.normal",
+        "video": "ParkingDetect_0004_step5 \u663e\u793a\u5c4f\u4e0e\u4e0a\u4f4d\u673a\u5c55\u793a.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.000000",
+        "nb_frames": "90"
+    },
+    {
+        "name": "step6 \u603b\u7ed3\u8f66\u4f4d\u68c0\u6d4b\u7cfb\u7edf",
+        "type": "default.normal",
+        "video": "ParkingDetect_0005_step6 \u603b\u7ed3\u8f66\u4f4d\u68c0\u6d4b\u7cfb\u7edf.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.200000",
+        "nb_frames": "96"
+    }
+]

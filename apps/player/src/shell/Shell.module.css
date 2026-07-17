@@ -1,0 +1,886 @@
+/* ========== Shell 五区布局 v2.0 ========== */
+
+/* AI气泡动画关键帧 */
+@keyframes dgb-bubble-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes dgb-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.shell {
+  --top-h: var(--dg-layout-shell-topbarheight);
+  --side-w: var(--dg-layout-shell-sidenavwidth);
+  --right-w: var(--dg-layout-shell-righttoolbarwidth);
+  /* Iter-19 · T-19-A · audio-h 仅作为 main 区底部 padding 给浮岛留位，
+     不再作为 grid 行高 — 浮岛 .audio 已 position:fixed 脱离布局流。 */
+  --audio-h: var(--dg-layout-shell-audiobarheight);
+
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: var(--side-w) 1fr var(--right-w);
+  /* Iter-19 · T-19-A · 取消独立 audio 行，main 区高度恢复 ~56px。
+     底部浮岛由 position:fixed bottom:20px 实现，叠在 main 上方。 */
+  grid-template-rows: var(--top-h) 1fr;
+  grid-template-areas:
+    "top  top  top"
+    "side main right";
+  background: var(--dg-color-surface-base);
+  color: var(--dg-color-text-primary);
+  font-family: var(--dg-font-sans);
+  overflow: hidden;
+}
+
+.top    { grid-area: top; }
+.side   { grid-area: side; }
+.main   { grid-area: main; position: relative; }
+.right  { grid-area: right; }
+/* Iter-19 · T-19-A · .audio 不再占 grid 行；改为 fixed 浮岛（详见 L632 区段）。 */
+
+
+.noAudio .audio { display: none !important; }
+.noAudio .sideResizer,
+.noAudio .rightResizer {
+  bottom: 0;
+}
+
+/* ── 可拖拽调整宽度的分隔句柄 ── */
+.sideResizer {
+  position: fixed;
+  left: calc(var(--side-w) - 3px);
+  top: var(--top-h);
+  bottom: var(--audio-h);
+  width: 6px;
+  z-index: 200;
+  cursor: col-resize;
+  background: transparent;
+  transition: background .15s;
+}
+.sideResizer:hover,
+.sideResizer:active {
+  background: var(--dg-color-brand-300, #93c5fd);
+  opacity: .5;
+}
+.rightResizer {
+  position: fixed;
+  right: calc(var(--right-w) - 3px);
+  top: var(--top-h);
+  bottom: var(--audio-h);
+  width: 6px;
+  z-index: 200;
+  cursor: col-resize;
+  background: transparent;
+  transition: background .15s;
+}
+.rightResizer:hover,
+.rightResizer:active {
+  background: var(--dg-color-brand-300, #93c5fd);
+  opacity: .5;
+}
+
+/* 目录可折叠：side 列宽收为 0；side 自身隐藏防止焦点穿透 */
+.shell.sideCollapsed {
+  grid-template-columns: 0 1fr var(--right-w);
+}
+.shell.sideCollapsed .side {
+  visibility: hidden;
+}
+
+/* Phase B · iframe embed=content：仅留 main 区，便于第三方平台贴合自有 chrome */
+.shell.embedContent {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: "main";
+}
+
+/* ========== TopBar v2.0 ========== */
+.topBar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 20px;
+  background: var(--dg-color-surface-card);
+  border-bottom: 1px solid var(--dg-color-surface-border);
+  height: 100%;
+}
+.topLogo {
+  display: flex; align-items: center; gap: 8px;
+  user-select: none;
+  flex-shrink: 0;
+  background: transparent; border: none;
+  padding: 4px 6px; border-radius: 8px;
+  color: inherit; cursor: pointer;
+  transition: background .15s ease;
+}
+.topLogo:hover { background: var(--dg-color-surface-muted); }
+.topLogoDot {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--dg-color-brand-500);
+  color: #fff;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; letter-spacing: 0;
+}
+.topLogoText {
+  display: flex; flex-direction: column; line-height: 1.1; text-align: left;
+}
+.topLogoName {
+  font-weight: 700; font-size: 13px; color: var(--dg-color-text-primary);
+}
+.topLogoSub {
+  font-size: 10px; color: var(--dg-color-text-tertiary); letter-spacing: .05em;
+}
+.topCourse {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 12px;
+  background: var(--dg-color-surface-muted);
+  border: 1px solid var(--dg-color-surface-border);
+  border-radius: 8px;
+  font-size: 13px; font-weight: 500;
+  color: var(--dg-color-text-secondary);
+  flex-shrink: 0;
+}
+.topCourseLabel { max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.topTabs {
+  display: flex; align-items: center; gap: 2px;
+  flex-shrink: 0;
+}
+.topTab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none; background: transparent;
+  font-size: 13px; font-weight: 500;
+  color: var(--dg-color-text-secondary);
+  cursor: pointer; transition: all .15s ease;
+  white-space: nowrap;
+}
+.topTab:hover { background: var(--dg-color-surface-muted); color: var(--dg-color-text-primary); }
+.topTabActive {
+  background: var(--dg-color-brand-50);
+  color: var(--dg-color-brand-600);
+  font-weight: 600;
+}
+.topTabActive:hover { background: var(--dg-color-brand-100); }
+
+.topGrow { flex: 1; }
+.topSearch {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px; min-width: 200px; max-width: 280px;
+  background: var(--dg-color-surface-muted);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--dg-color-text-tertiary);
+  font-size: 13px;
+  transition: border-color .15s ease;
+}
+.topSearch:hover { border-color: var(--dg-color-surface-border); }
+.topSearch input {
+  flex: 1; border: 0; outline: 0; background: transparent;
+  color: var(--dg-color-text-primary);
+  font: inherit;
+}
+.topThemeBtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 10px;
+  border-radius: 999px;
+  background: var(--dg-color-surface-muted);
+  border: 1px solid var(--dg-color-surface-border);
+  color: var(--dg-color-text-secondary);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.topThemeBtn:hover {
+  background: var(--dg-color-brand-50);
+  border-color: var(--dg-color-brand-500);
+  color: var(--dg-color-brand-600);
+}
+.topThemeGlyph { font-size: 14px; line-height: 1; }
+
+/* 专注模式按钮激活态 */
+.topFocusActive {
+  background: var(--dg-color-brand-50) !important;
+  border-color: var(--dg-color-brand-500) !important;
+  color: var(--dg-color-brand-600) !important;
+}
+
+/* 专注模式：隐藏 side + right，main 占满 */
+.focusMode {
+  grid-template-columns: 1fr !important;
+  grid-template-areas:
+    "top"
+    "main"
+    "audio" !important;
+}
+
+/* AI 对话 loading 指示 */
+.rpChatLoading {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px;
+  font-size: 12px; color: var(--dg-color-text-tertiary);
+}
+.rpChatLoadingDot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--dg-color-brand-500);
+  animation: rpChatPulse 1.2s ease-in-out infinite;
+}
+.rpChatLoadingDot:nth-child(2) { animation-delay: 0.2s; }
+.rpChatLoadingDot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes rpChatPulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+/* ========== SideNav v2.1 ========== */
+.sideNav {
+  background: var(--dg-color-surface-card);
+  border-right: 1px solid var(--dg-color-surface-border);
+  overflow-y: auto;
+  padding: 16px 12px;
+  display: flex; flex-direction: column;
+}
+
+/* 环形进度 */
+.sideProgressWrap {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 4px 12px;
+  margin-bottom: 12px;
+}
+.sideProgressRing { flex-shrink: 0; }
+.sideProgressMeta { flex: 1; }
+.sideProgressVal {
+  font-size: 22px; font-weight: 700;
+  color: var(--dg-color-brand-600);
+  line-height: 1;
+}
+.sideProgressLabel {
+  font-size: 11px; color: var(--dg-color-text-tertiary);
+  margin-top: 2px;
+}
+.sideProgressWrap {
+  border-bottom: 1px solid var(--dg-color-surface-border);
+  margin-bottom: 8px;
+}
+
+/* 目录标题 */
+.sideSection {
+  font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  color: var(--dg-color-text-tertiary); text-transform: uppercase;
+  padding: 8px 6px 6px;
+}
+
+/* 可折叠章节 */
+.sideGroup { margin-bottom: 2px; }
+.sideGroupTitle {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 8px;
+  border-radius: 8px;
+  font-size: 13px; font-weight: 600; color: var(--dg-color-text-primary);
+  cursor: pointer;
+  user-select: none;
+  transition: background .12s;
+}
+.sideGroupTitle:hover { background: var(--dg-color-surface-muted); }
+.sideGroupChevron {
+  display: inline-flex; transition: transform .2s;
+  color: var(--dg-color-text-tertiary);
+}
+.sideGroupChevronOpen { transform: rotate(90deg); }
+.sideGroupIcon { color: var(--dg-color-brand-500); flex-shrink: 0; }
+.sideGroupText { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sideGroupProgress {
+  margin-left: auto;
+  font-size: 10px; color: var(--dg-color-text-tertiary);
+  font-weight: 500;
+  background: var(--dg-color-surface-muted);
+  padding: 1px 6px; border-radius: 999px;
+  flex-shrink: 0;
+}
+.sideGroupUnits { padding-left: 8px; }
+
+/* Section 级别折叠（三级目录中间层） */
+.sideSectionTitle {
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 8px 5px 12px;
+  border-radius: 6px;
+  font-size: 12px; font-weight: 500; color: var(--dg-color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+  transition: background .12s;
+}
+.sideSectionTitle:hover { background: var(--dg-color-surface-muted); }
+.sideSectionChevron {
+  display: inline-flex; transition: transform .2s;
+  color: var(--dg-color-text-tertiary);
+  flex-shrink: 0;
+}
+.sideSectionChevronOpen { transform: rotate(90deg); }
+.sideSectionText { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sideSectionProgress {
+  margin-left: auto;
+  font-size: 9px; color: var(--dg-color-text-tertiary);
+  font-weight: 500;
+  padding: 0 4px; border-radius: 999px;
+  flex-shrink: 0;
+}
+.sideSectionPages { padding-left: 4px; }
+
+.sideUnit {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px 6px 10px;
+  margin-left: 4px;
+  font-size: 12px; color: var(--dg-color-text-secondary);
+  border-left: 2px solid transparent;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  transition: all .12s;
+}
+.sideUnit:hover { color: var(--dg-color-text-primary); background: var(--dg-color-surface-muted); }
+.sideUnitActive {
+  color: var(--dg-color-brand-600);
+  background: var(--dg-color-brand-50);
+  border-left-color: var(--dg-color-brand-500);
+  font-weight: 600;
+}
+.sideUnitIcon { flex-shrink: 0; display: flex; align-items: center; }
+.sideUnitDot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--dg-color-text-tertiary);
+}
+.sideUnitText { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sideError {
+  margin: 8px; padding: 10px 12px;
+  border: 1px solid var(--dg-color-surface-border);
+  background: var(--dg-color-surface-muted);
+  color: var(--dg-color-text-secondary);
+  border-radius: 8px;
+  font-size: 12.5px; line-height: 1.5;
+}
+
+/* ========== MainStage ========== */
+.mainStage {
+  position: absolute; inset: 0;
+  overflow-y: auto;   /* 允许 CourseHome 等长页面滚动 */
+  overflow-x: hidden;
+  background: var(--dg-color-surface-base);
+  /* Iter-19 · T-19-A · 浮岛 AudioBar fixed bottom:20px + 高 60px ≈ 80px。
+     给滚动容器底部留出 96px padding，最后一段内容不会被浮岛遮挡。 */
+  padding-bottom: 96px;
+  scroll-padding-bottom: 96px;
+}
+.mainHint {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  pointer-events: none;
+  color: var(--dg-color-text-tertiary);
+  text-align: center;
+}
+.mainHint h2 {
+  margin: 0 0 8px; font-size: 22px; font-weight: 600;
+  color: var(--dg-color-text-secondary);
+  letter-spacing: .01em;
+}
+.mainHint p { margin: 0; font-size: 13px; }
+
+/* ========== RightPanel v2.0 ========== */
+.rightPanel {
+  background: var(--dg-color-surface-card);
+  border-left: 1px solid var(--dg-color-surface-border);
+  overflow-y: auto;
+  padding: 14px 14px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* ══ RightPanel 极简重构 ══ */
+
+/* ── Header 行：头像 + 标题 + 朗读icon ── */
+.rpHeader {
+  display: flex; align-items: center; gap: 10px;
+}
+.rpAvatar {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--dg-color-brand-500), var(--dg-color-brand-700));
+  color: var(--dg-color-text-inverse, #fff);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--dg-color-brand-500) 28%, transparent);
+  border: 1px solid color-mix(in srgb, var(--dg-color-brand-500) 18%, transparent);
+}
+.rpAvatarEmoji { font-size: 20px; line-height: 1; }
+.rpAvatarChar {
+  font-size: 18px; font-weight: 800;
+  font-family: var(--dg-font-serif, var(--dg-font-sans));
+  line-height: 1; letter-spacing: 0;
+}
+.rpHeaderText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.rpTitle {
+  font-size: 15px; font-weight: 700;
+  color: var(--dg-color-text-primary);
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+}
+.rpTitleSub {
+  font-size: 11.5px; font-weight: 500;
+  color: var(--dg-color-text-tertiary);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  margin-top: 2px;
+}
+.rpWelcomeSub {
+  font-size: 12.5px; color: var(--dg-color-text-secondary);
+  margin: 6px 0 12px 50px;
+  line-height: 1.55;
+}
+
+/* 朗读 icon button — 右上角小圆钮 */
+.rpTtsBtn {
+  width: 30px; height: 30px; border-radius: 8px; border: none;
+  background: var(--dg-color-surface-muted);
+  color: var(--dg-color-brand-500);
+  display: grid; place-items: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: background .12s, color .12s;
+}
+.rpTtsBtn:hover { background: var(--dg-color-brand-50); color: var(--dg-color-brand-600); }
+.rpTtsBtn:disabled { opacity: .4; cursor: not-allowed; }
+.rpTtsBtnActive { background: var(--dg-color-brand-500) !important; color: #fff !important; }
+
+/* ── 讲师讲解：引用块内联样式 ── */
+.rpScriptBlock {
+  border-left: 3px solid var(--dg-color-brand-500);
+  background: var(--dg-color-surface-muted);
+  border-radius: 0 8px 8px 0;
+  padding: 8px 10px;
+  margin-bottom: 2px;
+}
+.rpScriptLabel {
+  font-size: 10px; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--dg-color-brand-500);
+  margin-bottom: 4px;
+}
+.rpScriptText {
+  margin: 0; font-size: 12px; line-height: 1.65;
+  color: var(--dg-color-text-secondary);
+  word-break: break-word;
+  display: -webkit-box; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rpScriptTextExpanded {
+  display: block;
+}
+.rpScriptMore {
+  font-size: 11px; color: var(--dg-color-brand-500);
+  background: none; border: none; padding: 2px 0;
+  cursor: pointer; margin-top: 3px;
+}
+.rpScriptMore:hover { color: var(--dg-color-brand-700); }
+
+/* ── FAQ chips — 水平 wrap ── */
+.rpFaqSection {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.rpFaqTitle {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 700;
+  color: var(--dg-color-text-tertiary);
+  text-transform: uppercase; letter-spacing: .06em;
+  margin-bottom: 2px;
+}
+.rpFaqChips {
+  display: flex; flex-wrap: wrap; gap: 5px;
+}
+.rpQuickQ {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px;
+  background: var(--dg-color-surface-card);
+  border: 1px solid var(--dg-color-surface-border);
+  border-radius: 999px;
+  font-size: 11px; color: var(--dg-color-text-secondary);
+  cursor: pointer; line-height: 1.3; max-width: 100%;
+  text-align: left; white-space: normal;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.rpQuickQ:hover { border-color: var(--dg-color-brand-400); color: var(--dg-color-brand-600); background: var(--dg-color-brand-50); }
+
+/* 迷你对话 */
+.rpChat { margin-top: 10px; }
+.rpChatMsg {
+  display: flex; gap: 6px; align-items: flex-start;
+  margin-bottom: 4px; font-size: 12px;
+}
+.rpChatRole {
+  flex-shrink: 0; width: 28px; text-align: center;
+  font-weight: 600; font-size: 10px;
+  padding: 2px 4px; border-radius: 4px;
+}
+.rpChatTutor .rpChatRole { background: var(--dg-color-brand-50); color: var(--dg-color-brand-600); }
+.rpChatUser .rpChatRole { background: var(--dg-color-surface-muted); color: var(--dg-color-text-tertiary); }
+.rpChatText {
+  flex: 1; min-width: 0; padding: 6px 8px; border-radius: 8px;
+  background: var(--dg-color-surface-card);
+  border: 1px solid var(--dg-color-surface-border);
+  color: var(--dg-color-text-secondary); line-height: 1.4;
+  word-break: break-word;
+  /* 支持 ChatMarkdown 内部 block 元素正确布局 */
+  display: block;
+  overflow: hidden;
+}
+/* ★ sources 和 followUps 已移到 rpChatMsg 外部，作为独立块 */
+.rpChatSources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 6px 34px;
+}
+.rpChatSourceTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--dg-color-brand-700);
+  background: var(--dg-color-brand-50);
+  border: 1px solid var(--dg-color-brand-100);
+}
+.rpChatInputRow {
+  display: flex; gap: 6px; margin-top: 8px;
+}
+
+/* ★ 追问建议 chips — 独立块，在 rpChatMsg 外部渲染 */
+.rpFollowUps {
+  margin: 4px 0 8px 34px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.rpFollowUpsLabel {
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--dg-color-text-tertiary, #94a3b8);
+  margin-bottom: 2px;
+}
+.rpFollowUpBtn {
+  display: block; text-align: left;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--dg-color-brand-200, #c3d7ff);
+  background: var(--dg-color-brand-50, #eaf0ff);
+  color: var(--dg-color-brand-700, #1d4ed8);
+  font-size: 11px; line-height: 1.4;
+  cursor: pointer;
+  transition: background .14s, border-color .14s;
+  width: 100%;
+}
+.rpFollowUpBtn:hover {
+  background: var(--dg-color-brand-100, #d6e4ff);
+  border-color: var(--dg-color-brand-400, #7ba3ff);
+  border-style: solid;
+}
+.rpChatInput {
+  flex: 1; padding: 6px 10px;
+  border-radius: 8px; border: 1px solid var(--dg-color-surface-border);
+  background: var(--dg-color-surface-card);
+  font-size: 12px; color: var(--dg-color-text-primary);
+  outline: none;
+}
+.rpChatInput:focus { border-color: var(--dg-color-brand-400); }
+.rpChatSend {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: none; background: var(--dg-color-brand-500);
+  color: #fff; display: grid; place-items: center;
+  cursor: pointer; flex-shrink: 0;
+}
+.rpChatSend:hover { background: var(--dg-color-brand-600); }
+.rpChatSend:disabled { opacity: .5; cursor: not-allowed; }
+
+/* 学习进度 — 仅展示真实可计算数据 */
+.rpProgressRow {
+  display: flex; align-items: baseline; gap: 8px;
+  margin-bottom: 8px;
+}
+.rpProgressVal {
+  font-size: 22px; font-weight: 700;
+  color: var(--dg-color-text-primary); line-height: 1;
+}
+.rpProgressUnit {
+  font-size: 13px; font-weight: 500;
+  color: var(--dg-color-text-tertiary);
+}
+.rpProgressLabel {
+  font-size: 12px; color: var(--dg-color-text-tertiary);
+}
+.rpProgressTrack {
+  height: 6px; border-radius: 3px;
+  background: var(--dg-color-surface-border);
+  overflow: hidden;
+}
+.rpProgressFill {
+  height: 100%; border-radius: 3px;
+  background: var(--dg-color-brand-500);
+  transition: width .4s ease;
+}
+
+/* ========== Roundtable AudioBar v3 · 浮岛卡片（Iter-17 · T-17-A） ==========
+   参考 OpenMAIC PresentationBubbleCard 的视觉语言（参考不是照抄）：
+   - footer (.audio) 仍占满 grid-area: audio audio audio，但自身透明，flex center
+   - 内容容器 .audioBar 是浮岛卡片：
+       max-width: 1080px / margin: auto / 距底栏边 12px / border-radius: 22px
+       box-shadow: 0 18px 50px -20px rgba(0,0,0,.35)
+       backdrop-filter: blur(14px) + 半透明白
+   - 这样视觉上 AudioBar 浮在主内容上方，与底栏分离，跟用户参考截图（5G教材）
+     视觉语言一致。floating layout 与 Iter-16 的 main 区对齐策略不冲突 —
+     浮岛 max-width 1080 < main 1026，但浮岛是 viewport-centered 的，所以
+     在 viewport=1536 时左右 padding ≈ 228px 自动避开 SideNav/RightPanel。
+   - 不再有 grid 三列布局；改为 flex（auto / 1fr / auto）。
+   Iter-19 · T-19-A · 进一步：footer 改为 position:fixed 浮于 viewport 底部 20px，
+     不再占 grid 行；main 区因此恢复 56px 高度，bottom 留出空白让浮岛真正"漂"。
+     z-index 50（低于 dialog/HighlightOverlay 9000+，高于普通内容）。 */
+.audio {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 20px;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 16px;
+  pointer-events: none;
+  background: transparent !important;
+  border-top: none !important;
+}
+.audio > .audioBar {
+  pointer-events: auto;
+}
+.audioBar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 1080px;
+  min-height: 60px;
+  padding: 8px 18px;
+  background: color-mix(in srgb, var(--dg-color-surface-card) 92%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid color-mix(in srgb, var(--dg-color-surface-border) 70%, transparent);
+  border-radius: 22px;
+  box-shadow:
+    0 18px 50px -20px rgba(0, 0, 0, 0.35),
+    0 2px 8px -2px rgba(0, 0, 0, 0.06);
+}
+
+/* ── 左区：讲师头像（OpenMAIC PresentationBubbleCard 风格） ──
+   - audioAvatar 是个轻量卡片容器（无外背景，仅约束 gap/padding）
+   - audioAvatarCircle 是真圆形头像（带描边 + speaking 时呼吸光环）
+   - audioAvatarMeta 双行文字：role 上小、name 下大 */
+.audioAvatar {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+  padding-right: 8px;
+  border-right: 1px solid color-mix(in srgb, var(--dg-color-surface-border) 60%, transparent);
+}
+.audioAvatarCircle {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--dg-color-brand-500) 14%, var(--dg-color-surface-base));
+  border: 2px solid var(--dg-color-brand-500);
+  display: grid; place-items: center;
+  color: var(--dg-color-brand-500);
+  transition: box-shadow 0.3s, border-color 0.3s;
+}
+.audioAvatarCircle img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+}
+.audioAvatarSpeaking {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--dg-color-brand-500) 18%, transparent);
+  animation: avatarPulse 2s ease-in-out infinite;
+}
+@keyframes avatarPulse {
+  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--dg-color-brand-500) 18%, transparent); }
+  50%      { box-shadow: 0 0 0 6px color-mix(in srgb, var(--dg-color-brand-500) 30%, transparent); }
+}
+.audioAvatarMeta {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+.audioAvatarRole {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--dg-color-brand-500);
+  white-space: nowrap; line-height: 1.2;
+  text-transform: uppercase;
+}
+.audioAvatarName {
+  font-size: 13px; font-weight: 600;
+  color: var(--dg-color-text-primary);
+  white-space: nowrap; line-height: 1.2;
+}
+
+/* ── 中区：语音气泡（Iter-17 浮岛版：单行省略号 + 进度条贴底） ── */
+.audioBubbleWrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.audioBubble {
+  position: relative;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--dg-color-surface-muted);
+  border: 1px solid var(--dg-color-surface-border);
+  border-radius: 999px;
+  padding: 8px 16px;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.audioBubbleActive {
+  background: color-mix(in srgb, var(--dg-color-brand-500) 8%, var(--dg-color-surface-base));
+  border-color: color-mix(in srgb, var(--dg-color-brand-500) 30%, transparent);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--dg-color-brand-500) 15%, transparent);
+}
+.audioBubbleWave { flex-shrink: 0; color: var(--dg-color-brand-500); }
+.audioBubbleText {
+  flex: 1; min-width: 0;
+  font-size: 13px; line-height: 1.35;
+  color: var(--dg-color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.18s, font-weight 0.18s;
+}
+/* Iter-18 · T-18-A · subtitle 跟读样式：playing 时颜色加深 + 加粗，
+   末尾加闪烁光标提示当前正在朗读这段文字。 */
+.audioBubbleTextFollowing {
+  color: var(--dg-color-text-primary);
+  font-weight: 600;
+  font-feature-settings: "ss01";
+  letter-spacing: 0.01em;
+}
+.audioBubbleCursor {
+  display: inline-block;
+  margin-left: 2px;
+  color: var(--dg-color-brand-500);
+  font-weight: 700;
+  animation: dgb-cursor-blink 0.9s steps(2, jump-none) infinite;
+  transform: translateY(-1px);
+}
+
+/* ── 控制组 ── */
+.audioControls {
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+}
+.audioBtn {
+  width: 30px; height: 30px; border: 0; background: transparent;
+  display: grid; place-items: center; border-radius: 50%;
+  color: var(--dg-color-text-secondary); cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.audioBtn:hover { color: var(--dg-color-text-primary); background: var(--dg-color-surface-muted); }
+.audioBtn:disabled { opacity: 0.35; cursor: default; }
+.audioPlay {
+  background: var(--dg-color-brand-500); color: #fff; width: 34px; height: 34px;
+  box-shadow: 0 3px 12px rgba(79,125,255,.30);
+}
+.audioPlay:hover { background: var(--dg-color-brand-600); color: #fff; }
+/* Iter-17 · T-17-A · Stop 按钮：hover 红，提示\"彻底终止当前讲解\" */
+.audioStop:hover {
+  color: #fff;
+  background: #ef4444;
+}
+.audioTrack {
+  width: 100%; height: 3px; border-radius: 1.5px;
+  background: var(--dg-color-surface-border);
+  position: relative; overflow: hidden;
+}
+.audioFill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg, var(--dg-color-brand-500), var(--dg-color-node-purple));
+  border-radius: 1.5px; transition: width 0.3s linear;
+}
+.audioSpeed {
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--dg-color-surface-muted);
+  font-size: 11px; color: var(--dg-color-text-secondary);
+  cursor: pointer; border: 0; font-weight: 600;
+  transition: background 0.15s;
+}
+.audioSpeed:hover { background: var(--dg-color-surface-border); }
+
+/* ========== Chip-dark theme overrides ========== */
+.chipDark {
+  --dg-color-surface-base-grid: rgba(61,215,224,.08);
+}
+.chipDark .mainStage {
+  background: var(--dg-color-surface-base);
+}
+.chipDark .topLogoDot {
+  background: linear-gradient(135deg, var(--dg-color-brand-500), var(--dg-color-node-green));
+  box-shadow: 0 2px 12px rgba(61,215,224,.45);
+}
+.chipDark .audioPlay {
+  box-shadow: 0 4px 14px rgba(61,215,224,.35);
+}
+.chipDark .topLogoDot {
+  background: var(--dg-color-brand-500);
+  color: var(--dg-color-surface-base);
+}
+.chipDark .rpAvatar {
+  background: var(--dg-color-surface-card);
+  color: var(--dg-color-brand-500);
+}
+.chipDark .topSearch {
+  background: var(--dg-color-surface-base);
+}
+
+/* ========== Chip-light theme overrides ========== */
+.chipLight .mainStage {
+  background: var(--dg-color-surface-base);
+}
+.chipLight .topLogoDot {
+  background: linear-gradient(135deg, var(--dg-color-brand-500), var(--dg-color-node-green));
+  box-shadow: 0 2px 10px rgba(14,165,176,.30);
+}
+.chipLight .audioPlay {
+  box-shadow: 0 4px 12px rgba(14,165,176,.25);
+}
+
+
+/* ── 讨论模式 ── */
+.rpDiscussionBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin: 0 0 8px;
+  background: var(--dg-color-brand-50, #e6f7f8);
+  border: 1px solid var(--dg-color-brand-200, #80deea);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--dg-color-text-primary, #333);
+  line-height: 1.4;
+}
+.rpEndDiscussionBtn {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 4px 12px;
+  border: 1px solid var(--dg-color-brand-400, #26c6da);
+  border-radius: 6px;
+  background: var(--dg-color-brand-500, #0ea5b0);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.rpEndDiscussionBtn:hover {
+  background: var(--dg-color-brand-600, #0c8d96);
+}
+
+@media (max-width: 720px) {
+  .shell {
+    grid-template-columns: minmax(0, var(--side-w)) minmax(0, 1fr) 0;
+  }
+
+  .shell.sideCollapsed {
+    grid-template-columns: 0 minmax(0, 1fr) 0;
+  }
+
+  .rightPanel,
+  .rightResizer {
+    display: none;
+  }
+}

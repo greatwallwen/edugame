@@ -1,0 +1,170 @@
+@import './interactive-tokens.css';
+/**
+ * CodeClozeBlock.css — 代码填空互动样式
+ * 全局类：dgb-cc-* 前缀（同 dgb-block-* 风格）
+ */
+
+.dgb-cc-root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(180deg, var(--ig-surface-muted) 0%, var(--ig-surface-muted) 100%);
+  border: 1px solid var(--ig-border-strong);
+  border-radius: 8px;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+
+.dgb-cc-prompt {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ig-text);
+  line-height: 1.6;
+}
+
+.dgb-cc-code {
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--ig-text);
+  color: var(--ig-border);
+  border-radius: 6px;
+  font-family: 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.dgb-cc-text {
+  white-space: pre-wrap;
+}
+
+/* 语言标记区分（暂只做颜色区分，未来接 prism） */
+.dgb-cc-code .language-c .dgb-cc-text,
+.dgb-cc-code .language-cpp .dgb-cc-text {
+  color: var(--ig-border);
+}
+
+.dgb-cc-blank {
+  display: inline-block;
+  min-width: 90px;
+  padding: 2px 8px;
+  margin: 0 2px;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ig-warn);
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid var(--ig-warn);
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.dgb-cc-blank:focus {
+  border-color: var(--ig-warn);
+  background: rgba(253, 224, 71, 0.18);
+  box-shadow: 0 0 0 2px rgba(253, 224, 71, 0.3);
+}
+
+.dgb-cc-blank--correct {
+  color: var(--ig-primary-border);
+  background: rgba(134, 239, 172, 0.16);
+  border-color: var(--ig-ok);
+}
+
+.dgb-cc-blank--wrong {
+  color: var(--ig-ng-bg);
+  background: rgba(252, 165, 165, 0.16);
+  border-color: var(--ig-ng);
+}
+
+.dgb-cc-feedback {
+  list-style: none;
+  margin: 0;
+  padding: 12px 14px;
+  background: white;
+  border: 1px solid var(--ig-border);
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.dgb-cc-feedback li {
+  display: block;
+  padding: 4px 0;
+}
+
+.dgb-cc-fb-ok {
+  color: var(--ig-primary);
+}
+
+.dgb-cc-fb-bad {
+  color: var(--ig-ng);
+}
+
+.dgb-cc-fb-id {
+  font-family: 'Fira Code', monospace;
+  padding: 1px 6px;
+  margin-right: 6px;
+  background: var(--ig-surface-muted);
+  color: var(--ig-text-sub);
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.dgb-cc-fb-value {
+  font-family: 'Fira Code', monospace;
+  font-weight: 600;
+}
+
+.dgb-cc-fb-expected {
+  margin-left: 12px;
+  color: var(--ig-text-sub);
+  font-style: italic;
+}
+
+.dgb-cc-fb-rationale {
+  display: block;
+  margin-top: 4px;
+  margin-left: 24px;
+  color: var(--ig-text-muted);
+  font-size: 12px;
+}
+
+.dgb-cc-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dgb-cc-submit,
+.dgb-cc-reset {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background: var(--ig-primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.dgb-cc-submit:hover:not(:disabled) {
+  background: var(--ig-primary);
+  transform: translateY(-1px);
+}
+
+.dgb-cc-submit:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.dgb-cc-reset {
+  background: var(--ig-text-muted);
+}
+
+.dgb-cc-reset:hover {
+  background: var(--ig-text-sub);
+}

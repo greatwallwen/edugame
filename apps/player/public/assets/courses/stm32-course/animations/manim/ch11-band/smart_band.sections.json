@@ -1,0 +1,68 @@
+[
+    {
+        "name": "step1 \u5149\u7535\u4f20\u611f\u5668\u6d4b\u8109\u640f\u6ce2",
+        "type": "default.normal",
+        "video": "SmartBand_0000_step1 \u5149\u7535\u4f20\u611f\u5668\u6d4b\u8109\u640f\u6ce2.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.500000",
+        "nb_frames": "135"
+    },
+    {
+        "name": "step2 \u63d0\u53d6\u5fc3\u7387 BPM",
+        "type": "default.normal",
+        "video": "SmartBand_0001_step2 \u63d0\u53d6\u5fc3\u7387 BPM.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.800000",
+        "nb_frames": "114"
+    },
+    {
+        "name": "step3 \u52a0\u901f\u5ea6\u8ba1\u68c0\u6d4b\u8fd0\u52a8",
+        "type": "default.normal",
+        "video": "SmartBand_0002_step3 \u52a0\u901f\u5ea6\u8ba1\u68c0\u6d4b\u8fd0\u52a8.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "2.600000",
+        "nb_frames": "78"
+    },
+    {
+        "name": "step4 \u5cf0\u503c\u8ba1\u6570\u5f97\u5230\u6b65\u6570",
+        "type": "default.normal",
+        "video": "SmartBand_0003_step4 \u5cf0\u503c\u8ba1\u6570\u5f97\u5230\u6b65\u6570.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "2.800000",
+        "nb_frames": "84"
+    },
+    {
+        "name": "step5 \u663e\u793a\u4e0e\u84dd\u7259\u540c\u6b65",
+        "type": "default.normal",
+        "video": "SmartBand_0004_step5 \u663e\u793a\u4e0e\u84dd\u7259\u540c\u6b65.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.000000",
+        "nb_frames": "120"
+    },
+    {
+        "name": "step6 \u603b\u7ed3\u624b\u73af\u6570\u636e\u94fe\u8def",
+        "type": "default.normal",
+        "video": "SmartBand_0005_step6 \u603b\u7ed3\u624b\u73af\u6570\u636e\u94fe\u8def.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.200000",
+        "nb_frames": "96"
+    }
+]

@@ -1,0 +1,59 @@
+.dgb-gfx {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.dgb-gfx-frame {
+  position: relative;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--dg-color-surface-muted, #f8fafc);
+  border: 1px solid var(--dg-color-surface-border, #e2e8f0);
+}
+
+.dgb-gfx img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  background: var(--dg-color-surface-card, #fff);
+  transition: opacity .18s ease;
+}
+
+.dgb-gfx-loading,
+.dgb-gfx-error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  font-size: 12.5px;
+  color: var(--dg-color-text-tertiary, #94a3b8);
+  text-align: center;
+}
+
+.dgb-gfx-error {
+  color: var(--dg-color-state-danger, #dc2626);
+}
+
+.dgb-gfx figcaption {
+  font-size: 12.5px;
+  color: var(--dg-color-text-tertiary, #94a3b8);
+}
+
+/* ── inline SVG 渲染 ── */
+.dgb-gfx-svg-frame {
+  min-height: unset;
+  padding: 12px;
+  background: var(--dg-color-surface-card, #fff);
+}
+.dgb-gfx-svg-frame svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}

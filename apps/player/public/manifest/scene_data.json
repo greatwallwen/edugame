@@ -1,0 +1,945 @@
+{
+  "p1-goals": {
+    "title": "认识单片机 — 任务导入",
+    "items": [
+      {
+        "id": "item_001",
+        "type": "title",
+        "text": "什么是单片机？"
+      },
+      {
+        "id": "item_002",
+        "type": "point",
+        "text": "CPU + 存储器 + 外设 = 一颗芯片上的微型计算机"
+      },
+      {
+        "id": "item_003",
+        "type": "point",
+        "text": "每天接触50+颗MCU：手机、空调、汽车、血糖仪…无处不在"
+      },
+      {
+        "id": "item_004",
+        "type": "highlight",
+        "text": "STM32F103是嵌入式入门首选平台",
+        "note": "兼顾性能、生态与学习成本"
+      },
+      {
+        "id": "item_005",
+        "type": "point",
+        "text": "学习路径：从概念→环境→GPIO→外设→系统"
+      },
+      {
+        "id": "item_006",
+        "type": "point",
+        "text": "本阶段任务：掌握基本概念 + 理解典型结构与开发流程"
+      }
+    ],
+    "actions": [
+      {
+        "type": "spotlight",
+        "itemId": "item_001"
+      },
+      {
+        "type": "speech",
+        "text": "同学们好！今天我们开启嵌入式开发的第一课——认识单片机。别被名字吓到，它其实就是一个‘麻雀虽小、五脏俱全’的微型电脑。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_002"
+      },
+      {
+        "type": "speech",
+        "text": "看这里：单片机不是一堆零件拼起来的，而是把CPU、RAM/ROM、GPIO、定时器这些核心部件，全部集成在一块小小的硅芯片上。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_003"
+      },
+      {
+        "type": "speech",
+        "text": "你可能没意识到——早上用智能手环测心率，坐电梯按楼层，下班刷门禁卡……这些动作背后，都有单片机在默默工作。全球每年生产300亿颗，平均每人每天接触50颗以上！"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_004"
+      },
+      {
+        "type": "speech",
+        "text": "那我们为什么选STM32F103作为入门平台？因为它性价比高、中文资料丰富、开发工具成熟，而且广泛用于国产工业设备和教学实验平台——学了就能用，用了就见效。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_005"
+      },
+      {
+        "type": "speech",
+        "text": "我们的学习不是东一榔头西一棒子，而是有清晰路径：先建立概念认知，再搭建开发环境，接着点亮LED练GPIO，再深入定时器、串口通信，最后整合成完整系统。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_006"
+      },
+      {
+        "type": "speech",
+        "text": "所以，本节课的两个核心任务就是：第一，真正理解单片机是什么、能做什么；第二，搞清楚它的典型结构和从写代码到烧录运行的完整开发流程。准备好了吗？我们出发！"
+      }
+    ]
+  },
+  "p2-gpio-hal": {
+    "title": "认识STM32 — GPIO与HAL库程序设计",
+    "items": [
+      {
+        "id": "item_001",
+        "type": "title",
+        "text": "STM32F103 GPIO与HAL编程核心"
+      },
+      {
+        "id": "item_002",
+        "type": "point",
+        "text": "总线矩阵：AHB(72MHz)、APB2(72MHz)、APB1(36MHz)"
+      },
+      {
+        "id": "item_003",
+        "type": "point",
+        "text": "外设使能：__HAL_RCC_GPIOA_CLK_ENABLE() 必须先调用"
+      },
+      {
+        "id": "item_004",
+        "type": "point",
+        "text": "GPIO八种模式：推挽/开漏/浮空/上拉/下拉/模拟/复用推挽/复用开漏"
+      },
+      {
+        "id": "item_005",
+        "type": "highlight",
+        "text": "推挽可主动输出高低电平；开漏仅能拉低，高电平需外部上拉"
+      },
+      {
+        "id": "item_006",
+        "type": "point",
+        "text": "I2C用开漏，UART TX用复用推挽——模式选错外设不工作！"
+      },
+      {
+        "id": "item_007",
+        "type": "code",
+        "text": "HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);"
+      }
+    ],
+    "actions": [
+      {
+        "type": "spotlight",
+        "itemId": "item_001"
+      },
+      {
+        "type": "speech",
+        "text": "同学们好！今天我们聚焦 STM32F103 的 GPIO 控制和 HAL 库实战，这是嵌入式开发的起点。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_002"
+      },
+      {
+        "type": "speech",
+        "text": "注意看总线结构：AHB 连接高速部件如 Flash 和 DMA；APB2 带 GPIO 和 USART1，跑在 72MHz；APB1 负责定时器、I2C 等低速外设，只有 36MHz。时钟树是理解性能的关键！"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_003"
+      },
+      {
+        "type": "speech",
+        "text": "特别提醒：使用任何 GPIO 前，必须先使能对应端口的时钟！比如操作 PA 口，就调 __HAL_RCC_GPIOA_CLK_ENABLE()。漏掉这句，引脚完全没反应——HAL 库不会自动帮你开时钟哦。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_004"
+      },
+      {
+        "type": "speech",
+        "text": "GPIO 不只是简单的高低电平开关。它有 8 种工作模式，每种都服务于不同场景。比如按键检测常用上拉输入，LED 驱动多用推挽输出，而 I2C 通信必须用开漏。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_005"
+      },
+      {
+        "type": "speech",
+        "text": "这是最关键的区分点！推挽输出像一个双向开关，能稳稳拉高或拉低；开漏只负责‘拉低’，高电平得靠外部电阻上拉——所以 I2C 总线上多个设备才能共享一条线，不会打架。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_006"
+      },
+      {
+        "type": "speech",
+        "text": "记住这个口诀：I2C 用开漏，UART TX 用复用推挽。如果把 UART 的 TX 引脚配成普通推挽，可能干扰通信；配成开漏又发不出高电平——模式选错，外设直接罢工！"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_007"
+      },
+      {
+        "type": "speech",
+        "text": "最后看这行典型代码：用 HAL_GPIO_WritePin 把 PA5 设为高电平。注意参数顺序：端口、引脚号、状态。写法简洁安全，这就是 HAL 库封装的价值。"
+      }
+    ]
+  },
+  "p3-led-blink": {
+    "title": "GPIO应用 — LED闪烁与流水灯",
+    "items": [
+      {
+        "id": "item_001",
+        "type": "title",
+        "text": "GPIO应用：LED闪烁与流水灯"
+      },
+      {
+        "id": "item_002",
+        "type": "point",
+        "text": "LED驱动电路：PA5→220Ω→LED→GND"
+      },
+      {
+        "id": "item_003",
+        "type": "point",
+        "text": "初始化三步：使能时钟→配置模式→默认低电平"
+      },
+      {
+        "id": "item_004",
+        "type": "point",
+        "text": "控制函数：WritePin / TogglePin / ReadPin"
+      },
+      {
+        "id": "item_005",
+        "type": "code",
+        "text": "HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);"
+      },
+      {
+        "id": "item_006",
+        "type": "highlight",
+        "text": "HAL_Delay()是阻塞延时，简单可靠，适合初学者验证逻辑"
+      },
+      {
+        "id": "item_007",
+        "type": "point",
+        "text": "流水灯 = 循环位移 + 多引脚输出（如PA5~PA8）"
+      }
+    ],
+    "actions": [
+      {
+        "type": "spotlight",
+        "itemId": "item_001"
+      },
+      {
+        "type": "speech",
+        "text": "大家好！今天我们动手实现两个经典GPIO案例：单LED闪烁和多LED流水灯。所有操作都基于STM32F103的PA5用户LED，无需额外接线，开箱即用。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_002"
+      },
+      {
+        "type": "speech",
+        "text": "先看硬件连接——PA5推挽输出，经220欧限流电阻驱动LED到GND。注意，GPIO最大灌电流25mA，这个设计完全安全，不会烧芯片。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_003"
+      },
+      {
+        "type": "speech",
+        "text": "软件初始化有三个关键动作：第一，用__HAL_RCC_GPIOA_CLK_ENABLE()打开GPIOA时钟；第二，配置为推挽输出、无上下拉、低速模式；第三，初始设为低电平，确保LED上电不误亮。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_004"
+      },
+      {
+        "type": "speech",
+        "text": "控制LED主要用这三个函数：WritePin直接写高或低，TogglePin一键翻转状态，最常用；ReadPin则用于读取当前电平，比如做按键反馈时会用到。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_005"
+      },
+      {
+        "type": "speech",
+        "text": "比如这行代码，每次调用就让PA5的LED状态反转——亮变灭、灭变亮，配合延时就是标准闪烁节奏，非常简洁直观。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_006"
+      },
+      {
+        "type": "speech",
+        "text": "特别提醒：HAL_Delay()是阻塞式延时，它会停住程序等待指定毫秒数。虽然不适用于实时系统，但对入门练习来说，逻辑清晰、调试方便，是最佳选择。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_007"
+      },
+      {
+        "type": "speech",
+        "text": "最后，流水灯本质是‘点亮一个、熄灭前一个、再点亮下一个’的循环。我们通常用变量左移或右移一位，再用HAL_GPIO_WritePin批量输出到多个引脚，就能看到灯光流动的效果啦！"
+      }
+    ]
+  },
+  "p3-key-int": {
+    "title": "GPIO应用 — 按键扫描与外部中断",
+    "items": [
+      {
+        "id": "item_001",
+        "type": "title",
+        "text": "按键输入的两种实现方式"
+      },
+      {
+        "id": "item_002",
+        "type": "point",
+        "text": "硬件接法：GPIO上拉输入，按键接地 → 按下读低电平"
+      },
+      {
+        "id": "item_003",
+        "type": "point",
+        "text": "轮询扫描：循环读取+20ms延时消抖，简单但占CPU"
+      },
+      {
+        "id": "item_004",
+        "type": "point",
+        "text": "外部中断(EXTI)：引脚电平变化触发，零等待响应"
+      },
+      {
+        "id": "item_005",
+        "type": "point",
+        "text": "NVIC配置：抢占优先级决定能否打断，响应优先级决定排队顺序"
+      },
+      {
+        "id": "item_006",
+        "type": "code",
+        "text": "HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) { if(GPIO_Pin == GPIO_PIN_0) {...} }"
+      },
+      {
+        "id": "item_007",
+        "type": "highlight",
+        "text": "推荐组合：中断触发 + 时间戳消抖，兼顾实时性与可靠性"
+      }
+    ],
+    "actions": [
+      {
+        "type": "spotlight",
+        "itemId": "item_001"
+      },
+      {
+        "type": "speech",
+        "text": "同学们好！今天我们聚焦一个最基础也最关键的外设应用——按键输入。它看似简单，却藏着轮询和中断两条技术路线，背后是嵌入式系统对实时性、资源效率的深层权衡。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_002"
+      },
+      {
+        "type": "speech",
+        "text": "先看硬件：按键一端接GPIO，另一端直接接地；软件必须配置为上拉输入模式。这样，没按下时引脚被内部电阻拉高，读到1；按下后形成通路，读到0——这是所有逻辑的起点。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_003"
+      },
+      {
+        "type": "speech",
+        "text": "轮询方式最直观：在主循环里反复调用HAL_GPIO_ReadPin，再加个20毫秒延时来躲过机械抖动。但它会一直占着CPU，如果系统还有其他任务，响应就会变卡。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_004"
+      },
+      {
+        "type": "speech",
+        "text": "而外部中断EXTI，让GPIO自己‘喊一声’就唤醒CPU——不需要轮询，CPU该干啥干啥，真正实现了事件驱动。比如按键按下瞬间，硬件自动触发中断，响应延迟通常在微秒级。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_005"
+      },
+      {
+        "type": "speech",
+        "text": "但中断多了怎么办？这就靠NVIC控制器来调度。抢占优先级高的中断能打断正在执行的低优先级中断；响应优先级则决定同级中断谁先排队处理——就像医院分诊台，急症插队，普通号按序。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_006"
+      },
+      {
+        "type": "speech",
+        "text": "所有EXTI共用同一个中断服务函数HAL_GPIO_EXTI_Callback，所以你必须在里面用if判断GPIO_Pin参数，区分到底是哪个按键触发的，再跳转到对应处理逻辑。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_007"
+      },
+      {
+        "type": "speech",
+        "text": "最后划重点：单纯用中断还不够，机械抖动仍可能引发多次误触发。最佳实践是——中断只做‘通知’，真判断交给时间戳：记录上次有效触发时刻，间隔小于20ms的全丢弃。这样既快又稳！"
+      }
+    ]
+  },
+  "p4-timer": {
+    "title": "定时器应用 — 定时器原理与中断应用",
+    "items": [
+      {
+        "id": "item_001",
+        "type": "title",
+        "text": "STM32定时器核心原理与实战"
+      },
+      {
+        "id": "item_002",
+        "type": "point",
+        "text": "PSC、ARR、CNT 是定时器三大核心寄存器"
+      },
+      {
+        "id": "item_003",
+        "type": "point",
+        "text": "溢出周期 T = (PSC+1)×(ARR+1)/CK_CNT，例：72MHz下PSC=71, ARR=999 → T=1ms"
+      },
+      {
+        "id": "item_004",
+        "type": "highlight",
+        "text": "TIM2~5挂载在APB1总线，实际时钟为72MHz（APB1分频后×2）"
+      },
+      {
+        "id": "item_005",
+        "type": "point",
+        "text": "中断回调函数：HAL_TIM_PeriodElapsedCallback()，需用户重写"
+      },
+      {
+        "id": "item_006",
+        "type": "point",
+        "text": "多路定时：用1ms基础定时器 + 多个计数变量，实现500ms/1000ms等不同周期任务"
+      },
+      {
+        "id": "item_007",
+        "type": "code",
+        "text": "static uint16_t cnt_500ms = 0;\\nif (++cnt_500ms >= 500) {\\n  cnt_500ms = 0;\\n  // 执行500ms任务\\n}"
+      }
+    ],
+    "actions": [
+      {
+        "type": "spotlight",
+        "itemId": "item_001"
+      },
+      {
+        "type": "speech",
+        "text": "同学们好！今天我们聚焦STM32定时器最实用的两个层面：底层原理怎么算准时间，上层应用怎么灵活调度任务。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_002"
+      },
+      {
+        "type": "speech",
+        "text": "先看硬件基础——PSC负责预分频，ARR设定重装载值，CNT实时计数。这三个寄存器就像钟表的齿轮、刻度和指针，共同决定定时精度。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_003"
+      },
+      {
+        "type": "speech",
+        "text": "来算个经典例子：PSC设为71，ARR设为999，系统主频72MHz，那溢出周期就是(71+1)×(999+1)÷72,000,000，刚好等于1毫秒。这个公式一定要熟记！"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_004"
+      },
+      {
+        "type": "speech",
+        "text": "特别注意！TIM2到TIM5接在APB1总线上，而F103的APB1默认是36MHz，但定时器时钟会被自动倍频到72MHz——这是很多同学配置不准的根本原因！"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_005"
+      },
+      {
+        "type": "speech",
+        "text": "中断来了怎么办？HAL库已经帮你注册好了回调入口：HAL_TIM_PeriodElapsedCallback。你只需要在main.c里重写它，把要周期执行的代码放进去就行。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_006"
+      },
+      {
+        "type": "speech",
+        "text": "一个定时器就能干多个事！比如我们用1ms中断做‘心跳’，再用几个uint16_t变量分别计数，就能轻松派生出500ms、1s甚至更长的定时任务，省资源又清晰。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_007"
+      },
+      {
+        "type": "speech",
+        "text": "看这段典型代码：用cnt_500ms变量对1ms中断累加，满500就清零并触发动作。这种‘软定时’方式，比开多个硬件定时器更灵活、更常用。"
+      }
+    ]
+  },
+  "p5-pwm": {
+    "title": "PWM输出 — PWM波形输出与呼吸灯",
+    "items": [
+      {
+        "id": "item_001",
+        "type": "title",
+        "text": "PWM输出与呼吸灯实现"
+      },
+      {
+        "id": "item_002",
+        "type": "point",
+        "text": "PWM原理：占空比 = 高电平时间 / 周期"
+      },
+      {
+        "id": "item_003",
+        "type": "point",
+        "text": "GPIO必须配置为复用推挽（AF_PP）模式"
+      },
+      {
+        "id": "item_004",
+        "type": "code",
+        "text": "__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ccr);"
+      },
+      {
+        "id": "item_005",
+        "type": "point",
+        "text": "呼吸灯：在定时器中断中渐变CCR值"
+      },
+      {
+        "id": "item_006",
+        "type": "highlight",
+        "text": "占空比直接决定等效电压和LED亮度"
+      },
+      {
+        "id": "item_007",
+        "type": "point",
+        "text": "SG90舵机：20ms周期，脉宽0.5~2.5ms对应0°~180°"
+      }
+    ],
+    "actions": [
+      {
+        "type": "spotlight",
+        "itemId": "item_001"
+      },
+      {
+        "type": "speech",
+        "text": "同学们好！今天我们聚焦PWM输出，重点掌握它怎么驱动呼吸灯，以及拓展到舵机控制。这是STM32数字控制模拟效果的核心能力。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_002"
+      },
+      {
+        "type": "speech",
+        "text": "先看本质——PWM不是真模拟信号，而是靠快速开关，用高电平占整个周期的比例来‘骗过’人眼或电机。比如周期1ms，高电平0.3ms，占空比就是30%。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_003"
+      },
+      {
+        "type": "speech",
+        "text": "特别注意！很多同学调不出PWM波，根本原因就是GPIO没设对模式。必须选复用推挽AF_PP，普通推挽或浮空输入都不行，硬件上根本不会把定时器信号连到引脚。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_004"
+      },
+      {
+        "type": "speech",
+        "text": "动态调亮度？靠这行代码！它不重启定时器，只悄悄改比较寄存器CCR的值，下个周期就生效，非常高效。记住参数顺序：定时器句柄、通道、新占空比值。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_005"
+      },
+      {
+        "type": "speech",
+        "text": "呼吸灯效果，就是让CCR从0慢慢加到最大，再慢慢减回来，在定时器更新中断里做这个加减法，配合延时或计数器控制变化快慢，人眼就看到柔和的明暗呼吸。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_006"
+      },
+      {
+        "type": "speech",
+        "text": "划重点！占空比不是炫技参数，它直接线性映射等效电压——3.3V系统下，50%就是1.65V，100%就是3.3V。LED亮度、舵机角度，全靠它精准调控。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_007"
+      },
+      {
+        "type": "speech",
+        "text": "最后拓展一下：SG90这种常见舵机，认的是20ms固定周期里的脉宽长度。0.5ms打满左转，1.5ms居中，2.5ms打满右转——所以你只要用PWM输出对应脉宽，就能精确控角度。"
+      }
+    ]
+  },
+  "p6-uart": {
+    "title": "串口通信实验 — UART原理与基础收发",
+    "items": [
+      {
+        "id": "item_001",
+        "type": "title",
+        "text": "UART通信：从原理到实践"
+      },
+      {
+        "id": "item_002",
+        "type": "point",
+        "text": "UART帧格式：8N1最常用（1起始+8数据+1停止）"
+      },
+      {
+        "id": "item_003",
+        "type": "point",
+        "text": "波特率必须严格匹配，误差＞3%将导致乱码"
+      },
+      {
+        "id": "item_004",
+        "type": "point",
+        "text": "printf重定向：重写fputc → 调用HAL_UART_Transmit"
+      },
+      {
+        "id": "item_005",
+        "type": "point",
+        "text": "轮询发送阻塞，中断接收异步，需配环形缓冲区"
+      },
+      {
+        "id": "item_006",
+        "type": "highlight",
+        "text": "中断+环形缓冲区是可靠接收的黄金组合"
+      }
+    ],
+    "actions": [
+      {
+        "type": "spotlight",
+        "itemId": "item_001"
+      },
+      {
+        "type": "speech",
+        "text": "同学们好！今天我们聚焦串口通信的核心——UART。它看似简单，但时序、同步和缓冲设计稍有疏忽，就会出现丢数、乱码甚至死锁。咱们边讲边调，稳扎稳打。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_002"
+      },
+      {
+        "type": "speech",
+        "text": "先看UART怎么打包数据：一个标准帧包含起始位、8位数据、无校验、1位停止——这就是8N1。注意起始位是低电平，它像‘预备开始’的哨声，告诉接收方一串数据来了。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_003"
+      },
+      {
+        "type": "speech",
+        "text": "波特率不是越快越好，而是双方必须完全一致。比如你设115200，对方却是111000，误差超3.7%，采样点就会漂移，结果就是满屏问号或乱码。实测建议用示波器或逻辑分析仪抓波形验证。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_004"
+      },
+      {
+        "type": "speech",
+        "text": "调试时想用printf打印变量？别急着接串口助手！只需重写fputc函数，把每个字符通过HAL_UART_Transmit发出去，就能让printf变成你的调试利器。记得在main前加__weak声明哦。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_005"
+      },
+      {
+        "type": "speech",
+        "text": "HAL库里HAL_UART_Transmit是轮询方式，会卡住CPU等发完；而HAL_UART_Receive_IT注册中断后，主程序照常运行，收到字节立刻进回调函数——这才是嵌入式实时性的正确打开方式。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_006"
+      },
+      {
+        "type": "speech",
+        "text": "最后划重点：单靠中断接收还不够！如果主循环来不及处理，新数据会覆盖旧数据。引入环形缓冲区，中断只负责安全写入，主循环按需读取解析——这样既不丢数，又避免临界区冲突。记住：中断写，主循环读，才是工业级做法。"
+      }
+    ]
+  },
+  "p7-adc": {
+    "title": "ADC实验 — 模数转换原理与光照检测",
+    "items": [
+      {
+        "id": "item_001",
+        "type": "title",
+        "text": "ADC实验：从原理到光照检测"
+      },
+      {
+        "id": "item_002",
+        "type": "point",
+        "text": "12位ADC，4096级分辨率，VREF+ = 3.3V"
+      },
+      {
+        "id": "item_003",
+        "type": "point",
+        "text": "电压换算公式：V = ADC_Value × 3.3 / 4096"
+      },
+      {
+        "id": "item_004",
+        "type": "point",
+        "text": "ADC引脚必须配置为GPIO_MODE_ANALOG"
+      },
+      {
+        "id": "item_005",
+        "type": "point",
+        "text": "光敏电阻需设长采样时间（239.5周期）"
+      },
+      {
+        "id": "item_006",
+        "type": "code",
+        "text": "HAL_ADC_Start();\nHAL_ADC_PollForConversion();\nval = HAL_ADC_GetValue();"
+      },
+      {
+        "id": "item_007",
+        "type": "highlight",
+        "text": "光照越强 → 光敏电阻越小 → 分压越低 → ADC值越小"
+      }
+    ],
+    "actions": [
+      {
+        "type": "spotlight",
+        "itemId": "item_001"
+      },
+      {
+        "type": "speech",
+        "text": "同学们好！今天我们动手实现一个实用的ADC实验——用STM32读取环境光照强度。核心就是理解模数转换怎么把模拟电压变成数字量。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_002"
+      },
+      {
+        "type": "speech",
+        "text": "STM32F103内置12位ADC，意味着它能把0~3.3V分成4096份，最小可分辨约0.8mV的电压变化。这个精度对光照检测完全够用。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_003"
+      },
+      {
+        "type": "speech",
+        "text": "比如读到ADC值2048，代入公式就是2048×3.3÷4096，结果是1.65V——正好是参考电压的一半，说明输入电压在中间点。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_004"
+      },
+      {
+        "type": "speech",
+        "text": "特别注意！哪怕引脚物理上连着ADC通道，如果GPIO模式没设成ANALOG，信号就进不了ADC模块——会被数字输入电路截断或干扰。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_005"
+      },
+      {
+        "type": "speech",
+        "text": "光敏电阻属于高阻抗传感器，内部电容充放电慢，所以必须把采样时间设为最长档239.5个周期，否则读数严重偏低、跳变大。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_006"
+      },
+      {
+        "type": "speech",
+        "text": "轮询方式最简单：先启动转换，再等待完成标志，最后取值。三行HAL函数搞定，适合初学调试和实时性要求不高的场景。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_007"
+      },
+      {
+        "type": "speech",
+        "text": "记住这个反向关系：光照增强 → 光敏电阻阻值下降 → 它在分压电路中占的电压变小 → ADC采集到的数值反而更小。这是光照检测的关键逻辑！"
+      }
+    ]
+  },
+  "p8-dac": {
+    "title": "DAC实验 — 数模转换与波形生成",
+    "items": [
+      {
+        "id": "item_001",
+        "type": "title",
+        "text": "DAC实验：从数字到模拟的波形艺术"
+      },
+      {
+        "id": "item_002",
+        "type": "point",
+        "text": "DAC是ADC的逆过程：12位，双通道，内置于STM32F103"
+      },
+      {
+        "id": "item_003",
+        "type": "point",
+        "text": "PA4必须设为模拟输入模式，否则DAC1输出无效"
+      },
+      {
+        "id": "item_004",
+        "type": "point",
+        "text": "256点正弦表 + DMA循环 + 定时器触发 = 自动波形输出"
+      },
+      {
+        "id": "item_005",
+        "type": "highlight",
+        "text": "波形频率 = 触发频率 ÷ 查找表点数（如1MHz/256 ≈ 3.9kHz）"
+      },
+      {
+        "id": "item_006",
+        "type": "point",
+        "text": "输出缓冲器：使能→带载强；禁用→0V更准，但驱动能力弱"
+      }
+    ],
+    "actions": [
+      {
+        "type": "spotlight",
+        "itemId": "item_001"
+      },
+      {
+        "type": "speech",
+        "text": "同学们好！今天我们走进DAC的世界——不是数据采集，而是数据‘创造’。它把一串数字，变成实实在在的电压信号，比如正弦波、三角波，甚至音频信号。这是嵌入式系统连接物理世界的关键桥梁。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_002"
+      },
+      {
+        "type": "speech",
+        "text": "注意，STM32F103的DAC和ADC正好互为镜像：ADC把电压变数字，DAC把数字变电压。它有两路独立12位DAC，每路都能输出0~3.3V之间的任意电压，理论分辨率达0.8毫伏。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_003"
+      },
+      {
+        "type": "speech",
+        "text": "特别提醒！很多同学烧录后没波形，问题就出在这儿——PA4引脚必须配置成GPIO_MODE_ANALOG，而不是推挽或浮空。否则DAC信号根本送不出去，引脚被数字电路‘锁死’了。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_004"
+      },
+      {
+        "type": "speech",
+        "text": "要生成连续正弦波，我们不用CPU逐点写寄存器——太慢还占资源。正确做法是：预存256个sin值到内存，用DMA自动搬运，再由定时器精准触发每次更新，整个过程完全硬件自治。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_005"
+      },
+      {
+        "type": "speech",
+        "text": "这里有个黄金公式一定要记住：最终波形频率，等于你的定时器触发频率，除以查找表的总点数。比如256点表配1MHz触发，实际输出就是3906Hz正弦波——这就是软硬协同的节奏感！"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_006"
+      },
+      {
+        "type": "speech",
+        "text": "最后看这个Output Buffer开关：打开它，DAC能直接驱动LED或小喇叭；关掉它，虽然不能带负载，但输出精度更高，尤其在接近0V时更线性、无偏移。选哪个？取决于你的应用场景。"
+      }
+    ]
+  },
+  "p9-env": {
+    "title": "环境监测系统 — 多传感器数据采集",
+    "items": [
+      {
+        "id": "item_001",
+        "type": "title",
+        "text": "多传感器协同采集架构"
+      },
+      {
+        "id": "item_002",
+        "type": "point",
+        "text": "MQ-2（ADC）、BH1750（I2C）、HDC1080（I2C）三路并存"
+      },
+      {
+        "id": "item_003",
+        "type": "point",
+        "text": "BH1750地址：0x23（ADDR=GND）或0x5C；HDC1080固定0x40"
+      },
+      {
+        "id": "item_004",
+        "type": "point",
+        "text": "HAL I2C流程：先Transmit发指令，再Receive读数据"
+      },
+      {
+        "id": "item_005",
+        "type": "highlight",
+        "text": "分时采集是避免I2C总线冲突的关键策略",
+        "note": "不可同时发起多个I2C传输"
+      },
+      {
+        "id": "item_006",
+        "type": "point",
+        "text": "BH1750：H-Res模式需延时120ms，原始值÷1.2得Lux"
+      },
+      {
+        "id": "item_007",
+        "type": "code",
+        "text": "temp = (raw_temp / 65536.0f) * 165.0f - 40.0f;"
+      }
+    ],
+    "actions": [
+      {
+        "type": "spotlight",
+        "itemId": "item_001"
+      },
+      {
+        "type": "speech",
+        "text": "同学们好！今天我们搭建一个真实的环境监测系统，它要同时采集烟雾、光照和温湿度——不是单个传感器，而是三个不同接口、不同协议的器件协同工作。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_002"
+      },
+      {
+        "type": "speech",
+        "text": "注意接口差异：MQ-2走ADC模拟输入，而BH1750和HDC1080都用I2C总线，这意味着它们共享同一组SDA和SCL引脚，必须靠地址区分。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_003"
+      },
+      {
+        "type": "speech",
+        "text": "BH1750的地址不唯一！接GND是0x23，接VCC就变成0x5C；而HDC1080固定为0x40。写代码前一定要确认硬件接线，否则I2C会直接‘失联’。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_004"
+      },
+      {
+        "type": "speech",
+        "text": "HAL库操作I2C不是一步到位的。比如读BH1750，得先用Transmit发送‘启动连续测量’命令，等转换完成，再用Receive把2字节数据拿回来。顺序错了就读不到有效值。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_005"
+      },
+      {
+        "type": "speech",
+        "text": "重点来了——三个I2C设备不能抢总线！我们用SysTick或TIM定时器，每1秒轮询一个传感器：第1秒读BH1750，第2秒读HDC1080，第3秒读MQ-2……这才是工业级稳定采集的核心逻辑。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_006"
+      },
+      {
+        "type": "speech",
+        "text": "BH1750返回的是原始数值，单位不是Lux。在高分辨率模式下，要除以1.2才对；而且别忘了，它需要120毫秒转换时间，不加delay就会读到上一次的旧数据。"
+      },
+      {
+        "type": "spotlight",
+        "itemId": "item_007"
+      },
+      {
+        "type": "speech",
+        "text": "最后看HDC1080温度换算：它给的是16位原始值，范围0~65535，对应-40℃~125℃。公式就是 raw/65536×165−40，注意用浮点运算，否则整数除法会丢精度。"
+      }
+    ]
+  }
+}

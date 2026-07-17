@@ -1,0 +1,22 @@
+{
+  "modeId": "godot-game",
+  "levelId": "godot-gpio-wiring-01",
+  "title": "GPIO Wiring Lab: Light the LED",
+  "objective": "Understand LED polarity, current limiting, and GPIO output level",
+  "difficulty": 2,
+  "starThresholds": [60, 80, 95],
+  "timeLimit": 0,
+  "data": {
+    "gameId": "gpio-lab",
+    "entryUrl": "/assets/godot/gpio-lab/index.html",
+    "aspectRatio": "16 / 9",
+    "target": "led_on",
+    "rules": ["need_resistor", "correct_polarity", "pa5_output"],
+    "components": ["stm32f103", "breadboard", "led", "resistor", "jumper_wire"],
+    "initialState": {
+      "pin": "PA5",
+      "gpioMode": "output_push_pull",
+      "requiredLevel": 1
+    }
+  }
+}

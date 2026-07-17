@@ -1,0 +1,252 @@
+[
+  {
+    "id": "ch12-light-quad-001",
+    "module": "quad_sensor",
+    "knowledgePoint": "四象限光敏误差",
+    "difficulty": 1,
+    "prompt": "四象限光敏阵列判断左右偏差时，主要比较哪两侧亮度？",
+    "choices": ["左侧与右侧", "上侧与下侧", "电源与地", "PWM 高低电平"],
+    "answerIndex": 0,
+    "explanation": "左右偏差来自左侧光敏与右侧光敏的亮度差，上下偏差则来自上侧与下侧。"
+  },
+  {
+    "id": "ch12-light-quad-002",
+    "module": "quad_sensor",
+    "knowledgePoint": "归一化误差",
+    "difficulty": 2,
+    "prompt": "用亮度差除以总光强，主要是为了什么？",
+    "choices": ["减少整体光照强弱变化的影响", "提高 PWM 频率", "关闭积分项", "改变串口波特率"],
+    "answerIndex": 0,
+    "explanation": "归一化误差能让系统更关注方向差，而不是被整体变亮或变暗误导。"
+  },
+  {
+    "id": "ch12-servo-pwm-001",
+    "module": "servo_pwm",
+    "knowledgePoint": "舵机 PWM 脉宽",
+    "difficulty": 1,
+    "prompt": "常见舵机角度主要由 PWM 的什么决定？",
+    "choices": ["高电平脉宽", "ADC 位数", "Flash 容量", "I2C 地址"],
+    "answerIndex": 0,
+    "explanation": "舵机通常根据周期内的高电平脉宽决定目标角度，而不是只看占空比名义值。"
+  },
+  {
+    "id": "ch12-servo-pwm-002",
+    "module": "servo_pwm",
+    "knowledgePoint": "舵机限位",
+    "difficulty": 2,
+    "prompt": "追光系统给舵机输出控制量时，为什么要做角度限幅？",
+    "choices": ["避免机构越界或卡死", "让 ADC 分辨率变高", "让串口不乱码", "关闭所有中断"],
+    "answerIndex": 0,
+    "explanation": "舵机和支架都有机械范围，输出限幅能避免越界、卡死或长期顶住限位。"
+  },
+  {
+    "id": "ch12-pid-p-001",
+    "module": "pid",
+    "knowledgePoint": "Kp 比例增益",
+    "difficulty": 1,
+    "prompt": "PID 中 Kp 比例项的直接作用是什么？",
+    "choices": ["误差越大，修正越强", "累积历史误差", "预测误差变化率", "设置 PWM 周期"],
+    "answerIndex": 0,
+    "explanation": "比例项与当前误差成正比，误差越大，控制输出越强。"
+  },
+  {
+    "id": "ch12-pid-i-001",
+    "module": "pid",
+    "knowledgePoint": "Ki 积分增益",
+    "difficulty": 2,
+    "prompt": "PID 中 Ki 积分项最适合解决什么问题？",
+    "choices": ["长期存在的稳态误差", "瞬时噪声尖峰", "芯片下载失败", "引脚复用冲突"],
+    "answerIndex": 0,
+    "explanation": "积分项会累积误差，常用于消除长期偏差，但需要防止积分饱和。"
+  },
+  {
+    "id": "ch12-pid-d-001",
+    "module": "pid",
+    "knowledgePoint": "Kd 微分增益",
+    "difficulty": 2,
+    "prompt": "PID 中 Kd 微分项主要用于什么？",
+    "choices": ["抑制变化趋势，减少抖动和超调", "消除所有稳态误差", "提高供电电压", "扩大光敏电阻量程"],
+    "answerIndex": 0,
+    "explanation": "微分项关注误差变化率，相当于给系统增加阻尼，常用于减少振荡和超调。"
+  },
+  {
+    "id": "ch12-deadband-001",
+    "module": "stability",
+    "knowledgePoint": "死区",
+    "difficulty": 2,
+    "prompt": "追光系统中设置死区的主要目的是什么？",
+    "choices": ["小误差不动作，减少舵机抖动", "让系统永远不转动", "提高 Flash 容量", "改变 ADC 参考电压"],
+    "answerIndex": 0,
+    "explanation": "死区会忽略很小的误差，避免系统在光斑接近中心时频繁来回调整。"
+  },
+  {
+    "id": "ch12-antiwindup-001",
+    "module": "stability",
+    "knowledgePoint": "积分限幅",
+    "difficulty": 3,
+    "prompt": "输出已经达到限幅时，为什么要限制积分继续累积？",
+    "choices": ["避免积分饱和导致恢复变慢", "让舵机直接断电", "让 Kp 变成 0", "让光敏电阻不工作"],
+    "answerIndex": 0,
+    "explanation": "输出饱和后继续累积积分会造成 windup，等误差反向时系统恢复会变慢甚至过冲。"
+  },
+  {
+    "id": "ch12-performance-001",
+    "module": "performance",
+    "knowledgePoint": "控制性能评估",
+    "difficulty": 2,
+    "prompt": "评价追光控制效果时，哪个指标能反映系统是否长期偏离目标？",
+    "choices": ["稳态误差", "芯片封装", "串口停止位", "程序 Flash 大小"],
+    "answerIndex": 0,
+    "explanation": "稳态误差反映系统稳定后仍然与目标存在的偏差，是控制效果的重要指标。"
+  },
+  {
+    "id": "ch12-light-quad-003",
+    "module": "quad_sensor",
+    "knowledgePoint": "四象限方向误差",
+    "difficulty": 1,
+    "prompt": "四象限光敏阵列判断上下偏差时，通常应该比较什么？",
+    "choices": ["电池电压与舵机电流", "上侧光强与下侧光强", "PWM 周期与占空比", "串口发送与接收"],
+    "answerIndex": 1,
+    "explanation": "上下方向误差来自上侧和下侧光敏值的差异；左右方向才比较左侧与右侧。"
+  },
+  {
+    "id": "ch12-light-quad-004",
+    "module": "quad_sensor",
+    "knowledgePoint": "总光强阈值",
+    "difficulty": 2,
+    "prompt": "当四象限光敏的总光强很低时，比较稳妥的处理是什么？",
+    "choices": ["直接把误差放大到最大", "完全相信当前方向误差", "降低动作或保持上一稳定输出", "把 PWM 频率设为 0"],
+    "answerIndex": 2,
+    "explanation": "总光强过低时方向差容易被噪声放大，常用阈值判断、保持或减小动作来避免误判。"
+  },
+  {
+    "id": "ch12-light-quad-005",
+    "module": "quad_sensor",
+    "knowledgePoint": "传感器标定",
+    "difficulty": 2,
+    "prompt": "不同光敏器件读数存在固定偏差时，最应该先做什么？",
+    "choices": ["传感器零点/增益标定", "把 Kd 调到最大", "删除死区", "缩短所有延时到 0"],
+    "answerIndex": 0,
+    "explanation": "器件差异会让同样光照下读数不同，先做零点或增益标定能减少系统性偏差。"
+  },
+  {
+    "id": "ch12-servo-pwm-003",
+    "module": "servo_pwm",
+    "knowledgePoint": "舵机 PWM 周期",
+    "difficulty": 2,
+    "prompt": "常见 hobby 舵机控制信号通常接近哪个周期量级？",
+    "choices": ["20 微秒", "20 毫秒", "2 秒", "200 秒"],
+    "answerIndex": 1,
+    "explanation": "很多 hobby 舵机使用约 20 ms 的控制周期，角度主要由周期内高电平脉宽决定。"
+  },
+  {
+    "id": "ch12-servo-pwm-004",
+    "module": "servo_pwm",
+    "knowledgePoint": "脉宽与角度",
+    "difficulty": 2,
+    "prompt": "给舵机输出目标角度时，代码里通常要把角度映射成什么？",
+    "choices": ["ADC 采样次数", "串口校验位", "PWM 高电平脉宽", "光敏电阻阻值单位"],
+    "answerIndex": 2,
+    "explanation": "舵机控制通常需要把目标角度映射到对应的高电平脉宽范围。"
+  },
+  {
+    "id": "ch12-servo-pwm-005",
+    "module": "servo_pwm",
+    "knowledgePoint": "舵机抖动",
+    "difficulty": 2,
+    "prompt": "光斑已经接近中心但舵机仍频繁小幅来回动作，优先考虑哪种处理？",
+    "choices": ["增大死区或滤波", "增大串口波特率", "关闭所有限幅", "把积分无限累加"],
+    "answerIndex": 0,
+    "explanation": "接近目标时的微小噪声会导致抖动，适当死区、滤波或降低小误差响应能改善。"
+  },
+  {
+    "id": "ch12-pid-p-002",
+    "module": "pid",
+    "knowledgePoint": "比例增益过大",
+    "difficulty": 2,
+    "prompt": "Kp 设置过大时，追光机构最可能出现什么现象？",
+    "choices": ["完全没有响应", "更容易振荡或超调", "ADC 位数自动增加", "PWM 引脚自动切换"],
+    "answerIndex": 1,
+    "explanation": "比例增益过大时，控制输出对误差过于敏感，容易来回摆动、超调甚至振荡。"
+  },
+  {
+    "id": "ch12-pid-i-002",
+    "module": "pid",
+    "knowledgePoint": "积分饱和",
+    "difficulty": 3,
+    "prompt": "Ki 较大且输出长期被限幅时，最需要警惕什么？",
+    "choices": ["PWM 周期变成负数", "光敏值无法读取", "积分饱和导致恢复慢或过冲", "串口打印速度变快"],
+    "answerIndex": 2,
+    "explanation": "输出饱和时积分仍继续累积，会造成 windup，误差反向后恢复慢并可能明显过冲。"
+  },
+  {
+    "id": "ch12-pid-d-002",
+    "module": "pid",
+    "knowledgePoint": "微分与噪声",
+    "difficulty": 3,
+    "prompt": "Kd 微分项为什么常常需要配合滤波使用？",
+    "choices": ["微分项对噪声变化很敏感", "微分项会改变电源电压", "微分项只能用于串口通信", "微分项会关闭舵机 PWM"],
+    "answerIndex": 0,
+    "explanation": "微分项关注变化率，传感器噪声的尖峰也会被放大，因此常需要滤波或限制微分输出。"
+  },
+  {
+    "id": "ch12-deadband-002",
+    "module": "stability",
+    "knowledgePoint": "死区副作用",
+    "difficulty": 2,
+    "prompt": "死区设置过大时，可能带来的问题是什么？",
+    "choices": ["系统完全不需要传感器", "PWM 周期自动变短", "小偏差长期不修正，精度下降", "积分项一定消失"],
+    "answerIndex": 2,
+    "explanation": "死区能减少抖动，但过大时会忽略本该修正的小偏差，使最终追光精度下降。"
+  },
+  {
+    "id": "ch12-output-limit-001",
+    "module": "stability",
+    "knowledgePoint": "输出限幅",
+    "difficulty": 1,
+    "prompt": "控制输出限幅的主要作用是什么？",
+    "choices": ["让控制量保持在机构和驱动允许范围内", "让题目倒计时变长", "让光敏器件变亮", "让 ADC 不再采样"],
+    "answerIndex": 0,
+    "explanation": "输出限幅能避免控制量超过舵机、支架或驱动允许范围，是保护机构和稳定控制的基本措施。"
+  },
+  {
+    "id": "ch12-sampling-001",
+    "module": "performance",
+    "knowledgePoint": "采样周期",
+    "difficulty": 2,
+    "prompt": "追光控制的采样周期过长时，最可能造成什么影响？",
+    "choices": ["系统响应滞后，容易跟不上光源变化", "舵机脉宽单位自动变成伏特", "死区完全失效", "积分项无法存储"],
+    "answerIndex": 0,
+    "explanation": "采样周期过长会让控制器拿到的信息滞后，光源变化时追踪反应会变慢。"
+  },
+  {
+    "id": "ch12-filter-001",
+    "module": "anti_interference",
+    "knowledgePoint": "滤波抗干扰",
+    "difficulty": 2,
+    "prompt": "传感器读数偶尔出现尖峰噪声时，哪种处理更合理？",
+    "choices": ["直接把尖峰当成真实光源", "使用均值/低通/限幅等滤波处理", "永久关闭比例项", "把舵机转到最大角度"],
+    "answerIndex": 1,
+    "explanation": "尖峰噪声不应直接驱动机构动作，均值、低通或限幅等滤波能提高读数稳定性。"
+  },
+  {
+    "id": "ch12-interference-001",
+    "module": "anti_interference",
+    "knowledgePoint": "杂散光干扰",
+    "difficulty": 2,
+    "prompt": "旁路反射光进入某一侧传感器时，系统可能会怎样？",
+    "choices": ["误以为太阳方向偏向该侧", "自动提高电池容量", "让 PWM 输出变成输入", "消除所有稳态误差"],
+    "answerIndex": 0,
+    "explanation": "杂散光会改变局部光敏读数，可能让方向误差偏向错误方向。"
+  },
+  {
+    "id": "ch12-occlusion-001",
+    "module": "anti_interference",
+    "knowledgePoint": "遮挡云影",
+    "difficulty": 2,
+    "prompt": "云影遮挡导致所有象限读数同时下降时，更像是哪类问题？",
+    "choices": ["整体光强降低", "左右方向误差必然增大", "Kp 自动清零", "舵机机械限位消失"],
+    "answerIndex": 0,
+    "explanation": "所有象限同时变暗通常表示总光强降低，不一定代表方向偏差变大。"
+  }
+]

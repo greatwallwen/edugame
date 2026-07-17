@@ -1,0 +1,22 @@
+{
+  "modeId": "godot-game",
+  "levelId": "ch12-solar-survivor-mvp",
+  "title": "追光幸存者：太阳追踪挑战",
+  "objective": "复习四象限光敏、舵机 PWM、PID、死区与限幅",
+  "difficulty": 3,
+  "starThresholds": [50, 75, 90],
+  "timeLimit": 0,
+  "data": {
+    "gameId": "ch12-solar-survivor",
+    "entryUrl": "/assets/godot/ch12-solar-survivor/index.html?v=26482a4deb89",
+    "aspectRatio": "16 / 9",
+    "durationSec": 180,
+    "maxFaults": 5,
+    "questionTimeSec": 15,
+    "scoreScale": 100,
+    "knowledgeSource": "external",
+    "questionsUrl": "/assets/courses/stm32-course/knowledge/ch12-solar-survivor.questions.json?v=820de774c55a",
+    "upgradesUrl": "/assets/courses/stm32-course/knowledge/ch12-solar-survivor.upgrades.json?v=1ec3ff2f2a4e",
+    "bindingUrl": "/assets/courses/stm32-course/game-bindings/ch12-solar-survivor.binding.json?v=c5e7887728db"
+  }
+}

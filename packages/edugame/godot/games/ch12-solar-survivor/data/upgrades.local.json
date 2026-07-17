@@ -1,0 +1,126 @@
+[
+  {
+    "id": "servo-pwm-calibration",
+    "title": "舵机 PWM 标定",
+    "shortLabel": "PWM",
+    "description": "偏移光带吸收范围 +52px，偏移带奖励 +1，追光效率 +4%。最多升级 3 次。",
+    "module": "servo_pwm",
+    "maxStacks": 3,
+    "effects": {
+      "bandRadiusBoost": 52,
+      "offsetBonus": 1,
+      "trackingBoost": 4
+    }
+  },
+  {
+    "id": "kp-response",
+    "title": "Kp 比例增益",
+    "shortLabel": "P",
+    "description": "追光车移动速度 +36，追光效率 +4%。最多升级 4 次。",
+    "module": "pid",
+    "maxStacks": 4,
+    "effects": {
+      "moveSpeedBoost": 36,
+      "trackingBoost": 4
+    }
+  },
+  {
+    "id": "ki-compensation",
+    "title": "Ki 稳态补偿",
+    "shortLabel": "I",
+    "description": "常态光能自动充能 +0.32/秒，稳定度 +3%。最多升级 3 次。",
+    "module": "pid",
+    "maxStacks": 3,
+    "effects": {
+      "passiveEnergyBoost": 0.32,
+      "stabilityBoost": 3
+    }
+  },
+  {
+    "id": "kd-damping",
+    "title": "Kd 阻尼预测",
+    "shortLabel": "D",
+    "description": "答错/碰撞造成的稳定度扣除 -10，稳定度 +6%。最多升级 3 次。",
+    "module": "pid",
+    "maxStacks": 3,
+    "effects": {
+      "stabilityBoost": 6,
+      "faultPenaltyReduce": 10
+    }
+  },
+  {
+    "id": "deadband-threshold",
+    "title": "DZ 死区阈值",
+    "shortLabel": "DZ",
+    "description": "死区保护次数 +1，稳定度 +4%。保护会抵消下一次答错/碰撞故障。最多升级 3 次。",
+    "module": "stability",
+    "maxStacks": 3,
+    "effects": {
+      "wrongShieldCharges": 1,
+      "stabilityBoost": 4
+    }
+  },
+  {
+    "id": "output-limit",
+    "title": "LIM 输出限幅",
+    "shortLabel": "LIM",
+    "description": "答对后保留光能 +18%，致命故障保护 +1，稳定度 +5%。最多升级 2 次。",
+    "module": "stability",
+    "maxStacks": 2,
+    "effects": {
+      "energyRefundOnCorrect": 18,
+      "fatalSaveCharges": 1,
+      "stabilityBoost": 5
+    }
+  },
+  {
+    "id": "correction-pulse-rate",
+    "title": "校正脉冲提频",
+    "shortLabel": "RATE",
+    "description": "自动攻击间隔 -0.35 秒，追光效率 +3%。累计间隔缩短上限为 -1.2 秒，最多升级 4 次。",
+    "module": "anti_interference",
+    "maxStacks": 4,
+    "effects": {
+      "correctionCooldownReduce": 0.35,
+      "trackingBoost": 3
+    }
+  },
+  {
+    "id": "multi-sample-lock",
+    "title": "多点采样锁定",
+    "shortLabel": "MUX",
+    "description": "每次自动攻击目标数 +1，稳定度 +3%。最高同时攻击 4 个目标，最多升级 3 次。",
+    "module": "anti_interference",
+    "maxStacks": 3,
+    "effects": {
+      "correctionTargets": 1,
+      "stabilityBoost": 3
+    }
+  },
+  {
+    "id": "filter-field-expand",
+    "title": "滤波视场扩展",
+    "shortLabel": "FOV",
+    "description": "自动攻击范围 +85px，追光效率 +2%。累计范围加成上限为 +240px，最多升级 3 次。",
+    "module": "anti_interference",
+    "maxStacks": 3,
+    "effects": {
+      "correctionRangeBoost": 85,
+      "trackingBoost": 2
+    }
+  },
+  {
+    "id": "quadrant-differential-bridge",
+    "title": "四象限差分桥",
+    "shortLabel": "Q4",
+    "description": "校正脉冲伤害 +1。四象限差分让水平/垂直偏差判别更完整。控制饱和块出现后解锁，最多升级 1 次。",
+    "module": "photoelectric_tracking",
+    "rarity": "rare",
+    "requiresSeenEnemyKind": "saturation",
+    "maxStacks": 1,
+    "effects": {
+      "correctionDamageBoost": 1,
+      "trackingBoost": 3
+    }
+  }
+]

@@ -1,0 +1,68 @@
+[
+    {
+        "name": "step1 CPU \u53ea\u662f\u8fd0\u7b97\u63a7\u5236\u6838\u5fc3",
+        "type": "default.normal",
+        "video": "McuConcept_0000_step1 CPU \u53ea\u662f\u8fd0\u7b97\u63a7\u5236\u6838\u5fc3.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "7.000000",
+        "nb_frames": "210"
+    },
+    {
+        "name": "step2 MCU \u96c6\u6210 CPU \u5b58\u50a8 \u5916\u8bbe",
+        "type": "default.normal",
+        "video": "McuConcept_0001_step2 MCU \u96c6\u6210 CPU \u5b58\u50a8 \u5916\u8bbe.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.000000",
+        "nb_frames": "90"
+    },
+    {
+        "name": "step3 MCU \u4e0a\u7535\u5373\u53ef\u72ec\u7acb\u5de5\u4f5c",
+        "type": "default.normal",
+        "video": "McuConcept_0002_step3 MCU \u4e0a\u7535\u5373\u53ef\u72ec\u7acb\u5de5\u4f5c.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "5.000000",
+        "nb_frames": "150"
+    },
+    {
+        "name": "step4 SoC \u96c6\u6210\u5ea6\u66f4\u9ad8",
+        "type": "default.normal",
+        "video": "McuConcept_0003_step4 SoC \u96c6\u6210\u5ea6\u66f4\u9ad8.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "5.000000",
+        "nb_frames": "150"
+    },
+    {
+        "name": "step5 STM32F103 \u5b9a\u4f4d",
+        "type": "default.normal",
+        "video": "McuConcept_0004_step5 STM32F103 \u5b9a\u4f4d.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "4.000000",
+        "nb_frames": "120"
+    },
+    {
+        "name": "step6 \u603b\u7ed3\u96c6\u6210\u5ea6\u6f14\u8fdb",
+        "type": "default.normal",
+        "video": "McuConcept_0005_step6 \u603b\u7ed3\u96c6\u6210\u5ea6\u6f14\u8fdb.mp4",
+        "codec_name": "h264",
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "30/1",
+        "duration": "3.200000",
+        "nb_frames": "96"
+    }
+]

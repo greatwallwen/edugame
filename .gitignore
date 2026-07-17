@@ -1,0 +1,204 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# Iter-32 · Playwright e2e 测试产物
+# - playwright-report/   HTML 报告
+# - test-results/        失败时的截图 / video / trace
+# - .playwright/         浏览器缓存
+**/playwright-report/
+**/test-results/
+.playwright/
+playwright/.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.uv/
+*.egg-info/
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+!infra/.env.example
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Cache
+.eslintcache
+.stylelintcache
+.parcel-cache
+.vite/
+**/.godot/
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Pipeline artifacts（课程数据的中间/发布产物，不入仓库）
+materials/*/extracted/
+materials/*/generated/
+materials/*/published/
+materials/*/raw/pdfs/*
+materials/*/raw/docs/*
+materials/*/raw/slides/*
+materials/*/raw/videos/*
+materials/*/raw/audios/*
+!materials/*/raw/pdfs/.gitkeep
+!materials/*/raw/docs/.gitkeep
+!materials/*/raw/slides/.gitkeep
+!materials/*/raw/videos/.gitkeep
+!materials/*/raw/audios/.gitkeep
+
+# Player build artifacts
+apps/player/public/manifest.json
+
+# Live2D model assets (大体积二进制，通过外部渠道分发)
+apps/player/public/models/
+
+# Manim 渲染中间产物（不入仓库）
+materials/stm32-course/manim/_generated/
+materials/stm32-course/manim/**/media/
+materials/stm32-course/manim/**/__pycache__/
+# 注：apps/player/public/assets/courses/ 的最终动画产物（mp4/webm/sections.json，约 4.8MB）
+# 现已入库，保证新机器 git pull 后教材 video 块不 404（Iter-65 决策）。
+
+# Runtime
+/tmp/
+/temp/
+
+# Lock files (keep pnpm only)
+package-lock.json
+yarn.lock
+
+# Old installer (root, not needed)
+UnityHubSetup.exe
+
+# Playwright MCP workspace scratch
+.playwright-mcp/
+.playwright-cli/
+/tools/
+
+# DGBook phase / release scratch files
+# 各阶段审计、构建、清理过程中临时落盘的日志或调研产物。
+# 注意 *.log 已在上方 Logs 段统一忽略，这里再显式声明前缀，
+# 让 Release-B 审计脚本能直观看到「这些前缀已被排除」。
+.release-*
+.build-*
+.cov-*
+.c2-*
+.c3-*
+.c35-*
+.c4-*
+.phase-*
+.cleaning-*
+
+
+# DGBook ���/��Ͻű����ÿ�����ܻ�䣩
+# - audit/step-alignment.json��_check_step_alignment.py �����
+# - audit/screenshots/*��_g3_highlight_smoke.mjs �������
+# ��ǩ����ʷ���˹�����������Ǩ�� docs/pr/�����ܴ˹���Ӱ�졣
+audit/
+
+# Iter-15 · T-15g 冗余清理 wave 3
+# .codegraph/ 是 codegraph 工具的本地数据目录（含 *.db、诊断脚本 _*.py、
+# 大型 dump *.json/*.txt/*.md/*.log），均为本机临时产物，不入仓。
+# 目录内已有自己的 .gitignore（只 ignore *.db/*.log），这里把整个目录
+# 显式 ignore，避免每轮迭代有几十个 _iter*_xxx.py 污染 git status。
+.codegraph/
+
+# vendor/ 是第三方依赖源码 mirror（如 ragflow-plus），体量大、与本仓
+# 主代码松耦合（仅通过 packages/rag/src/ragflow.ts graceful 调用）。
+# OpenMAIC/ 已在下方独立段落，不受影响（仍受其它规则约束）。
+vendor/
+
+# Iter-30 · OpenMAIC/ 是 sibling 仓库的工作副本（用户克隆来做对照参考），
+# 0 个 tracked 文件，但每次 git status 占用 N 行屏幕。统一忽略让 status
+# 干净。后续若要把 OpenMAIC 引入主代码，应通过 git submodule / vendor/
+# 显式集成，而不是直接放工作树。
+OpenMAIC/
+
+# Iter-30 · archive/ 下的 untracked 历史脚本污染 status
+# archive/ 路径下已有 47 个 git tracked 的归档文件（manifest-legacy / scripts / packages
+# 等，为查史保留，不动），但工作树里另有 40+ 个 untracked 历史脚本（_audit_*.py /
+# _patch_*.py / _diag_*.mjs 等），既不入仓也不删除。本规则把"archive/scripts/" 路径
+# 下的 untracked 文件一并 ignore，让 git status 干净；要复活某段历史脚本时手动 add -f
+# 强制入仓。
+# 注意：使用 ! 否定模式保留已 tracked 的 archive/scripts/_* 路径
+archive/scripts/_*.py
+archive/scripts/_*.mjs
+archive/scripts/playwright_e2e.mjs
+archive/scripts/ragflow_bridge.py
+archive/pdf-pages/
+archive/public-py/
+archive/root-strays/*.png
+# 但保留已 git tracked 的 archive/scripts 文件（git ls-files 已记录，! 否定恢复跟踪）
+!archive/scripts/_check_commentary.py
+!archive/scripts/_dump_chapter3_titles.py
+!archive/scripts/_dump_final_animation_script.py
+!archive/scripts/_dump_first_commentary.py
+!archive/scripts/_dump_first_teacher.py
+!archive/scripts/_faq_sample.py
+!archive/scripts/_faq_stats.py
+!archive/scripts/_find_dirty_titles.py
+!archive/scripts/_inspect_led_blocks.py
+!archive/scripts/_phase0_audit_code_blocks.py
+!archive/scripts/_phase1_test_parser.py
+!archive/scripts/_phase2_test_schema_validation.py
+!archive/scripts/_phase3_probe_p2_cl_anim.py
+!archive/scripts/_phase3_remove_dead_defs.py
+!archive/scripts/_phase45_codeflow_smoke.mjs
+!archive/scripts/_phase_inject_manim_widget_preview.py
+!archive/scripts/_rename_extra_pages.py
+
+
+# 参考代码（从公司仓库克隆，不入主库）
+reference/
+
+# 聊天工具/AI 产物（不入 git）
+DGBook*.json
+*.conversation.json
+
+# 构建缓存
+.turbo/cache/
+__pycache__/
+*.pyc
+
+# 过期测试产物
+apps/player/test-results/
+apps/player/dist-offline/
+
+# OpenMAIC 参考资产（仅本地参考）
+OpenMAIC/assets/

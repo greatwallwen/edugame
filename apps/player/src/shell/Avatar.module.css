@@ -1,0 +1,107 @@
+/* Avatar SVG · 数字人头像样式与动画 */
+
+.avatar {
+  display: block;
+  color: var(--dg-color-brand-500);
+  filter: drop-shadow(0 0 12px rgba(61, 215, 224, 0.18));
+}
+
+/* HUD 圆环 */
+.ringOuter {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.45;
+  stroke-dasharray: 4 6;
+  transform-origin: 66px 66px;
+  animation: ringSpin 22s linear infinite;
+}
+.ringInner {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.25;
+  stroke-dasharray: 2 5;
+  transform-origin: 66px 66px;
+  animation: ringSpin 14s linear infinite reverse;
+}
+.ticks {
+  color: currentColor;
+  opacity: 0.55;
+}
+
+/* 头部呼吸 */
+.head {
+  transform-origin: 66px 78px;
+  animation: breathe 3.6s ease-in-out infinite;
+}
+.face {
+  fill: var(--dg-color-surface-card);
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+.pins {
+  color: currentColor;
+  opacity: 0.7;
+}
+.circuit {
+  color: currentColor;
+  opacity: 0.55;
+}
+
+/* 眼睛 + 眨眼 */
+.eyes {
+  color: var(--dg-color-node-blue);
+}
+.eye {
+  fill: currentColor;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+.lid {
+  fill: var(--dg-color-surface-card);
+  transform-origin: center;
+  transform-box: fill-box;
+  transform: scaleY(0);
+  animation: blink 5.2s ease-in-out infinite;
+}
+
+/* 嘴 */
+.mouth {
+  fill: var(--dg-color-node-green);
+  transform-origin: center;
+  transform-box: fill-box;
+  filter: drop-shadow(0 0 6px var(--dg-color-node-green));
+}
+.speaking .mouth {
+  animation: mouthPulse 0.42s ease-in-out infinite;
+}
+
+/* 音波 */
+.wave {
+  color: var(--dg-color-node-green);
+  opacity: 0.7;
+}
+.waveBar1 { animation: waveBar 1.2s ease-in-out 0.0s infinite; }
+.waveBar2 { animation: waveBar 1.2s ease-in-out 0.18s infinite; }
+.waveBar3 { animation: waveBar 1.2s ease-in-out 0.36s infinite; }
+
+/* ========== keyframes ========== */
+@keyframes breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-1.5px) scale(1.018); }
+}
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(0); }
+  94%, 96%      { transform: scaleY(1); }
+}
+@keyframes mouthPulse {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(2.2); }
+}
+@keyframes waveBar {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(0.4); }
+}
+@keyframes ringSpin {
+  to { transform: rotate(360deg); }
+}
