@@ -105,6 +105,28 @@ func _run() -> void:
 	game.hand = [{"id": "abnormal_reading", "negative": true, "group": "noise"}]
 	_assert(!game._checkpoint_requirements_met(), "an abnormal reading still in hand should fail the trust check")
 
+	var run_states: Dictionary = game.get_script().get_script_constant_map().get("RunState", {})
+	if !run_states.has("COMPONENT"):
+		_assert(false, "component node should expose a dedicated run state")
+	else:
+		game._reset_run()
+		game.current_layer = 5
+		_assert(bool(game.choose_node(0)), "node six should open the component choice")
+		_assert(game.state == int(run_states.get("COMPONENT")), "component node should enter its choice state")
+		_assert(game.component_choices.size() == 3, "component node should offer three choices")
+		var chosen_id := str((game.component_choices[0] as Dictionary).get("id", ""))
+		_assert(bool(game.choose_component(chosen_id)), "an offered component should be selectable")
+		_assert(game.relics.has(chosen_id), "selected component should join the run")
+		_assert(game.state == game.RunState.MAP, "component selection should return to the route")
+		_assert(!bool(game.choose_component("missing_component")), "an unoffered component should be rejected")
+
+		var component_ids: Array = game.relic_defs.keys()
+		component_ids.sort()
+		game.relics = component_ids.slice(0, 4)
+		game._open_component_choice()
+		_assert(game.component_choices.size() == 2, "one remaining component should be paired with one fallback")
+		_assert(_array_has_id(game.component_choices, "upgrade_fallback"), "component shortage should offer a card upgrade fallback")
+
 	game.current_layer = 10
 	game.state = game.RunState.MAP
 	_assert(bool(game.choose_node(0)), "layer eleven service should be selectable")
@@ -186,6 +208,13 @@ func _log_contains(entries: Array, expected: String) -> bool:
 func _object_has_property(object: Object, property_name: String) -> bool:
 	for raw_property in object.get_property_list():
 		if str((raw_property as Dictionary).get("name", "")) == property_name:
+			return true
+	return false
+
+
+func _array_has_id(items: Array, expected_id: String) -> bool:
+	for raw_item in items:
+		if str((raw_item as Dictionary).get("id", "")) == expected_id:
 			return true
 	return false
 

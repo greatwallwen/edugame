@@ -12,7 +12,7 @@ const STAGE_ORDER := ["collect", "interface", "process", "output"]
 const BOSS_DRAW_SEED := 90909
 const RUN_NODE_COUNT := 12
 
-enum RunState { WAITING, MAP, COMBAT, REWARD, EVENT, SHOP, REST, RESULT }
+enum RunState { WAITING, MAP, COMBAT, REWARD, EVENT, SHOP, REST, COMPONENT, RESULT }
 
 var runtime
 var state := RunState.WAITING
@@ -84,6 +84,7 @@ var repair_target := 0
 var repair_progress := 0
 var current_event := {}
 var reward_choices: Array = []
+var component_choices: Array = []
 var shop_cards: Array = []
 var message_log: Array = []
 var debug_reports: Array = []
@@ -555,7 +556,7 @@ func _render_state() -> void:
 		return
 	map_view.visible = state == RunState.MAP
 	combat_view.visible = state == RunState.COMBAT
-	choice_view.visible = [RunState.REWARD, RunState.EVENT, RunState.SHOP, RunState.REST].has(state)
+	choice_view.visible = [RunState.REWARD, RunState.EVENT, RunState.SHOP, RunState.REST, RunState.COMPONENT].has(state)
 	result_view.visible = state == RunState.RESULT
 	_render_header()
 	match state:
@@ -563,7 +564,7 @@ func _render_state() -> void:
 			_render_map()
 		RunState.COMBAT:
 			_render_combat()
-		RunState.REWARD, RunState.EVENT, RunState.SHOP, RunState.REST:
+		RunState.REWARD, RunState.EVENT, RunState.SHOP, RunState.REST, RunState.COMPONENT:
 			_render_choices()
 		RunState.RESULT:
 			_render_result()
@@ -622,7 +623,8 @@ func _node_type_name(node_type: String) -> String:
 	return {
 		"ordinary": "普通故障", "elite": "精英故障", "event": "调试事件",
 		"shop": "器材商店", "service": "整备", "checkpoint_sensor": "教学检查点",
-		"checkpoint_trust": "教学检查点", "checkpoint": "教学检查点", "boss": "综合验收"
+		"checkpoint_trust": "教学检查点", "checkpoint": "教学检查点",
+		"component": "工程组件", "boss": "综合验收"
 	}.get(node_type, node_type)
 
 
@@ -630,7 +632,7 @@ func _node_type_short(node_type: String) -> String:
 	return {
 		"ordinary": "故障", "elite": "精英", "event": "事件", "shop": "商店",
 		"service": "整备", "checkpoint_sensor": "接入检查", "checkpoint_trust": "可信检查",
-		"boss": "综合验收"
+		"component": "组件", "boss": "综合验收"
 	}.get(node_type, "节点")
 
 
@@ -824,6 +826,21 @@ func _render_choices() -> void:
 			_add_service_button("固件优化 · 升级一张牌", "upgrade", Color("#2f7f8d"))
 			_add_service_button("线束整理 · 删除基础牌，稳定度 -5", "remove", Color("#b16a2c"))
 			_add_service_button("进入器材商店", "shop", Color("#725c91"))
+		RunState.COMPONENT:
+			choice_title.text = "选择工程组件"
+			choice_description.text = "组件在本局后续战斗中持续生效。"
+			for raw_component in component_choices:
+				var component := raw_component as Dictionary
+				var button := Button.new()
+				button.text = "%s\n%s" % [component.get("name", "工程组件"), component.get("description", "")]
+				button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				_skin_button(button, Color("#8b6b23"))
+				_size_choice_button(button, 96)
+				button.pressed.connect(func() -> void:
+					choose_component(str(component.get("id", "")))
+					_render_state()
+				)
+				choice_list.add_child(button)
 
 
 func _add_service_button(text: String, action_id: String, accent: Color) -> void:
@@ -958,6 +975,7 @@ func _reset_run() -> void:
 	powers.clear()
 	message_log.clear()
 	debug_reports.clear()
+	component_choices.clear()
 	deck.clear()
 	for card_id in STARTER_CARD_IDS:
 		deck.append(_card_copy(card_id))
@@ -1108,6 +1126,8 @@ func choose_node(choice_index: int) -> bool:
 			_open_shop()
 		"service":
 			state = RunState.REST
+		"component":
+			_open_component_choice()
 		_:
 			return false
 	return true
@@ -1827,6 +1847,51 @@ func choose_service(action_id: String) -> bool:
 			return true
 		_:
 			return false
+	state = RunState.MAP
+	return true
+
+
+func _component_choice_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for raw_id in relic_defs.keys():
+		var component_id := str(raw_id)
+		if !relics.has(component_id):
+			ids.append(component_id)
+	ids.sort()
+	_shuffle(ids)
+	return ids
+
+
+func _open_component_choice() -> void:
+	component_choices.clear()
+	var ids := _component_choice_ids()
+	for index in range(mini(3, ids.size())):
+		component_choices.append((relic_defs[ids[index]] as Dictionary).duplicate(true))
+	if component_choices.size() < 3:
+		component_choices.append({
+			"id": "upgrade_fallback",
+			"name": "固件优化",
+			"description": "升级牌组中的第一张未升级卡牌。"
+		})
+	state = RunState.COMPONENT
+
+
+func choose_component(component_id: String) -> bool:
+	if state != RunState.COMPONENT:
+		return false
+	var offered := false
+	for raw_component in component_choices:
+		if str((raw_component as Dictionary).get("id", "")) == component_id:
+			offered = true
+			break
+	if !offered:
+		return false
+	if component_id == "upgrade_fallback":
+		_upgrade_first_card()
+	else:
+		relics.append(component_id)
+		_log("获得工程组件：%s" % (relic_defs[component_id] as Dictionary).get("name", component_id))
+	component_choices.clear()
 	state = RunState.MAP
 	return true
 

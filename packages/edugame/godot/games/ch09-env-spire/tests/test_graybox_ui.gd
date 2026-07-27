@@ -138,6 +138,20 @@ func _verify_viewport(size: Vector2i) -> void:
 		_assert((choice_list.get_child(0) as Control).custom_minimum_size.y >= 88.0, "choice cards should be visually scannable")
 		_assert((choice_list as GridContainer).columns == (1 if size.x < 720 else 2), "choice grid should adapt its column count")
 
+	var run_states: Dictionary = game.get_script().get_script_constant_map().get("RunState", {})
+	if !run_states.has("COMPONENT"):
+		_assert(false, "component node should expose a dedicated run state")
+	else:
+		game.state = game.RunState.MAP
+		game.current_layer = 5
+		game.choose_node(0)
+		game._render_state()
+		await process_frame
+		_assert(choice_view.visible, "component state should reuse the choice view")
+		_assert(choice_list.get_child_count() == 3, "component node should render three choices")
+		if choice_list.get_child_count() > 0:
+			_assert(!(choice_list.get_child(0) as Button).text.is_empty(), "component choice should have a readable label")
+
 	game._finish_run(true)
 	game._render_state()
 	await process_frame
