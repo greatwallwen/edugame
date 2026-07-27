@@ -261,7 +261,7 @@ func _build_ui() -> void:
 	add_child(shell)
 
 	header_panel = PanelContainer.new()
-	header_panel.name = "Header"
+	header_panel.name = "RunHud"
 	header_panel.theme = ui_theme
 	header_panel.custom_minimum_size = Vector2(0, 66)
 	header_panel.add_theme_stylebox_override("panel", _panel_style(Color("#ecf3f4"), Color("#52717a")))
@@ -295,14 +295,15 @@ func _build_ui() -> void:
 	budget_label = _header_metric(header_row)
 	deck_label = _header_metric(header_row)
 	main_area = Control.new()
-	main_area.name = "Main"
+	main_area.name = "SceneStage"
 	main_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	main_area.custom_minimum_size = Vector2(0, 420)
 	shell.add_child(main_area)
-	map_view = _state_panel("MapView")
-	combat_view = _state_panel("CombatView")
-	choice_view = _state_panel("ChoiceView")
-	result_view = _state_panel("ResultView")
+	main_area.add_child(_build_scene_grid())
+	map_view = _scene_panel("MapView", Color("#f7faf9e8"), Color("#68818a"))
+	combat_view = _scene_panel("CombatView", Color("#f7faf9e8"), Color("#68818a"))
+	choice_view = _scene_panel("ChoiceView", Color("#f7faf9e8"), Color("#68818a"))
+	result_view = _scene_panel("ResultView", Color("#f7faf9e8"), Color("#68818a"))
 	main_area.add_child(map_view)
 	main_area.add_child(combat_view)
 	main_area.add_child(choice_view)
@@ -313,7 +314,7 @@ func _build_ui() -> void:
 	_build_result_view()
 
 	var footer := PanelContainer.new()
-	footer.name = "Footer"
+	footer.name = "RunFooter"
 	footer.custom_minimum_size = Vector2(0, 58)
 	footer.add_theme_stylebox_override("panel", _panel_style(Color("#1c272c"), Color("#3a555e")))
 	shell.add_child(footer)
@@ -339,6 +340,27 @@ func _load_svg_texture(path: String) -> Texture2D:
 	return ImageTexture.create_from_image(image)
 
 
+func _grid_texture() -> Texture2D:
+	var image := Image.create(48, 48, false, Image.FORMAT_RGBA8)
+	image.fill(Color.TRANSPARENT)
+	var line := Color("#d9e7e9")
+	for pixel in range(48):
+		image.set_pixel(pixel, 0, line)
+		image.set_pixel(0, pixel, line)
+	return ImageTexture.create_from_image(image)
+
+
+func _build_scene_grid() -> TextureRect:
+	var grid := TextureRect.new()
+	grid.name = "SceneGrid"
+	grid.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	grid.texture = _grid_texture()
+	grid.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	grid.stretch_mode = TextureRect.STRETCH_TILE
+	grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return grid
+
+
 func _header_metric(parent: HBoxContainer) -> Label:
 	var label := Label.new()
 	label.add_theme_color_override("font_color", Color("#294b54"))
@@ -348,10 +370,14 @@ func _header_metric(parent: HBoxContainer) -> Label:
 
 
 func _state_panel(node_name: String) -> PanelContainer:
+	return _scene_panel(node_name, Color("#f7faf9"), Color("#68818a"))
+
+
+func _scene_panel(node_name: String, background: Color, border: Color) -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.name = node_name
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	panel.add_theme_stylebox_override("panel", _panel_style(Color("#f7faf9"), Color("#68818a")))
+	panel.add_theme_stylebox_override("panel", _panel_style(background, border))
 	return panel
 
 

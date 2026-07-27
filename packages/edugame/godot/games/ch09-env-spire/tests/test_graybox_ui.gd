@@ -40,7 +40,7 @@ func _verify_live_resize() -> void:
 	await process_frame
 	var hand_row = game.find_child("HandRow", true, false)
 	var end_turn = game.find_child("EndTurnButton", true, false)
-	var footer = game.get_node_or_null("Shell/Footer")
+	var footer = game.get_node_or_null("Shell/RunFooter")
 	_assert(hand_row != null and hand_row.get_child_count() > 0, "live resize should retain the rendered hand")
 	if hand_row != null and hand_row.get_child_count() > 0:
 		_assert((hand_row.get_child(0) as Control).custom_minimum_size.y <= 200.0, "live resize should compact existing cards")
@@ -63,15 +63,18 @@ func _verify_viewport(size: Vector2i) -> void:
 	await process_frame
 	await process_frame
 
-	var header = game.get_node_or_null("Shell/Header")
-	var map_view = game.get_node_or_null("Shell/Main/MapView")
-	var combat_view = game.get_node_or_null("Shell/Main/CombatView")
-	var choice_view = game.get_node_or_null("Shell/Main/ChoiceView")
-	var result_view = game.get_node_or_null("Shell/Main/ResultView")
-	var footer = game.get_node_or_null("Shell/Footer")
+	var header = game.get_node_or_null("Shell/RunHud")
+	var map_view = game.get_node_or_null("Shell/SceneStage/MapView")
+	var combat_view = game.get_node_or_null("Shell/SceneStage/CombatView")
+	var choice_view = game.get_node_or_null("Shell/SceneStage/ChoiceView")
+	var result_view = game.get_node_or_null("Shell/SceneStage/ResultView")
+	var footer = game.get_node_or_null("Shell/RunFooter")
+	var run_hud = game.find_child("RunHud", true, false)
+	var scene_stage = game.find_child("SceneStage", true, false)
+	var run_footer = game.find_child("RunFooter", true, false)
 	var hand_row = game.find_child("HandRow", true, false)
 	var end_turn = game.find_child("EndTurnButton", true, false)
-	var log_label = game.get_node_or_null("Shell/Footer/LogLabel")
+	var log_label = game.get_node_or_null("Shell/RunFooter/LogLabel")
 	var repair_bar = game.find_child("RepairBar", true, false)
 	var map_timeline = game.find_child("MapTimeline", true, false)
 	var choice_list = game.find_child("ChoiceList", true, false)
@@ -81,6 +84,10 @@ func _verify_viewport(size: Vector2i) -> void:
 
 	_assert(header != null, "header should exist at %s" % size)
 	_assert(map_view != null and combat_view != null and choice_view != null and result_view != null, "all state views should exist")
+	_assert(run_hud != null, "normal flow should expose a stable RunHud")
+	_assert(scene_stage != null, "normal flow should expose a stable SceneStage")
+	_assert(run_footer != null, "normal flow should expose a stable RunFooter")
+	_assert(run_hud.theme == game.ui_theme, "RunHud should use the bundled UI theme")
 	_assert(hand_row != null and end_turn != null and log_label != null and repair_bar != null, "combat controls, repair progress, and log should exist")
 	_assert(choice_list != null, "choice states should expose a stable choice grid")
 	_assert(gate_label != null and restart_button != null, "boss gate and result action should expose stable controls")
