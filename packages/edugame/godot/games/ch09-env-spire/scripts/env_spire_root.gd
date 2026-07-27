@@ -11,6 +11,11 @@ const SOURCE_ORDER := ["smoke", "light", "temp", "humidity"]
 const STAGE_ORDER := ["collect", "interface", "process", "output"]
 const BOSS_DRAW_SEED := 90909
 const RUN_NODE_COUNT := 12
+const LAB_COVERAGE_CARD_IDS := [
+	"mq2_sample", "bh1750_read", "hdc1080_read", "adc_convert",
+	"i2c_transaction", "sliding_average", "lcd_display",
+	"uart_log", "threshold_judgement", "time_slice"
+]
 
 enum RunState { WAITING, MAP, COMBAT, REWARD, EVENT, SHOP, REST, COMPONENT, RESULT }
 
@@ -88,6 +93,9 @@ var component_choices: Array = []
 var shop_cards: Array = []
 var message_log: Array = []
 var debug_reports: Array = []
+var node_lab_active := false
+var lab_current_entry := {}
+var lab_deck_fixture := "starter"
 
 var ui_font: Font
 var ui_theme: Theme
@@ -1904,6 +1912,84 @@ func _grant_random_relic() -> void:
 		if !relics.has(relic_id):
 			relics.append(relic_id)
 			return
+
+
+func _reset_lab_fixture(deck_fixture: String) -> void:
+	_reset_run()
+	node_lab_active = true
+	lab_deck_fixture = deck_fixture
+	budget = 100
+	stability = max_stability
+	relics.clear()
+	if deck_fixture == "coverage":
+		deck.clear()
+		for card_id in LAB_COVERAGE_CARD_IDS:
+			deck.append(_card_copy(card_id))
+	draw_pile = deck.duplicate(true)
+	_shuffle(draw_pile)
+	discard_pile.clear()
+	exhaust_pile.clear()
+	hand.clear()
+	_reset_combat_resources()
+
+
+func start_lab_scenario(entry: Dictionary, deck_fixture: String = "starter") -> bool:
+	if entry.is_empty():
+		return false
+	var selected_entry := entry.duplicate(true)
+	_reset_lab_fixture(deck_fixture)
+	lab_current_entry = selected_entry
+	var kind := str(selected_entry.get("kind", ""))
+	match kind:
+		"enemy":
+			var tier := str(selected_entry.get("tier", "ordinary"))
+			current_node = {"type": tier, "contentId": selected_entry.get("contentId", "")}
+			boss_phase = 0
+			_start_encounter(str(selected_entry.get("contentId", "")), tier)
+		"boss_phase":
+			boss_phase = int(selected_entry.get("phase", 0))
+			current_node = {"type": "boss", "contentId": selected_entry.get("contentId", "warehouse_acceptance")}
+			_start_encounter(str(selected_entry.get("contentId", "warehouse_acceptance")), "boss")
+		"event":
+			current_event = (event_defs.get(str(selected_entry.get("contentId", "")), {}) as Dictionary).duplicate(true)
+			if current_event.is_empty():
+				return false
+			state = RunState.EVENT
+		"checkpoint_sensor":
+			current_node = {"type": "checkpoint_sensor"}
+			_start_checkpoint(true)
+		"checkpoint_trust":
+			current_node = {"type": "checkpoint_trust"}
+			_start_checkpoint(false)
+		"component":
+			_open_component_choice()
+		"shop":
+			_open_shop()
+		"service":
+			current_node = {"type": "service", "label": "节点实验室休整"}
+			state = RunState.REST
+		"reward":
+			_open_reward()
+		_:
+			return false
+	_render_state()
+	return true
+
+
+func restart_lab_scenario() -> bool:
+	if lab_current_entry.is_empty():
+		return false
+	return start_lab_scenario(lab_current_entry, lab_deck_fixture)
+
+
+func return_to_node_lab() -> void:
+	_reset_combat_resources()
+	reward_choices.clear()
+	component_choices.clear()
+	current_event.clear()
+	shop_cards.clear()
+	state = RunState.WAITING
+	_render_state()
 
 
 func _handle_defeat() -> void:
