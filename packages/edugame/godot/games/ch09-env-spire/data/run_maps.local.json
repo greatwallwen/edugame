@@ -1,0 +1,58 @@
+{
+  "maps": [
+    {
+      "id": "mvp_a",
+      "seedId": 901,
+      "layers": [
+        {"layer": 1, "choices": [{"id": "a1", "type": "ordinary", "contentId": "mq2_warmup", "lane": "merge", "label": "MQ-2 预热不足"}]},
+        {"layer": 2, "choices": [{"id": "a2", "type": "event", "contentId": "sensor_replacement", "lane": "merge", "label": "传感器替换"}]},
+        {"layer": 3, "choices": [{"id": "a3", "type": "ordinary", "contentId": "bh1750_stale", "lane": "merge", "label": "BH1750 读数停留"}]},
+        {"layer": 4, "choices": [{"id": "a4", "type": "service", "contentId": "service", "lane": "merge", "label": "阶段维护"}]},
+        {"layer": 5, "choices": [{"id": "a5", "type": "checkpoint_sensor", "contentId": "sensor_checkpoint", "lane": "merge", "label": "传感器接入检查"}]},
+        {"layer": 6, "choices": [{"id": "a6", "type": "component", "contentId": "component", "lane": "merge", "label": "工程组件"}]},
+        {"layer": 7, "choices": [{"id": "a7", "type": "ordinary", "contentId": "adc_spike", "lane": "merge", "label": "ADC 尖峰噪声"}]},
+        {"layer": 8, "choices": [{"id": "a8", "type": "checkpoint_trust", "contentId": "trust_checkpoint", "lane": "merge", "label": "数据可信检查"}]},
+        {"layer": 9, "choices": [{"id": "a9", "type": "shop", "contentId": "shop", "lane": "merge", "label": "器材商店"}]},
+        {"layer": 10, "choices": [{"id": "a10", "type": "elite", "contentId": "i2c_congestion", "lane": "merge", "label": "I2C 总线拥塞"}]},
+        {"layer": 11, "choices": [{"id": "a11", "type": "service", "contentId": "service", "lane": "merge", "label": "Boss 前整备"}]},
+        {"layer": 12, "choices": [{"id": "a12", "type": "boss", "contentId": "warehouse_acceptance", "lane": "merge", "label": "智能仓储综合验收"}]}
+      ]
+    },
+    {
+      "id": "mvp_b",
+      "seedId": 902,
+      "layers": [
+        {"layer": 1, "choices": [{"id": "b1", "type": "ordinary", "contentId": "bh1750_stale", "lane": "merge", "label": "BH1750 读数停留"}]},
+        {"layer": 2, "choices": [{"id": "b2", "type": "event", "contentId": "datasheet_errata", "lane": "merge", "label": "数据手册勘误"}]},
+        {"layer": 3, "choices": [{"id": "b3", "type": "ordinary", "contentId": "mq2_warmup", "lane": "merge", "label": "MQ-2 预热不足"}]},
+        {"layer": 4, "choices": [{"id": "b4", "type": "service", "contentId": "service", "lane": "merge", "label": "阶段维护"}]},
+        {"layer": 5, "choices": [{"id": "b5", "type": "checkpoint_sensor", "contentId": "sensor_checkpoint", "lane": "merge", "label": "传感器接入检查"}]},
+        {"layer": 6, "choices": [{"id": "b6", "type": "component", "contentId": "component", "lane": "merge", "label": "工程组件"}]},
+        {"layer": 7, "choices": [{"id": "b7", "type": "ordinary", "contentId": "lcd_blocking", "lane": "merge", "label": "LCD 刷新阻塞"}]},
+        {"layer": 8, "choices": [{"id": "b8", "type": "checkpoint_trust", "contentId": "trust_checkpoint", "lane": "merge", "label": "数据可信检查"}]},
+        {"layer": 9, "choices": [{"id": "b9", "type": "shop", "contentId": "shop", "lane": "merge", "label": "器材商店"}]},
+        {"layer": 10, "choices": [{"id": "b10", "type": "elite", "contentId": "i2c_congestion", "lane": "merge", "label": "I2C 总线拥塞"}]},
+        {"layer": 11, "choices": [{"id": "b11", "type": "service", "contentId": "service", "lane": "merge", "label": "Boss 前整备"}]},
+        {"layer": 12, "choices": [{"id": "b12", "type": "boss", "contentId": "warehouse_acceptance", "lane": "merge", "label": "智能仓储综合验收"}]}
+      ]
+    },
+    {
+      "id": "mvp_c",
+      "seedId": 903,
+      "layers": [
+        {"layer": 1, "choices": [{"id": "c1", "type": "ordinary", "contentId": "mq2_warmup", "lane": "merge", "label": "MQ-2 预热不足"}]},
+        {"layer": 2, "choices": [{"id": "c2", "type": "event", "contentId": "bench_cleanup", "lane": "merge", "label": "实验台整理"}]},
+        {"layer": 3, "choices": [{"id": "c3", "type": "ordinary", "contentId": "bh1750_stale", "lane": "merge", "label": "BH1750 读数停留"}]},
+        {"layer": 4, "choices": [{"id": "c4", "type": "service", "contentId": "service", "lane": "merge", "label": "阶段维护"}]},
+        {"layer": 5, "choices": [{"id": "c5", "type": "checkpoint_sensor", "contentId": "sensor_checkpoint", "lane": "merge", "label": "传感器接入检查"}]},
+        {"layer": 6, "choices": [{"id": "c6", "type": "component", "contentId": "component", "lane": "merge", "label": "工程组件"}]},
+        {"layer": 7, "choices": [{"id": "c7", "type": "ordinary", "contentId": "alarm_jitter", "lane": "merge", "label": "报警阈值抖动"}]},
+        {"layer": 8, "choices": [{"id": "c8", "type": "checkpoint_trust", "contentId": "trust_checkpoint", "lane": "merge", "label": "数据可信检查"}]},
+        {"layer": 9, "choices": [{"id": "c9", "type": "shop", "contentId": "shop", "lane": "merge", "label": "器材商店"}]},
+        {"layer": 10, "choices": [{"id": "c10", "type": "elite", "contentId": "i2c_congestion", "lane": "merge", "label": "I2C 总线拥塞"}]},
+        {"layer": 11, "choices": [{"id": "c11", "type": "service", "contentId": "service", "lane": "merge", "label": "Boss 前整备"}]},
+        {"layer": 12, "choices": [{"id": "c12", "type": "boss", "contentId": "warehouse_acceptance", "lane": "merge", "label": "智能仓储综合验收"}]}
+      ]
+    }
+  ]
+}
