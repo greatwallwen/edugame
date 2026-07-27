@@ -66,6 +66,16 @@ func _run() -> void:
 	game.return_to_node_lab()
 	_assert(game.state == game.RunState.WAITING, "return should leave scenario gameplay")
 
+	if !game.has_method("_enter_node_lab"):
+		_assert(false, "game should expose the hidden node lab launcher")
+	else:
+		game._enter_node_lab()
+		await process_frame
+		_assert(game.node_lab_active, "manual lab entry should activate lab mode")
+		_assert(game.find_child("NodeLabCatalog", true, false) != null, "lab should render a catalog")
+		_assert(game.find_child("NodeLabRestart", true, false) != null, "lab should expose restart")
+		_assert(game.find_child("NodeLabReturn", true, false) != null, "lab should expose return")
+
 	game.queue_free()
 	await process_frame
 	_finish()

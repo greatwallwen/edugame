@@ -70,6 +70,21 @@ func _run() -> void:
 	runtime.bridge.receive_payload({"type": "DGB_GODOT_RESET", "version": 1})
 	_assert(game.stability == 80 and game.state == game.RunState.MAP, "host reset should restart with injected config")
 
+	if !game.has_method("_enter_node_lab"):
+		_assert(false, "game should expose node lab entry")
+	else:
+		var completion_count_before_lab := outbound_payloads.filter(func(payload: Dictionary) -> bool: return payload.get("type") == "DGB_GODOT_COMPLETE").size()
+		game._enter_node_lab()
+		game.start_lab_scenario({
+			"id": "warehouse_acceptance",
+			"kind": "enemy",
+			"contentId": "warehouse_acceptance",
+			"tier": "boss"
+		})
+		game._finish_run(true)
+		var completion_count_after_lab := outbound_payloads.filter(func(payload: Dictionary) -> bool: return payload.get("type") == "DGB_GODOT_COMPLETE").size()
+		_assert(completion_count_after_lab == completion_count_before_lab, "node lab should not report course completion")
+
 	game.queue_free()
 	await process_frame
 	_finish()

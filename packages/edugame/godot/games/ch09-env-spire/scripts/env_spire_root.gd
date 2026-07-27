@@ -96,6 +96,7 @@ var debug_reports: Array = []
 var node_lab_active := false
 var lab_current_entry := {}
 var lab_deck_fixture := "starter"
+var node_lab_overlay: CanvasLayer
 
 var ui_font: Font
 var ui_theme: Theme
@@ -142,7 +143,10 @@ func _ready() -> void:
 	_setup_runtime()
 	state = RunState.WAITING
 	_render_state()
-	call_deferred("_start_standalone_preview_if_needed")
+	if _node_lab_requested():
+		call_deferred("_enter_node_lab")
+	else:
+		call_deferred("_start_standalone_preview_if_needed")
 
 
 func _setup_runtime() -> void:
@@ -189,6 +193,40 @@ func _start_standalone_preview(top_level: bool) -> bool:
 	_reset_run()
 	_render_state()
 	return true
+
+
+func _node_lab_requested() -> bool:
+	for argument in OS.get_cmdline_user_args():
+		if argument == "--node-lab":
+			return true
+	if OS.has_feature("web"):
+		var value = JavaScriptBridge.eval(
+			"new URLSearchParams(window.location.search).get('nodeLab')",
+			true
+		)
+		return str(value) == "1"
+	return false
+
+
+func _enter_node_lab() -> void:
+	if node_lab_overlay != null:
+		node_lab_active = true
+		node_lab_overlay.show_catalog()
+		return
+	for child in get_children():
+		var script = child.get_script()
+		if script != null and str(script.resource_path) == "res://dev/node_lab.gd":
+			node_lab_overlay = child as CanvasLayer
+			break
+	if node_lab_overlay == null:
+		var lab_script := load("res://dev/node_lab.gd")
+		node_lab_overlay = lab_script.new() as CanvasLayer
+		add_child(node_lab_overlay)
+		node_lab_overlay.configure(self)
+	node_lab_active = true
+	state = RunState.WAITING
+	node_lab_overlay.show_catalog()
+	_render_state()
 
 
 func _notification(what: int) -> void:
@@ -964,7 +1002,7 @@ func _index_by_id(items: Array) -> Dictionary:
 
 
 func _reset_run() -> void:
-	if runtime != null:
+	if runtime != null and !node_lab_active:
 		runtime.begin_attempt()
 	completed = false
 	victory = false
@@ -1113,7 +1151,7 @@ func choose_node(choice_index: int) -> bool:
 	current_node = (choices[choice_index] as Dictionary).duplicate(true)
 	visited_nodes.append(current_node.duplicate(true))
 	current_layer += 1
-	if runtime != null:
+	if runtime != null and !node_lab_active:
 		runtime.report_progress(_run_progress(), str(current_node.get("label", "调试节点")), _run_stats())
 	var node_type := str(current_node.get("type", ""))
 	match node_type:
@@ -1915,8 +1953,8 @@ func _grant_random_relic() -> void:
 
 
 func _reset_lab_fixture(deck_fixture: String) -> void:
-	_reset_run()
 	node_lab_active = true
+	_reset_run()
 	lab_deck_fixture = deck_fixture
 	budget = 100
 	stability = max_stability
@@ -1973,6 +2011,8 @@ func start_lab_scenario(entry: Dictionary, deck_fixture: String = "starter") -> 
 		_:
 			return false
 	_render_state()
+	if node_lab_overlay != null:
+		node_lab_overlay.show_scenario_controls()
 	return true
 
 
@@ -1989,6 +2029,8 @@ func return_to_node_lab() -> void:
 	current_event.clear()
 	shop_cards.clear()
 	state = RunState.WAITING
+	if node_lab_overlay != null:
+		node_lab_overlay.show_catalog()
 	_render_state()
 
 
@@ -2014,6 +2056,9 @@ func _finish_run(won: bool) -> void:
 	victory = won
 	score = _calculate_score() if won else mini(59, int(round(40.0 * _run_progress())))
 	state = RunState.RESULT
+	if node_lab_active:
+		_render_state()
+		return
 	if runtime != null:
 		runtime.complete(score, -1, Time.get_ticks_msec() - started_at, _run_stats())
 	_render_state()

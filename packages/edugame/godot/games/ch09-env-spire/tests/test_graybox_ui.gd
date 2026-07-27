@@ -162,6 +162,30 @@ func _verify_viewport(size: Vector2i) -> void:
 		_assert(restart_button.size.x <= 360.0, "desktop result action should not stretch across the work area")
 		_assert(viewport_rect.encloses(restart_button.get_global_rect()), "result action should stay inside viewport at %s" % size)
 
+	if !game.has_method("_enter_node_lab"):
+		_assert(false, "game should expose the hidden node lab launcher")
+	else:
+		game._enter_node_lab()
+		await process_frame
+		var lab_catalog = game.find_child("NodeLabCatalog", true, false)
+		var lab_return = game.find_child("NodeLabReturn", true, false)
+		var lab_restart = game.find_child("NodeLabRestart", true, false)
+		var lab_scenario = game.find_child("NodeLabScenario_mq2_warmup", true, false)
+		_assert(lab_catalog != null and lab_catalog.visible, "node lab catalog should be visible at %s" % size)
+		_assert(lab_return != null and lab_restart != null, "node lab should expose stable scenario controls")
+		_assert(lab_scenario != null, "node lab should render generated scenario buttons")
+		if lab_scenario != null:
+			_assert((lab_scenario as Control).custom_minimum_size.y >= 44.0, "lab scenario touch target should be at least 44 px")
+			_assert(viewport_rect.intersects((lab_scenario as Control).get_global_rect()), "first lab scenario should be visible at %s" % size)
+		game.start_lab_scenario({
+			"id": "sensor_replacement",
+			"kind": "event",
+			"contentId": "sensor_replacement"
+		})
+		await process_frame
+		_assert(!lab_catalog.visible, "starting a lab scenario should hide the catalog")
+		_assert(lab_return.visible and lab_restart.visible, "scenario controls should remain visible during lab play")
+
 	game.queue_free()
 	await process_frame
 
