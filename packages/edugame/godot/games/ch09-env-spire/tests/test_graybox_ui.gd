@@ -171,7 +171,9 @@ func _verify_viewport(size: Vector2i) -> void:
 		var lab_return = game.find_child("NodeLabReturn", true, false)
 		var lab_restart = game.find_child("NodeLabRestart", true, false)
 		var lab_scenario = game.find_child("NodeLabScenario_mq2_warmup", true, false)
+		var lab_root = game.find_child("NodeLabRoot", true, false)
 		_assert(lab_catalog != null and lab_catalog.visible, "node lab catalog should be visible at %s" % size)
+		_assert(lab_root != null and lab_root.theme == game.ui_theme, "node lab should inherit the bundled UI font theme")
 		_assert(lab_return != null and lab_restart != null, "node lab should expose stable scenario controls")
 		_assert(lab_scenario != null, "node lab should render generated scenario buttons")
 		if lab_scenario != null:
@@ -185,6 +187,17 @@ func _verify_viewport(size: Vector2i) -> void:
 		await process_frame
 		_assert(!lab_catalog.visible, "starting a lab scenario should hide the catalog")
 		_assert(lab_return.visible and lab_restart.visible, "scenario controls should remain visible during lab play")
+		_assert(viewport_rect.encloses(lab_return.get_global_rect()), "lab return control should stay inside viewport at %s" % size)
+		_assert(viewport_rect.encloses(lab_restart.get_global_rect()), "lab restart control should stay inside viewport at %s" % size)
+		game.start_lab_scenario({
+			"id": "mq2_warmup",
+			"kind": "enemy",
+			"contentId": "mq2_warmup",
+			"tier": "ordinary"
+		}, "coverage")
+		await process_frame
+		_assert(!header.visible, "lab toolbar should replace the normal game header during scenarios")
+		_assert(end_turn.get_global_rect().end.y <= footer.get_global_rect().position.y, "lab combat action should stay above the footer at %s" % size)
 
 	game.queue_free()
 	await process_frame

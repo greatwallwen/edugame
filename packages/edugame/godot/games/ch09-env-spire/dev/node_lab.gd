@@ -112,6 +112,7 @@ func _build_ui() -> void:
 	lab_root.name = "NodeLabRoot"
 	lab_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	lab_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lab_root.theme = game.ui_theme
 	add_child(lab_root)
 
 	toolbar = PanelContainer.new()
@@ -203,6 +204,7 @@ func _toolbar_button(button_name: String, text: String) -> Button:
 	button.name = button_name
 	button.text = text
 	button.custom_minimum_size = Vector2(76, 44)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	game._skin_button(button, Color("#2f7f8d"))
 	return button
 
@@ -270,6 +272,8 @@ func show_catalog() -> void:
 	starter_button.visible = true
 	coverage_button.visible = true
 	_set_fixture(deck_fixture)
+	game.header_panel.visible = true
+	game.shell.offset_top = 0
 	game.shell.visible = false
 	_apply_responsive_layout()
 
@@ -283,6 +287,7 @@ func show_scenario_controls() -> void:
 	restart_button.visible = true
 	starter_button.visible = true
 	coverage_button.visible = true
+	game.header_panel.visible = false
 	game.shell.visible = true
 	game.shell.offset_top = 58
 	_apply_responsive_layout()
@@ -297,5 +302,8 @@ func _apply_responsive_layout() -> void:
 	coverage_button.text = "全标签"
 	return_button.text = "目录" if compact else "返回目录"
 	restart_button.text = "重开" if compact else "重开节点"
+	for button in [starter_button, coverage_button, return_button, restart_button]:
+		button.custom_minimum_size.x = 58 if compact else 76
+		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	for grid in group_grids:
 		grid.columns = 1 if compact else 2
