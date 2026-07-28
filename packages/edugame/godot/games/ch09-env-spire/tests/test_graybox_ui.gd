@@ -76,6 +76,8 @@ func _verify_viewport(size: Vector2i) -> void:
 	var end_turn = game.find_child("EndTurnButton", true, false)
 	var log_label = game.get_node_or_null("Shell/RunFooter/LogLabel")
 	var repair_bar = game.find_child("RepairBar", true, false)
+	var map_composition = game.find_child("MapComposition", true, false)
+	var map_route_scroll = game.find_child("MapRouteScroll", true, false)
 	var map_route = game.find_child("MapRoute", true, false)
 	var map_enter = game.find_child("MapEnterButton", true, false)
 	var mission_summary = game.find_child("MapMissionSummary", true, false)
@@ -97,6 +99,13 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(map_route != null and map_route.get_child_count() == 12, "map climb should render twelve route nodes")
 	_assert(map_enter != null and map_enter.custom_minimum_size.y >= 44.0, "map enter should be a full touch target")
 	_assert(mission_summary != null and next_detail != null, "map should expose mission and next-node context")
+	_assert(map_composition != null and map_route_scroll != null, "map should expose its responsive route composition")
+	if size.x < 720 and map_composition != null and map_route_scroll != null:
+		_assert(map_composition.vertical, "compact map composition should stack vertically")
+		_assert(!mission_summary.visible, "compact map should hide the mission summary")
+		_assert(next_detail.get_global_rect().position.y >= map_route_scroll.get_global_rect().end.y, "compact next-node detail should follow the route")
+		for marker in map_route.get_children():
+			_assert((marker as Control).custom_minimum_size.y >= 44.0, "compact route markers should be full touch targets")
 	if header != null:
 		_assert(header.theme != null and header.theme.default_font != null, "bundled Chinese font should be installed")
 		_assert(game.ui_font.resource_path == game.UI_FONT_PATH, "UI font should use the imported resource for Web export")
@@ -106,13 +115,22 @@ func _verify_viewport(size: Vector2i) -> void:
 	game.current_layer = 10
 	game._render_state()
 	await process_frame
+	await process_frame
 	if map_route != null and map_route.get_child_count() == 12:
 		_assert((map_route.get_child(10) as Button).text.contains("整备"), "node 11 should render the service label")
+		if size.x < 720 and map_route_scroll != null:
+			var route_view: Rect2 = map_route_scroll.get_global_rect()
+			for marker_index in [9, 10, 11]:
+				var marker_rect: Rect2 = (map_route.get_child(marker_index) as Control).get_global_rect()
+				_assert(marker_rect.position.y >= route_view.position.y and marker_rect.end.y <= route_view.end.y, "compact route should reveal the available node and neighboring node %d" % (marker_index + 1))
 	game.current_layer = 11
 	game._render_state()
 	await process_frame
 	if map_route != null and map_route.get_child_count() == 12:
-		_assert((map_route.get_child(11) as Button).text.contains("综合验收"), "node 12 should render the boss label")
+		var boss_marker := map_route.get_child(11) as Button
+		_assert(boss_marker.text.contains("综合验收"), "node 12 should render the boss label")
+		var boss_style := boss_marker.get_theme_stylebox("normal") as StyleBoxFlat
+		_assert(boss_style != null and boss_style.border_color.is_equal_approx(Color("#725c91")), "available Boss should retain violet styling")
 	game.current_layer = 0
 	game._render_state()
 	await process_frame

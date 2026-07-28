@@ -642,6 +642,8 @@ func _apply_responsive_layout() -> void:
 		map_mission_summary.visible = !compact
 	if map_route_scroll != null:
 		map_route_scroll.custom_minimum_size.y = 228.0 if compact else 252.0
+		if compact and state == RunState.MAP:
+			call_deferred("_reveal_available_map_node")
 	if choice_list != null:
 		choice_list.columns = 1 if compact else 2
 	if budget_label != null:
@@ -722,14 +724,14 @@ func _render_map_route(layers: Array) -> void:
 			background = Color("#2f7f8d")
 			accent = Color("#2f7f8d")
 			text_color = Color.WHITE
-		elif node_state == "available":
-			background = Color("#f2d5cc")
-			accent = Color("#b75a3a")
-			text_color = Color("#7b3324")
 		elif marker_type == "boss":
 			background = Color("#e6e0ed")
 			accent = Color("#725c91")
 			text_color = Color("#4f4066")
+		elif node_state == "available":
+			background = Color("#f2d5cc")
+			accent = Color("#b75a3a")
+			text_color = Color("#7b3324")
 		marker.text = "%02d  %s\n%s" % [layer_number, _node_type_short(marker_type), _node_type_name(marker_type)]
 		marker.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_skin_button(marker, accent)
@@ -748,6 +750,15 @@ func _render_map_route(layers: Array) -> void:
 				_render_state()
 			)
 		map_route.add_child(marker)
+
+
+func _reveal_available_map_node() -> void:
+	if map_route_scroll == null or map_route == null or map_route.get_child_count() == 0:
+		return
+	var available_index := mini(current_layer, map_route.get_child_count() - 1)
+	var first_visible_index := maxi(0, available_index - 1)
+	var first_visible_marker := map_route.get_child(first_visible_index) as Control
+	map_route_scroll.scroll_vertical = int(first_visible_marker.position.y)
 
 
 func _map_node_state(layer_number: int) -> String:
