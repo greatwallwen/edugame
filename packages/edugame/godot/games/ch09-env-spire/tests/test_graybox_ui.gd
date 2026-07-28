@@ -196,11 +196,35 @@ func _verify_viewport(size: Vector2i) -> void:
 	game._render_state()
 	await process_frame
 	_assert(choice_view.visible and !combat_view.visible, "reward state should show choice view")
+	var choice_backdrop = game.find_child("SceneChoiceBackdrop", true, false)
+	var choice_context = game.find_child("SceneChoiceContext", true, false)
+	var reward_cards = game.find_child("RewardCards", true, false)
+	var reward_skip = game.find_child("RewardSkipButton", true, false)
+	_assert(choice_backdrop != null and choice_context != null, "choice states should retain scene context")
+	_assert(reward_cards != null, "reward should expose a dedicated card row")
+	if reward_cards != null and reward_skip != null and reward_cards.get_child_count() > 0:
+		_assert((reward_skip as Control).custom_minimum_size.y < (reward_cards.get_child(0) as Control).custom_minimum_size.y, "reward skip should be visually secondary to reward cards")
 	if choice_list != null:
 		_assert(choice_list is GridContainer, "choice states should use a responsive grid")
-		_assert(choice_list.get_child_count() == 2, "one reward and the skip action should render")
-		_assert((choice_list.get_child(0) as Control).custom_minimum_size.y >= 88.0, "choice cards should be visually scannable")
 		_assert((choice_list as GridContainer).columns == (1 if size.x < 720 else 2), "choice grid should adapt its column count")
+	if reward_cards != null:
+		_assert(reward_cards.get_child_count() == 1, "one reward should render in the dedicated reward row")
+		if reward_cards.get_child_count() > 0:
+			_assert((reward_cards.get_child(0) as Control).custom_minimum_size.y >= 88.0, "reward cards should be visually scannable")
+
+	game.state = game.RunState.REST
+	game.current_layer = 10
+	game._render_state()
+	await process_frame
+	var service_bench = game.find_child("ServiceBench", true, false)
+	_assert(service_bench != null and service_bench.visible, "service should present the engineering maintenance bench")
+	if service_bench != null and choice_list != null:
+		for action in choice_list.get_children():
+			_assert((action as Control).custom_minimum_size.y >= 44.0, "service actions should remain at least 44 px high")
+	game.state = game.RunState.RESULT
+	game._render_state()
+	await process_frame
+	_assert(service_bench != null and !service_bench.visible, "service bench should hide outside the service state")
 
 	var run_states: Dictionary = game.get_script().get_script_constant_map().get("RunState", {})
 	if !run_states.has("COMPONENT"):
@@ -220,8 +244,12 @@ func _verify_viewport(size: Vector2i) -> void:
 	game._render_state()
 	await process_frame
 	_assert(result_view.visible and !choice_view.visible, "result state should show result view")
-	var result_summary = game.find_child("ResultSummary", true, false)
-	_assert(result_summary != null and result_summary.text.contains("调试报告"), "result state should retain the run's debugging report summary")
+	var result_heading = game.find_child("RunResultHeading", true, false)
+	var result_metrics = game.find_child("RunResultMetrics", true, false)
+	var learning_summary = game.find_child("RunLearningSummary", true, false)
+	_assert(result_heading != null and result_metrics != null and learning_summary != null, "result state should expose the refreshed result hierarchy")
+	if learning_summary != null:
+		_assert(learning_summary.text.contains("调试报告"), "result state should retain the run's debugging report summary")
 	if restart_button != null:
 		_assert(restart_button.size.x <= 360.0, "desktop result action should not stretch across the work area")
 		_assert(viewport_rect.encloses(restart_button.get_global_rect()), "result action should stay inside viewport at %s" % size)

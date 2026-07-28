@@ -136,9 +136,13 @@ var choice_view: PanelContainer
 var choice_title: Label
 var choice_description: Label
 var choice_list: GridContainer
+var reward_cards: GridContainer
+var reward_skip_button: Button
+var service_bench: PanelContainer
 var result_view: PanelContainer
 var result_title: Label
-var result_summary: Label
+var result_metrics: Label
+var result_learning_summary: Label
 var log_label: Label
 
 
@@ -620,30 +624,75 @@ func _build_combat_view() -> void:
 
 
 func _build_choice_view() -> void:
+	var backdrop := ColorRect.new()
+	backdrop.name = "SceneChoiceBackdrop"
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color("#dbe7e7")
+	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	choice_view.add_child(backdrop)
 	var margin := _content_margin()
 	choice_view.add_child(margin)
 	var content := VBoxContainer.new()
 	content.add_theme_constant_override("separation", 10)
 	margin.add_child(content)
+	var context := VBoxContainer.new()
+	context.name = "SceneChoiceContext"
+	context.add_theme_constant_override("separation", 4)
+	content.add_child(context)
 	choice_title = Label.new()
 	choice_title.add_theme_font_size_override("font_size", 24)
 	choice_title.add_theme_color_override("font_color", Color("#17343c"))
-	content.add_child(choice_title)
+	context.add_child(choice_title)
 	choice_description = Label.new()
 	choice_description.name = "ChoiceDescription"
 	choice_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	choice_description.add_theme_color_override("font_color", Color("#486068"))
-	content.add_child(choice_description)
+	context.add_child(choice_description)
 	var scroll := ScrollContainer.new()
+	scroll.name = "ChoiceScroll"
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(scroll)
+	var scroll_content := VBoxContainer.new()
+	scroll_content.name = "ChoiceScrollContent"
+	scroll_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_content.add_theme_constant_override("separation", 10)
+	scroll.add_child(scroll_content)
+	reward_cards = GridContainer.new()
+	reward_cards.name = "RewardCards"
+	reward_cards.columns = 3
+	reward_cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	reward_cards.add_theme_constant_override("h_separation", 10)
+	reward_cards.add_theme_constant_override("v_separation", 10)
+	scroll_content.add_child(reward_cards)
+	reward_skip_button = Button.new()
+	reward_skip_button.name = "RewardSkipButton"
+	reward_skip_button.text = "跳过奖励"
+	_skin_button(reward_skip_button, Color("#697b80"))
+	reward_skip_button.custom_minimum_size = Vector2(180, 44)
+	reward_skip_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	reward_skip_button.pressed.connect(func() -> void:
+		choose_reward("")
+		_render_state()
+	)
+	scroll_content.add_child(reward_skip_button)
+	service_bench = PanelContainer.new()
+	service_bench.name = "ServiceBench"
+	service_bench.custom_minimum_size = Vector2(0, 58)
+	service_bench.add_theme_stylebox_override("panel", _panel_style(Color("#e7efea"), Color("#517943")))
+	var bench_label := Label.new()
+	bench_label.text = "工程维护台 / 诊断、清理与固件整备"
+	bench_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bench_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	bench_label.add_theme_color_override("font_color", Color("#315f45"))
+	service_bench.add_child(bench_label)
+	scroll_content.add_child(service_bench)
 	choice_list = GridContainer.new()
 	choice_list.name = "ChoiceList"
 	choice_list.columns = 2
 	choice_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	choice_list.add_theme_constant_override("h_separation", 10)
 	choice_list.add_theme_constant_override("v_separation", 10)
-	scroll.add_child(choice_list)
+	scroll_content.add_child(choice_list)
 
 
 func _build_result_view() -> void:
@@ -654,15 +703,22 @@ func _build_result_view() -> void:
 	content.add_theme_constant_override("separation", 16)
 	margin.add_child(content)
 	result_title = Label.new()
+	result_title.name = "RunResultHeading"
 	result_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	result_title.add_theme_font_size_override("font_size", 28)
 	content.add_child(result_title)
-	result_summary = Label.new()
-	result_summary.name = "ResultSummary"
-	result_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	result_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	result_summary.add_theme_color_override("font_color", Color("#355158"))
-	content.add_child(result_summary)
+	result_metrics = Label.new()
+	result_metrics.name = "RunResultMetrics"
+	result_metrics.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_metrics.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	result_metrics.add_theme_color_override("font_color", Color("#355158"))
+	content.add_child(result_metrics)
+	result_learning_summary = Label.new()
+	result_learning_summary.name = "RunLearningSummary"
+	result_learning_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_learning_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	result_learning_summary.add_theme_color_override("font_color", Color("#355158"))
+	content.add_child(result_learning_summary)
 	var restart := Button.new()
 	restart.name = "RestartButton"
 	restart.text = "重新开始调试"
@@ -707,6 +763,8 @@ func _apply_responsive_layout() -> void:
 			call_deferred("_reveal_available_map_node")
 	if choice_list != null:
 		choice_list.columns = 1 if compact else 2
+	if reward_cards != null:
+		reward_cards.columns = 1 if compact else 3
 	if budget_label != null:
 		budget_label.visible = !compact
 	if deck_label != null:
@@ -729,6 +787,8 @@ func _render_state() -> void:
 	combat_view.visible = state == RunState.COMBAT
 	choice_view.visible = [RunState.REWARD, RunState.EVENT, RunState.SHOP, RunState.REST, RunState.COMPONENT].has(state)
 	result_view.visible = state == RunState.RESULT
+	if service_bench != null:
+		service_bench.visible = state == RunState.REST
 	_render_header()
 	match state:
 		RunState.MAP:
@@ -962,10 +1022,16 @@ func _current_intent_text() -> String:
 
 func _render_choices() -> void:
 	_clear_children(choice_list)
+	_clear_children(reward_cards)
+	var scene_kind := _choice_scene_kind()
+	reward_cards.visible = scene_kind == "reward"
+	reward_skip_button.visible = scene_kind == "reward"
+	service_bench.visible = scene_kind == "service"
+	choice_list.visible = scene_kind != "reward"
 	match state:
 		RunState.REWARD:
-			choice_title.text = "选择一张工程卡牌"
-			choice_description.text = "补足当前链路，或跳过以保持牌组精简。"
+			choice_title.text = "故障已解决 · 选择后续工具"
+			choice_description.text = "本次故障已定位并完成修复。"
 			var debug_summary := _latest_debug_summary()
 			if !debug_summary.is_empty():
 				choice_description.text += "\n" + debug_summary
@@ -980,16 +1046,7 @@ func _render_choices() -> void:
 					choose_reward(str(card.get("id", "")))
 					_render_state()
 				)
-				choice_list.add_child(button)
-			var skip := Button.new()
-			skip.text = "跳过奖励"
-			_skin_button(skip, Color("#697b80"))
-			_size_choice_button(skip, 72)
-			skip.pressed.connect(func() -> void:
-				choose_reward("")
-				_render_state()
-			)
-			choice_list.add_child(skip)
+				reward_cards.add_child(button)
 		RunState.EVENT:
 			choice_title.text = str(current_event.get("name", "调试事件"))
 			choice_description.text = str(current_event.get("description", ""))
@@ -1055,6 +1112,16 @@ func _render_choices() -> void:
 				choice_list.add_child(button)
 
 
+func _choice_scene_kind() -> String:
+	return {
+		RunState.REWARD: "reward",
+		RunState.EVENT: "event",
+		RunState.SHOP: "shop",
+		RunState.REST: "service",
+		RunState.COMPONENT: "component"
+	}.get(state, "choice")
+
+
 func _add_service_button(text: String, action_id: String, accent: Color) -> void:
 	var button := Button.new()
 	button.text = text
@@ -1076,9 +1143,10 @@ func _size_choice_button(button: Button, minimum_height: float) -> void:
 func _render_result() -> void:
 	result_title.text = "综合验收通过" if victory else "调试中止"
 	result_title.add_theme_color_override("font_color", Color("#226c59") if victory else Color("#8d2f2a"))
-	result_summary.text = "得分 %d / 100\n到达节点 %d / %d\n稳定度 %d / %d\n检查点 %d / 2\n牌组 %d 张\n%s" % [
-		score, current_layer, RUN_NODE_COUNT, stability, max_stability, checkpoints_passed, deck.size(), _learning_summary()
+	result_metrics.text = "得分 %d / 100\n到达节点 %d / %d\n稳定度 %d / %d\n检查点 %d / 2\n牌组 %d 张" % [
+		score, current_layer, RUN_NODE_COUNT, stability, max_stability, checkpoints_passed, deck.size()
 	]
+	result_learning_summary.text = _learning_summary()
 
 
 func _learning_summary() -> String:
