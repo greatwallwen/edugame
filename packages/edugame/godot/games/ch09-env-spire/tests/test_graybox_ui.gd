@@ -28,6 +28,8 @@ func _verify_live_resize() -> void:
 	game.size = Vector2(desktop_size)
 	await process_frame
 	await process_frame
+	game._start_clean_formal_run()
+	await process_frame
 	game.current_node = {"type": "ordinary", "contentId": "mq2_warmup"}
 	game._start_encounter("mq2_warmup", "ordinary")
 	game._render_state()
@@ -95,6 +97,15 @@ func _verify_viewport(size: Vector2i) -> void:
 	var point_counter = game.find_child("ProcessingPointCounter", true, false)
 	var reward_cards = game.find_child("RewardCards", true, false)
 	var reward_skip = game.find_child("RewardSkipButton", true, false)
+	var tutorial_view = game.find_child("TutorialView", true, false)
+	var tutorial_route = game.find_child("TutorialRouteSummary", true, false)
+	var tutorial_start = game.find_child("TutorialStartButton", true, false)
+	var tutorial_coach = game.find_child("TutorialCoachLayer", true, false)
+	var tutorial_text = game.find_child("TutorialCoachText", true, false)
+	var tutorial_skip = game.find_child("TutorialSkipButton", true, false)
+	var tutorial_intent = game.find_child("TutorialIntentButton", true, false)
+	game._start_clean_formal_run()
+	await process_frame
 
 	_assert(header != null, "header should exist at %s" % size)
 	_assert(map_view != null and combat_view != null and choice_view != null and result_view != null, "all state views should exist")
@@ -114,6 +125,22 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(mission_summary != null and next_detail != null, "map should expose mission and next-node context")
 	_assert(map_composition != null and map_route_scroll != null, "map should expose its responsive route composition")
 	var viewport_rect := Rect2(Vector2.ZERO, Vector2(size))
+	_assert(tutorial_view != null, "tutorial should expose a dedicated scene view")
+	_assert(tutorial_route != null, "tutorial briefing should explain the route")
+	_assert(tutorial_start != null, "tutorial briefing should expose its start command")
+	_assert(tutorial_coach != null and tutorial_text != null, "tutorial should expose coach guidance")
+	_assert(tutorial_skip != null, "tutorial skip should remain available")
+	_assert(tutorial_intent != null, "tutorial intent should be an actionable target")
+
+	game._start_tutorial_briefing()
+	game._render_state()
+	await process_frame
+	_assert(tutorial_view.visible, "tutorial briefing should be visible when active")
+	_assert(viewport_rect.encloses(tutorial_start.get_global_rect()), "tutorial start should fit the viewport")
+	_assert(viewport_rect.encloses(tutorial_skip.get_global_rect()), "tutorial skip should fit the viewport")
+	_assert(tutorial_start.custom_minimum_size.y >= 44.0, "tutorial start should be a touch target")
+	game._start_clean_formal_run()
+	await process_frame
 	_assert(viewport_rect.encloses(run_hud.get_global_rect()), "RunHud should stay in the viewport")
 	_assert(viewport_rect.intersects(map_enter.get_global_rect()), "Available map action should remain visible")
 	_assert_visible_primary_command_heights(game)

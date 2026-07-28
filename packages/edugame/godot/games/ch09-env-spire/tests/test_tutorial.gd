@@ -47,6 +47,7 @@ func _run() -> void:
 	)
 
 	game._start_tutorial_briefing()
+	_assert(game.tutorial_step == game.TutorialStep.BRIEFING, "tutorial briefing should set the briefing step")
 	game.budget = 99
 	game._on_runtime_reset()
 	_assert(game.tutorial_active, "runtime reset should keep tutorial mode active")

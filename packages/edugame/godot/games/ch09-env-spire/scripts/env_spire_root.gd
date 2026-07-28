@@ -21,6 +21,18 @@ const LAB_COVERAGE_CARD_IDS := [
 
 enum RunState { WAITING, MAP, COMBAT, REWARD, EVENT, SHOP, REST, COMPONENT, RESULT }
 
+enum TutorialStep {
+	INACTIVE,
+	BRIEFING,
+	READ_INTENT,
+	PLAY_DEFENSE,
+	END_TURN,
+	PLAY_SAMPLE,
+	PLAY_CONVERT,
+	PLAY_OUTPUT,
+	COMPLETE
+}
+
 var runtime
 var state := RunState.WAITING
 var card_defs := {}
@@ -96,6 +108,7 @@ var shop_cards: Array = []
 var message_log: Array = []
 var debug_reports: Array = []
 var node_lab_active := false
+var tutorial_step := TutorialStep.INACTIVE
 var tutorial_active := false
 var formal_run_active := false
 var initial_experience_started := false
@@ -114,6 +127,13 @@ var stability_label: Label
 var budget_label: Label
 var deck_label: Label
 var main_area: Control
+var tutorial_view: PanelContainer
+var tutorial_route_summary: Label
+var tutorial_start_button: Button
+var tutorial_coach_layer: PanelContainer
+var tutorial_coach_text: Label
+var tutorial_skip_button: Button
+var tutorial_intent_button: Button
 var map_view: PanelContainer
 var map_title: Label
 var map_composition: BoxContainer
@@ -298,11 +318,13 @@ func _start_initial_experience() -> void:
 func _start_tutorial_briefing() -> void:
 	formal_run_active = false
 	tutorial_active = true
+	tutorial_step = TutorialStep.BRIEFING
 	state = RunState.WAITING
 
 
 func _start_clean_formal_run() -> void:
 	tutorial_active = false
+	tutorial_step = TutorialStep.INACTIVE
 	_reset_run()
 	_render_state()
 
@@ -432,6 +454,7 @@ func _build_ui() -> void:
 	_build_combat_view()
 	_build_choice_view()
 	_build_result_view()
+	_build_tutorial_view()
 
 	var footer := PanelContainer.new()
 	footer.name = "RunFooter"
@@ -537,6 +560,91 @@ func _content_margin() -> MarginContainer:
 	margin.add_theme_constant_override("margin_top", 14)
 	margin.add_theme_constant_override("margin_bottom", 14)
 	return margin
+
+
+func _build_tutorial_view() -> void:
+	tutorial_view = _scene_panel("TutorialView", Color("#f7faf9e8"), Color("#68818a"))
+	tutorial_view.theme = ui_theme
+	main_area.add_child(tutorial_view)
+	var margin := _content_margin()
+	tutorial_view.add_child(margin)
+	var scroll := ScrollContainer.new()
+	scroll.name = "TutorialBriefingScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(scroll)
+	var content := VBoxContainer.new()
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_theme_constant_override("separation", 12)
+	scroll.add_child(content)
+	var title := Label.new()
+	title.text = "训练导览 / 环境监测调试"
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_color", Color("#17343c"))
+	content.add_child(title)
+	tutorial_route_summary = Label.new()
+	tutorial_route_summary.name = "TutorialRouteSummary"
+	tutorial_route_summary.text = "12 节点单线调试\n故障与检查点：验证工程证据\n事件、组件、商店与休整：调整卡组\n节点 11：Boss 前整备\n节点 12：三阶段综合验收"
+	tutorial_route_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tutorial_route_summary.add_theme_color_override("font_color", Color("#3e565d"))
+	tutorial_route_summary.add_theme_font_size_override("font_size", 16)
+	content.add_child(tutorial_route_summary)
+	var briefing_note := Label.new()
+	briefing_note.text = "训练战斗将依次练习：读取故障意图、建立防御、结束回合与工程数据链。"
+	briefing_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	briefing_note.add_theme_color_override("font_color", Color("#486068"))
+	content.add_child(briefing_note)
+	tutorial_start_button = Button.new()
+	tutorial_start_button.name = "TutorialStartButton"
+	tutorial_start_button.text = "开始训练"
+	tutorial_start_button.disabled = true
+	tutorial_start_button.tooltip_text = "训练场景将在战斗引导就绪后启用"
+	_skin_button(tutorial_start_button, Color("#2f7f8d"))
+	tutorial_start_button.custom_minimum_size = Vector2(260, 44)
+	tutorial_start_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	content.add_child(tutorial_start_button)
+
+	tutorial_skip_button = Button.new()
+	tutorial_skip_button.name = "TutorialSkipButton"
+	tutorial_skip_button.text = "跳过教程"
+	tutorial_skip_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	tutorial_skip_button.offset_left = -138
+	tutorial_skip_button.offset_top = 10
+	tutorial_skip_button.offset_right = -10
+	tutorial_skip_button.offset_bottom = 54
+	_skin_button(tutorial_skip_button, Color("#697b80"))
+	tutorial_skip_button.custom_minimum_size = Vector2(128, 44)
+	tutorial_skip_button.pressed.connect(func() -> void:
+		_skip_tutorial()
+	)
+	main_area.add_child(tutorial_skip_button)
+
+	tutorial_coach_layer = PanelContainer.new()
+	tutorial_coach_layer.name = "TutorialCoachLayer"
+	tutorial_coach_layer.theme = ui_theme
+	tutorial_coach_layer.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	tutorial_coach_layer.offset_left = 18
+	tutorial_coach_layer.offset_top = -84
+	tutorial_coach_layer.offset_right = -18
+	tutorial_coach_layer.offset_bottom = -12
+	tutorial_coach_layer.add_theme_stylebox_override("panel", _panel_style(Color("#e6f1f1"), Color("#2f7f8d")))
+	main_area.add_child(tutorial_coach_layer)
+	var coach_content := VBoxContainer.new()
+	coach_content.add_theme_constant_override("separation", 6)
+	tutorial_coach_layer.add_child(coach_content)
+	tutorial_coach_text = Label.new()
+	tutorial_coach_text.name = "TutorialCoachText"
+	tutorial_coach_text.text = "按教练提示完成训练步骤。"
+	tutorial_coach_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tutorial_coach_text.add_theme_color_override("font_color", Color("#173f47"))
+	coach_content.add_child(tutorial_coach_text)
+	tutorial_intent_button = Button.new()
+	tutorial_intent_button.name = "TutorialIntentButton"
+	tutorial_intent_button.text = "查看故障意图"
+	_skin_button(tutorial_intent_button, Color("#2f7f8d"))
+	tutorial_intent_button.custom_minimum_size = Vector2(0, 44)
+	coach_content.add_child(tutorial_intent_button)
 
 
 func _build_map_view() -> void:
@@ -966,6 +1074,7 @@ func _render_state() -> void:
 	combat_view.visible = state == RunState.COMBAT
 	choice_view.visible = [RunState.REWARD, RunState.EVENT, RunState.SHOP, RunState.REST, RunState.COMPONENT].has(state)
 	result_view.visible = state == RunState.RESULT
+	_render_tutorial()
 	if service_bench != null:
 		service_bench.visible = state == RunState.REST
 	_render_header()
@@ -981,6 +1090,15 @@ func _render_state() -> void:
 	if log_label != null:
 		log_label.text = "  /  ".join(message_log.slice(maxi(0, message_log.size() - 2), message_log.size()))
 	_apply_responsive_layout()
+
+
+func _render_tutorial() -> void:
+	if tutorial_view != null:
+		tutorial_view.visible = tutorial_active and tutorial_step == TutorialStep.BRIEFING
+	if tutorial_coach_layer != null:
+		tutorial_coach_layer.visible = tutorial_active and tutorial_step != TutorialStep.BRIEFING
+	if tutorial_skip_button != null:
+		tutorial_skip_button.visible = tutorial_active
 
 
 func _render_header() -> void:
