@@ -76,7 +76,10 @@ func _verify_viewport(size: Vector2i) -> void:
 	var end_turn = game.find_child("EndTurnButton", true, false)
 	var log_label = game.get_node_or_null("Shell/RunFooter/LogLabel")
 	var repair_bar = game.find_child("RepairBar", true, false)
-	var map_timeline = game.find_child("MapTimeline", true, false)
+	var map_route = game.find_child("MapRoute", true, false)
+	var map_enter = game.find_child("MapEnterButton", true, false)
+	var mission_summary = game.find_child("MapMissionSummary", true, false)
+	var next_detail = game.find_child("MapNextDetail", true, false)
 	var choice_list = game.find_child("ChoiceList", true, false)
 	var choice_description = game.find_child("ChoiceDescription", true, false)
 	var gate_label = game.find_child("GateLabel", true, false)
@@ -91,15 +94,28 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(hand_row != null and end_turn != null and log_label != null and repair_bar != null, "combat controls, repair progress, and log should exist")
 	_assert(choice_list != null, "choice states should expose a stable choice grid")
 	_assert(gate_label != null and restart_button != null, "boss gate and result action should expose stable controls")
-	_assert(map_timeline != null and map_timeline.get_child_count() == 12, "map should render a twelve-stage timeline")
-	if map_timeline != null and map_timeline.get_child_count() > 0:
-		_assert((map_timeline.get_child(0) as Control).custom_minimum_size.y >= 52.0, "timeline stages should be visually scannable")
+	_assert(map_route != null and map_route.get_child_count() == 12, "map climb should render twelve route nodes")
+	_assert(map_enter != null and map_enter.custom_minimum_size.y >= 44.0, "map enter should be a full touch target")
+	_assert(mission_summary != null and next_detail != null, "map should expose mission and next-node context")
 	if header != null:
 		_assert(header.theme != null and header.theme.default_font != null, "bundled Chinese font should be installed")
 		_assert(game.ui_font.resource_path == game.UI_FONT_PATH, "UI font should use the imported resource for Web export")
 		_assert(game.ui_font.has_char("选".unicode_at(0)), "UI font should contain Chinese glyphs")
 	_assert(map_view != null and map_view.visible, "map view should be visible after reset")
 	_assert(combat_view != null and !combat_view.visible, "combat view should be hidden on map")
+	game.current_layer = 10
+	game._render_state()
+	await process_frame
+	if map_route != null and map_route.get_child_count() == 12:
+		_assert((map_route.get_child(10) as Button).text.contains("整备"), "node 11 should render the service label")
+	game.current_layer = 11
+	game._render_state()
+	await process_frame
+	if map_route != null and map_route.get_child_count() == 12:
+		_assert((map_route.get_child(11) as Button).text.contains("综合验收"), "node 12 should render the boss label")
+	game.current_layer = 0
+	game._render_state()
+	await process_frame
 
 	game.current_node = {"type": "ordinary", "contentId": "mq2_warmup"}
 	game._start_encounter("mq2_warmup", "ordinary")

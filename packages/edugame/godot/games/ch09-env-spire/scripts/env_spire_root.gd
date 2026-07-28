@@ -110,8 +110,12 @@ var deck_label: Label
 var main_area: Control
 var map_view: PanelContainer
 var map_title: Label
-var map_timeline: HBoxContainer
-var map_choices: GridContainer
+var map_composition: BoxContainer
+var map_mission_summary: Label
+var map_route_scroll: ScrollContainer
+var map_route: VBoxContainer
+var map_next_detail: Label
+var map_enter_button: Button
 var combat_view: PanelContainer
 var combat_layout: BoxContainer
 var encounter_name_label: Label
@@ -424,30 +428,58 @@ func _build_map_view() -> void:
 	map_view.add_child(margin)
 	var content := VBoxContainer.new()
 	content.add_theme_constant_override("separation", 12)
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margin.add_child(content)
 	map_title = Label.new()
 	map_title.add_theme_font_size_override("font_size", 24)
 	map_title.add_theme_color_override("font_color", Color("#17343c"))
 	content.add_child(map_title)
-	var timeline_scroll := ScrollContainer.new()
-	timeline_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	timeline_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	timeline_scroll.custom_minimum_size = Vector2(0, 76)
-	content.add_child(timeline_scroll)
-	map_timeline = HBoxContainer.new()
-	map_timeline.name = "MapTimeline"
-	map_timeline.add_theme_constant_override("separation", 8)
-	timeline_scroll.add_child(map_timeline)
-	var divider := HSeparator.new()
-	content.add_child(divider)
-	map_choices = GridContainer.new()
-	map_choices.name = "MapChoices"
-	map_choices.columns = 2
-	map_choices.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	map_choices.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	map_choices.add_theme_constant_override("h_separation", 10)
-	map_choices.add_theme_constant_override("v_separation", 10)
-	content.add_child(map_choices)
+	map_composition = BoxContainer.new()
+	map_composition.name = "MapComposition"
+	map_composition.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	map_composition.add_theme_constant_override("separation", 14)
+	content.add_child(map_composition)
+	map_mission_summary = Label.new()
+	map_mission_summary.name = "MapMissionSummary"
+	map_mission_summary.custom_minimum_size = Vector2(190, 0)
+	map_mission_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	map_mission_summary.add_theme_color_override("font_color", Color("#3e565d"))
+	map_mission_summary.add_theme_font_size_override("font_size", 16)
+	map_composition.add_child(map_mission_summary)
+	map_route_scroll = ScrollContainer.new()
+	map_route_scroll.name = "MapRouteScroll"
+	map_route_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	map_route_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	map_route_scroll.custom_minimum_size = Vector2(260, 252)
+	map_route_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	map_route_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	map_composition.add_child(map_route_scroll)
+	map_route = VBoxContainer.new()
+	map_route.name = "MapRoute"
+	map_route.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	map_route.add_theme_constant_override("separation", 8)
+	map_route_scroll.add_child(map_route)
+	var next_column := VBoxContainer.new()
+	next_column.custom_minimum_size = Vector2(210, 0)
+	next_column.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	next_column.add_theme_constant_override("separation", 10)
+	map_composition.add_child(next_column)
+	map_next_detail = Label.new()
+	map_next_detail.name = "MapNextDetail"
+	map_next_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	map_next_detail.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	map_next_detail.add_theme_color_override("font_color", Color("#3e565d"))
+	next_column.add_child(map_next_detail)
+	map_enter_button = Button.new()
+	map_enter_button.name = "MapEnterButton"
+	map_enter_button.text = "进入下一节点"
+	_skin_button(map_enter_button, Color("#b75a3a"))
+	map_enter_button.custom_minimum_size = Vector2(0, 44)
+	map_enter_button.pressed.connect(func() -> void:
+		choose_node(0)
+		_render_state()
+	)
+	next_column.add_child(map_enter_button)
 
 
 func _build_combat_view() -> void:
@@ -604,8 +636,12 @@ func _apply_responsive_layout() -> void:
 		return
 	var compact := size.x < 720.0
 	combat_layout.vertical = compact
-	if map_choices != null:
-		map_choices.columns = 1 if compact else 2
+	if map_composition != null:
+		map_composition.vertical = compact
+	if map_mission_summary != null:
+		map_mission_summary.visible = !compact
+	if map_route_scroll != null:
+		map_route_scroll.custom_minimum_size.y = 228.0 if compact else 252.0
 	if choice_list != null:
 		choice_list.columns = 1 if compact else 2
 	if budget_label != null:
@@ -654,41 +690,72 @@ func _render_header() -> void:
 
 func _render_map() -> void:
 	map_title.text = "第 %d 个调试节点" % (current_layer + 1) if current_layer < RUN_NODE_COUNT else "路线完成"
-	_clear_children(map_timeline)
 	var layers: Array = run_map.get("layers", [])
+	map_mission_summary.text = "环境监测塔\n十二层调试攀登\n\n当前进度 %d / %d" % [current_layer, RUN_NODE_COUNT]
+	_render_map_route(layers)
+	if current_layer >= layers.size():
+		map_next_detail.text = "路线已完成\n综合验收已结束。"
+		map_enter_button.disabled = true
+		return
+	var choices: Array = (layers[current_layer] as Dictionary).get("choices", [])
+	if choices.is_empty():
+		map_next_detail.text = "下一节点暂不可用。"
+		map_enter_button.disabled = true
+		return
+	var node := choices[0] as Dictionary
+	map_next_detail.text = "下一节点\n%02d  %s\n%s" % [current_layer + 1, node.get("label", "调试节点"), _node_type_name(str(node.get("type", "")))]
+	map_enter_button.disabled = false
+
+
+func _render_map_route(layers: Array) -> void:
+	_clear_children(map_route)
 	for layer_number in range(1, RUN_NODE_COUNT + 1):
-		var marker := Label.new()
+		var marker := Button.new()
 		var layer_data := (layers[layer_number - 1] as Dictionary) if layer_number - 1 < layers.size() else {}
 		var layer_choices: Array = layer_data.get("choices", [])
 		var marker_type := str((layer_choices[0] as Dictionary).get("type", "")) if !layer_choices.is_empty() else ""
-		marker.text = "%02d\n%s" % [layer_number, _node_type_short(marker_type)]
-		marker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		marker.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		marker.custom_minimum_size = Vector2(96, 58)
-		marker.add_theme_stylebox_override("normal", _button_style(
-			Color("#2f7f8d") if layer_number <= current_layer else Color("#dfe7e8"),
-			Color("#2f7f8d") if layer_number == current_layer + 1 else Color("#8ca0a5")
-		))
-		marker.add_theme_color_override("font_color", Color.WHITE if layer_number <= current_layer else Color("#50656b"))
+		var node_state := _map_node_state(layer_number)
+		var background := Color("#dfe7e8")
+		var accent := Color("#8ca0a5")
+		var text_color := Color("#50656b")
+		if node_state == "completed":
+			background = Color("#2f7f8d")
+			accent = Color("#2f7f8d")
+			text_color = Color.WHITE
+		elif node_state == "available":
+			background = Color("#f2d5cc")
+			accent = Color("#b75a3a")
+			text_color = Color("#7b3324")
+		elif marker_type == "boss":
+			background = Color("#e6e0ed")
+			accent = Color("#725c91")
+			text_color = Color("#4f4066")
+		marker.text = "%02d  %s\n%s" % [layer_number, _node_type_short(marker_type), _node_type_name(marker_type)]
+		marker.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_skin_button(marker, accent)
+		marker.custom_minimum_size = Vector2(0, 48)
+		marker.add_theme_stylebox_override("normal", _button_style(background, accent))
+		marker.add_theme_stylebox_override("hover", _button_style(background, accent))
+		marker.add_theme_stylebox_override("pressed", _button_style(background, accent))
+		marker.add_theme_stylebox_override("disabled", _button_style(background, accent))
+		marker.add_theme_color_override("font_color", text_color)
+		marker.add_theme_color_override("font_disabled_color", text_color)
 		marker.add_theme_font_size_override("font_size", 13)
-		map_timeline.add_child(marker)
-	_clear_children(map_choices)
-	if current_layer >= layers.size():
-		return
-	var choices: Array = (layers[current_layer] as Dictionary).get("choices", [])
-	for index in range(choices.size()):
-		var node := choices[index] as Dictionary
-		var button := Button.new()
-		button.text = "%02d  %s\n%s" % [current_layer + 1, node.get("label", "调试节点"), _node_type_name(str(node.get("type", "")))]
-		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		_skin_button(button, _lane_color(str(node.get("lane", ""))))
-		button.custom_minimum_size = Vector2(280, 112)
-		button.add_theme_font_size_override("font_size", 17)
-		button.pressed.connect(func() -> void:
-			choose_node(index)
-			_render_state()
-		)
-		map_choices.add_child(button)
+		marker.disabled = node_state != "available"
+		if node_state == "available":
+			marker.pressed.connect(func() -> void:
+				choose_node(0)
+				_render_state()
+			)
+		map_route.add_child(marker)
+
+
+func _map_node_state(layer_number: int) -> String:
+	if layer_number <= current_layer:
+		return "completed"
+	if layer_number == current_layer + 1:
+		return "available"
+	return "future"
 
 
 func _node_type_name(node_type: String) -> String:
