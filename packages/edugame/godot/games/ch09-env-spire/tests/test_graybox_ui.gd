@@ -109,6 +109,7 @@ func _verify_viewport(size: Vector2i) -> void:
 	var tutorial_text = game.find_child("TutorialCoachText", true, false)
 	var tutorial_skip = game.find_child("TutorialSkipButton", true, false)
 	var tutorial_intent = game.find_child("TutorialIntentButton", true, false)
+	var tutorial_data_values = game.find_child("TutorialDataValues", true, false)
 	game._start_clean_formal_run()
 	await process_frame
 
@@ -136,6 +137,7 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(tutorial_coach != null and tutorial_text != null, "tutorial should expose coach guidance")
 	_assert(tutorial_skip != null, "tutorial skip should remain available")
 	_assert(tutorial_intent != null, "tutorial intent should be an actionable target")
+	_assert(tutorial_data_values != null, "tutorial should expose the data values that receive guided focus")
 
 	game._start_tutorial_briefing()
 	game._render_state()
@@ -149,24 +151,36 @@ func _verify_viewport(size: Vector2i) -> void:
 	game._start_tutorial_encounter()
 	await process_frame
 	_assert_tutorial_bounds(game, viewport_rect, footer, "", "intent")
+	_assert_tutorial_focus(enemy_intent as Control, "intent step should strongly focus the actual fault intent")
 	_assert(game.confirm_tutorial_intent(), "tutorial intent should advance to guided defense")
 	await process_frame
 	_assert_tutorial_bounds(game, viewport_rect, footer, "sliding_average", "defense")
 	_assert(game.play_card(0), "tutorial defense should be playable for layout verification")
 	await process_frame
 	_assert_tutorial_bounds(game, viewport_rect, footer, "", "end turn")
+	_assert_tutorial_focus(end_turn as Control, "end-turn step should strongly focus the end-turn target")
 	_assert(game.end_turn(), "tutorial end turn should advance to data-chain practice")
 	await process_frame
 	_assert_tutorial_bounds(game, viewport_rect, footer, "mq2_sample", "sample")
 	_assert(game.play_card(0), "tutorial sample should be playable for layout verification")
 	await process_frame
 	_assert_tutorial_bounds(game, viewport_rect, footer, "adc_convert", "convert")
+	_assert_tutorial_focus(tutorial_data_values as Control, "conversion step should strongly focus the changed raw data")
 	_assert(game.play_card(0), "tutorial conversion should be playable for layout verification")
 	await process_frame
 	_assert_tutorial_bounds(game, viewport_rect, footer, "led_alarm", "output")
+	_assert_tutorial_focus(tutorial_data_values as Control, "output step should strongly focus the changed trusted data")
 	_assert(game.play_card(0), "tutorial output should be playable for layout verification")
 	await process_frame
 	_assert_tutorial_bounds(game, viewport_rect, footer, "", "complete")
+	_assert_tutorial_focus(evidence_bridge as Control, "completion should strongly focus the resolved evidence values")
+	var completion_summary := game.find_child("TutorialCompletionSummary", true, false) as Label
+	_assert(completion_summary != null and completion_summary.is_visible_in_tree(), "completion should expose its full loop summary")
+	if completion_summary != null:
+		_assert(completion_summary.has_method("get_visible_line_count"), "completion summary should expose visible-line layout for responsive verification")
+		if completion_summary.has_method("get_visible_line_count"):
+			var required_completion_lines := 4 if size.x < 720 else 3
+			_assert(int(completion_summary.call("get_visible_line_count")) >= required_completion_lines, "completion summary should show the wrapped loop, node, and LED notes without clipping")
 	game._start_clean_formal_run()
 	await process_frame
 	_assert(viewport_rect.encloses(run_hud.get_global_rect()), "RunHud should stay in the viewport")
@@ -429,6 +443,14 @@ func _assert_visible_primary_command_heights(root: Node) -> void:
 		var button := raw_button as Button
 		if button != null and button.is_visible_in_tree():
 			_assert(button.size.y >= 44.0, "%s should be at least 44 px high when visible" % button.name)
+
+
+func _assert_tutorial_focus(control: Control, message: String) -> void:
+	_assert(control != null, message)
+	if control == null:
+		return
+	var style := control.get_theme_stylebox("normal") as StyleBoxFlat
+	_assert(style != null and style.border_width_left >= 3 and style.border_color == Color("#2f7f8d"), message)
 
 
 func _assert_tutorial_bounds(game, viewport_rect: Rect2, footer: Control, expected_card_id: String, step_name: String) -> void:

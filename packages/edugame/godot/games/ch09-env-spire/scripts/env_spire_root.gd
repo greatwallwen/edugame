@@ -144,6 +144,7 @@ var tutorial_route_summary: Label
 var tutorial_start_button: Button
 var tutorial_coach_layer: PanelContainer
 var tutorial_coach_text: Label
+var tutorial_completion_summary: Label
 var tutorial_coach_actions: HBoxContainer
 var tutorial_skip_button: Button
 var tutorial_intent_button: Button
@@ -172,6 +173,7 @@ var repair_label: Label
 var repair_bar: ProgressBar
 var gate_label: Label
 var data_label: Label
+var evidence_bridge: PanelContainer
 var status_label: Label
 var hand_scroll: ScrollContainer
 var hand_row: HBoxContainer
@@ -648,6 +650,12 @@ func _build_tutorial_view() -> void:
 	tutorial_coach_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tutorial_coach_text.add_theme_color_override("font_color", Color("#173f47"))
 	coach_content.add_child(tutorial_coach_text)
+	tutorial_completion_summary = Label.new()
+	tutorial_completion_summary.name = "TutorialCompletionSummary"
+	tutorial_completion_summary.text = "循环：读取意图 -> 消耗处理点 -> 建立证据 -> 修复故障 -> 改善牌组\n战斗奖励加牌；功能节点改变本局。\nLED 仅用于训练；正式起始牌组会重置。"
+	tutorial_completion_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tutorial_completion_summary.add_theme_color_override("font_color", Color("#173f47"))
+	coach_content.add_child(tutorial_completion_summary)
 	tutorial_coach_actions = HBoxContainer.new()
 	tutorial_coach_actions.name = "TutorialCoachActions"
 	tutorial_coach_actions.add_theme_constant_override("separation", 8)
@@ -773,11 +781,12 @@ func _build_combat_view() -> void:
 	status_label.add_theme_color_override("font_color", Color("#52666b"))
 	device_content.add_child(status_label)
 	data_label = Label.new()
+	data_label.name = "TutorialDataValues"
 	data_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	data_label.add_theme_color_override("font_color", Color("#24434b"))
 	device_content.add_child(data_label)
 
-	var evidence_bridge := PanelContainer.new()
+	evidence_bridge = PanelContainer.new()
 	evidence_bridge.name = "EvidenceBridge"
 	evidence_bridge.custom_minimum_size = Vector2(220, 0)
 	evidence_bridge.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1067,9 +1076,11 @@ func _apply_responsive_layout() -> void:
 		hand_dock.custom_minimum_size.y = 274.0 if compact else 176.0
 	if hand_title != null:
 		hand_title.visible = !tutorial_active
+	var tutorial_completion_visible := tutorial_active and tutorial_step == TutorialStep.COMPLETE
+	var tutorial_coach_height := (208.0 if compact else 148.0) if tutorial_completion_visible else (108.0 if compact else 84.0)
 	if tutorial_combat_spacer != null:
 		tutorial_combat_spacer.visible = tutorial_active and state == RunState.COMBAT
-		tutorial_combat_spacer.custom_minimum_size.y = 108.0 if compact else 84.0
+		tutorial_combat_spacer.custom_minimum_size.y = tutorial_coach_height
 	if end_turn_button != null and dock_header != null and combat_actions != null:
 		var end_turn_parent := combat_actions if compact and !tutorial_active else dock_header
 		if end_turn_button.get_parent() != end_turn_parent:
@@ -1116,12 +1127,15 @@ func _apply_responsive_layout() -> void:
 		tutorial_briefing_content.add_theme_constant_override("separation", 10 if compact else 12)
 	if tutorial_coach_layer != null:
 		tutorial_coach_layer.offset_left = 10.0 if compact else 18.0
-		tutorial_coach_layer.offset_top = -108.0 if compact else -84.0
+		tutorial_coach_layer.offset_top = -tutorial_coach_height
 		tutorial_coach_layer.offset_right = -10.0 if compact else -18.0
 		tutorial_coach_layer.offset_bottom = -12.0
 	if tutorial_coach_text != null:
 		tutorial_coach_text.max_lines_visible = 2
 		tutorial_coach_text.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	if tutorial_completion_summary != null:
+		tutorial_completion_summary.max_lines_visible = 4
+		tutorial_completion_summary.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
 
 func _render_state() -> void:
@@ -1162,6 +1176,8 @@ func _render_tutorial() -> void:
 	if tutorial_complete_button != null:
 		tutorial_complete_button.visible = tutorial_active and tutorial_step == TutorialStep.COMPLETE
 		tutorial_complete_button.disabled = !tutorial_active or tutorial_step != TutorialStep.COMPLETE
+	if tutorial_completion_summary != null:
+		tutorial_completion_summary.visible = tutorial_active and tutorial_step == TutorialStep.COMPLETE
 	if tutorial_coach_text != null and tutorial_active:
 		match tutorial_step:
 			TutorialStep.BRIEFING:
@@ -1179,7 +1195,7 @@ func _render_tutorial() -> void:
 			TutorialStep.PLAY_OUTPUT:
 				tutorial_coach_text.text = "使用 LED 报警，将可信烟雾数据输出为行动。"
 			TutorialStep.COMPLETE:
-				tutorial_coach_text.text = "训练完成。你已完成意图、防御、采样、转换和输出链路。"
+				tutorial_coach_text.text = "训练完成。"
 
 
 func _render_header() -> void:
@@ -1335,6 +1351,7 @@ func _render_combat() -> void:
 			_apply_tutorial_card_focus(button)
 		hand_row.add_child(button)
 	end_turn_button.disabled = tutorial_active and !_tutorial_end_turn_allowed()
+	_render_tutorial_focus()
 	if tutorial_active and !_tutorial_expected_card_id().is_empty():
 		call_deferred("_reveal_tutorial_required_card")
 
@@ -1344,9 +1361,49 @@ func _apply_tutorial_card_focus(button: Button) -> void:
 		var base_style := button.get_theme_stylebox(state_name)
 		if base_style is StyleBoxFlat:
 			var focus_style := (base_style as StyleBoxFlat).duplicate() as StyleBoxFlat
-			focus_style.border_color = Color("#c57b23")
+			focus_style.border_color = Color("#2f7f8d")
 			focus_style.set_border_width_all(3)
 			button.add_theme_stylebox_override(state_name, focus_style)
+
+
+func _render_tutorial_focus() -> void:
+	if intent_label != null:
+		intent_label.add_theme_stylebox_override("normal", _button_style(Color("#fff0df"), Color("#b16a2c")))
+	if end_turn_button != null:
+		_skin_button(end_turn_button, Color("#b16a2c"))
+	if data_label != null:
+		data_label.remove_theme_stylebox_override("normal")
+	if evidence_bridge != null:
+		evidence_bridge.add_theme_stylebox_override("panel", _panel_style(Color("#e8f1ee"), Color("#3c8d72")))
+	if !tutorial_active:
+		return
+	match tutorial_step:
+		TutorialStep.READ_INTENT:
+			_apply_tutorial_focus(intent_label)
+		TutorialStep.END_TURN:
+			_apply_tutorial_focus(end_turn_button)
+		TutorialStep.PLAY_CONVERT, TutorialStep.PLAY_OUTPUT:
+			_apply_tutorial_focus(data_label)
+		TutorialStep.COMPLETE:
+			_apply_tutorial_focus(evidence_bridge)
+
+
+func _apply_tutorial_focus(control: Control) -> void:
+	if control == null:
+		return
+	var base_style := control.get_theme_stylebox("normal")
+	var focus_style := (base_style as StyleBoxFlat).duplicate() as StyleBoxFlat if base_style is StyleBoxFlat else _panel_style(Color("#eff9f8"), Color("#2f7f8d"))
+	focus_style.border_color = Color("#2f7f8d")
+	focus_style.set_border_width_all(3)
+	control.add_theme_stylebox_override("normal", focus_style)
+	if control is Button:
+		for state_name in ["hover", "pressed"]:
+			var state_style := control.get_theme_stylebox(state_name)
+			if state_style is StyleBoxFlat:
+				var focused_state_style := (state_style as StyleBoxFlat).duplicate() as StyleBoxFlat
+				focused_state_style.border_color = Color("#2f7f8d")
+				focused_state_style.set_border_width_all(3)
+				control.add_theme_stylebox_override(state_name, focused_state_style)
 
 
 func _reveal_tutorial_required_card() -> void:
@@ -1646,10 +1703,10 @@ func _index_by_id(items: Array) -> Dictionary:
 
 
 func _reset_run() -> void:
-	formal_run_active = true
+	formal_run_active = !node_lab_active
 	tutorial_active = false
 	tutorial_step = TutorialStep.INACTIVE
-	if runtime != null and !node_lab_active:
+	if runtime != null and formal_run_active:
 		runtime.begin_attempt()
 	completed = false
 	victory = false
@@ -1718,8 +1775,9 @@ func _reset_combat_resources() -> void:
 
 
 func _start_tutorial_encounter() -> void:
-	if !_tutorial_fixture_available():
-		push_warning("Missing Ch09 tutorial fixture data; starting formal run.")
+	var missing_card_id := _tutorial_missing_fixture_card_id()
+	if !missing_card_id.is_empty():
+		push_warning("Missing Ch09 tutorial fixture card: %s; starting formal run." % missing_card_id)
 		_start_clean_formal_run()
 		return
 	tutorial_active = true
@@ -1743,10 +1801,14 @@ func _start_tutorial_encounter() -> void:
 
 
 func _tutorial_fixture_available() -> bool:
+	return _tutorial_missing_fixture_card_id().is_empty()
+
+
+func _tutorial_missing_fixture_card_id() -> String:
 	for card_id in ["sliding_average", "mq2_sample", "adc_convert", "led_alarm"]:
 		if !card_defs.has(card_id):
-			return false
-	return true
+			return card_id
+	return ""
 
 
 func _tutorial_expected_card_id() -> String:

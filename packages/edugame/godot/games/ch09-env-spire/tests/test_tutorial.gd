@@ -74,6 +74,10 @@ func _run() -> void:
 		game.state == game.RunState.MAP and game.formal_run_active,
 		"missing tutorial fixture data should fall back to a formal run"
 	)
+	_assert(
+		game._tutorial_missing_fixture_card_id() == "led_alarm",
+		"missing tutorial fixture fallback should identify the exact missing card"
+	)
 	game.card_defs["led_alarm"] = saved_led
 
 	_enter_practice(game)
@@ -123,6 +127,19 @@ func _run() -> void:
 	_assert(game.play_card(0), "LED output should consume trusted smoke")
 	_assert(int(game.trusted_data.get("smoke", 0)) == 0, "output should consume trusted smoke")
 	_assert(game.tutorial_step == game.TutorialStep.COMPLETE, "output should complete the practice")
+	await process_frame
+	var completion_summary := game.find_child("TutorialCompletionSummary", true, false) as Label
+	var completion_button := game.find_child("TutorialCompleteButton", true, false) as Button
+	_assert(completion_summary != null and completion_summary.is_visible_in_tree(), "completion should show the formal loop summary")
+	if completion_summary != null:
+		_assert(completion_summary.text.contains("读取意图 -> 消耗处理点 -> 建立证据 -> 修复故障 -> 改善牌组"), "completion summary should explain the core loop")
+		_assert(completion_summary.text.contains("战斗奖励") and completion_summary.text.contains("功能节点") and completion_summary.text.contains("LED"), "completion summary should explain rewards, utility nodes, and the practice-only LED card")
+	_assert(completion_button != null and completion_button.is_visible_in_tree() and !completion_button.disabled, "completion should expose an enabled formal-run command")
+	if completion_button != null:
+		completion_button.emit_signal("pressed")
+		await process_frame
+		_assert(game._load_tutorial_completed_version(TEST_RECORD_PATH) == game.TUTORIAL_VERSION, "completion command should persist the tutorial version")
+		_assert_clean_formal_run(game, "completion command")
 
 	game.queue_free()
 	await process_frame

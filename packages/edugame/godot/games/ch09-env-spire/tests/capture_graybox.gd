@@ -2,6 +2,8 @@ extends SceneTree
 
 const OUT_DIR := "C:/Users/sy/Desktop/dgbook-ref-main/dgbook-ref/.superpowers/visual-qa/ch09-env-spire"
 
+var capture_failed := false
+
 
 func _init() -> void:
 	call_deferred("_run")
@@ -28,22 +30,28 @@ func _run() -> void:
 	game._start_tutorial_encounter()
 	await _capture("40-mobile-tutorial-intent.png" if mobile else "20-desktop-tutorial-intent.png")
 
-	game.confirm_tutorial_intent()
+	if !_advance_tutorial(game, func() -> bool: return game.confirm_tutorial_intent(), game.TutorialStep.PLAY_DEFENSE, "confirm intent"):
+		return
 	await _capture("41-mobile-tutorial-defense.png" if mobile else "21-desktop-tutorial-defense.png")
 
-	game.play_card(0)
+	if !_advance_tutorial(game, func() -> bool: return game.play_card(0), game.TutorialStep.END_TURN, "play defense"):
+		return
 	await _capture("42-mobile-tutorial-end-turn.png" if mobile else "22-desktop-tutorial-end-turn.png")
 
-	game.end_turn()
+	if !_advance_tutorial(game, func() -> bool: return game.end_turn(), game.TutorialStep.PLAY_SAMPLE, "end turn"):
+		return
 	await _capture("43-mobile-tutorial-sample.png" if mobile else "23-desktop-tutorial-sample.png")
 
-	game.play_card(0)
+	if !_advance_tutorial(game, func() -> bool: return game.play_card(0), game.TutorialStep.PLAY_CONVERT, "play sample"):
+		return
 	await _capture("44-mobile-tutorial-convert.png" if mobile else "24-desktop-tutorial-convert.png")
 
-	game.play_card(0)
+	if !_advance_tutorial(game, func() -> bool: return game.play_card(0), game.TutorialStep.PLAY_OUTPUT, "play conversion"):
+		return
 	await _capture("45-mobile-tutorial-output.png" if mobile else "25-desktop-tutorial-output.png")
 
-	game.play_card(0)
+	if !_advance_tutorial(game, func() -> bool: return game.play_card(0), game.TutorialStep.COMPLETE, "play output"):
+		return
 	await _capture("46-mobile-tutorial-complete.png" if mobile else "26-desktop-tutorial-complete.png")
 
 	game._reset_run()
@@ -147,7 +155,7 @@ func _run() -> void:
 	game.queue_free()
 	await process_frame
 	print("Ch09 graybox captures written to: " + OUT_DIR)
-	quit(0)
+	quit(1 if capture_failed else 0)
 
 
 func _settle() -> void:
@@ -157,9 +165,27 @@ func _settle() -> void:
 
 
 func _capture(filename: String) -> void:
+	if capture_failed:
+		return
 	await _settle()
 	var image := get_root().get_texture().get_image()
+	if image == null:
+		capture_failed = true
+		push_error("could not capture %s: a rendered viewport is required" % filename)
+		return
 	var result := image.save_png(OUT_DIR.path_join(filename))
 	if result != OK:
+		capture_failed = true
 		push_error("could not save capture: %s" % filename)
+
+
+func _advance_tutorial(game, action: Callable, expected_step: int, action_name: String) -> bool:
+	if !bool(action.call()):
+		push_error("tutorial capture action failed: %s" % action_name)
 		quit(1)
+		return false
+	if game.tutorial_step != expected_step:
+		push_error("tutorial capture action reached the wrong step: %s" % action_name)
+		quit(1)
+		return false
+	return true

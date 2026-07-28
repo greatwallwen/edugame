@@ -96,6 +96,31 @@ func _run() -> void:
 	else:
 		var completion_count_before_lab := outbound_payloads.filter(func(payload: Dictionary) -> bool: return payload.get("type") == "DGB_GODOT_COMPLETE").size()
 		game._enter_node_lab()
+		runtime.bridge.receive_payload({"type": "DGB_GODOT_RESET", "version": 1})
+		await process_frame
+		_assert(game.node_lab_active, "host reset should preserve Node Lab mode")
+		_assert(!game.formal_run_active, "host reset inside Node Lab should not activate a formal attempt")
+		game.current_layer = 12
+		game.visited_nodes.resize(12)
+		game.checkpoints_passed = 2
+		game.boss_phase = 2
+		game._finish_run(true)
+		await process_frame
+		var completion_count_after_host_reset := outbound_payloads.filter(func(payload: Dictionary) -> bool: return payload.get("type") == "DGB_GODOT_COMPLETE").size()
+		_assert(completion_count_after_host_reset == completion_count_before_lab, "Node Lab host reset result should not report course completion")
+		var restart_button := game.find_child("RestartButton", true, false) as Button
+		_assert(restart_button != null, "Node Lab result should retain the normal restart control for regression coverage")
+		if restart_button != null:
+			restart_button.emit_signal("pressed")
+			await process_frame
+			_assert(!game.formal_run_active, "result restart inside Node Lab should not activate a formal attempt")
+			game.current_layer = 12
+			game.visited_nodes.resize(12)
+			game.checkpoints_passed = 2
+			game.boss_phase = 2
+			game._finish_run(true)
+			var completion_count_after_restart := outbound_payloads.filter(func(payload: Dictionary) -> bool: return payload.get("type") == "DGB_GODOT_COMPLETE").size()
+			_assert(completion_count_after_restart == completion_count_before_lab, "Node Lab result restart should not report course completion")
 		game.start_lab_scenario({
 			"id": "warehouse_acceptance",
 			"kind": "enemy",
