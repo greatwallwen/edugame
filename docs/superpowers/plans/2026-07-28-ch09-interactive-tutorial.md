@@ -49,6 +49,8 @@
 - Produces: `func _tutorial_forced() -> bool`
 - Produces: `var tutorial_record_path := TUTORIAL_RECORD_PATH`
 - Produces: `var formal_run_active := false`
+- Produces: `func _start_clean_formal_run() -> void`
+- Produces: `func _skip_tutorial(record_path: String = "") -> bool`
 - Consumes: existing `_node_lab_requested()`, `_reset_run()`, `_enter_node_lab()`, runtime initialization callbacks.
 
 - [ ] **Step 1: Write the failing entry-decision test**
@@ -249,6 +251,36 @@ _assert(
 )
 ```
 
+Add a real skip transition assertion:
+
+```gdscript
+game._start_tutorial_briefing()
+game.stability = 9
+game.budget = 99
+game.current_layer = 4
+_assert(game._skip_tutorial(TEST_RECORD_PATH), "skip should persist completion")
+_assert(!game.tutorial_active, "skip should leave tutorial mode")
+_assert(game.formal_run_active, "skip should activate a formal attempt")
+_assert(game.state == game.RunState.MAP, "skip should open the formal map")
+_assert(game.current_layer == 0, "skip should reset formal route progress")
+_assert(game.stability == game.max_stability and game.budget == 30, "skip should restore formal resources")
+```
+
+Implement the shared transition and skip:
+
+```gdscript
+func _start_clean_formal_run() -> void:
+	tutorial_active = false
+	_reset_run()
+	_render_state()
+
+
+func _skip_tutorial(record_path: String = "") -> bool:
+	var persisted := _save_tutorial_completion(record_path)
+	_start_clean_formal_run()
+	return persisted
+```
+
 - [ ] **Step 5: Run entry and existing startup tests**
 
 ```powershell
@@ -361,13 +393,19 @@ var tutorial_intent_button: Button
 
 - Use the existing cool-white scene panel and shared theme.
 - Render a concise route summary with explicit node 11 and 12 labels.
-- Connect `TutorialStartButton` to `_start_tutorial_encounter()`.
+- Create `TutorialStartButton` as disabled; Task 3 connects and enables it
+  when `_start_tutorial_encounter()` exists.
 - Keep `TutorialSkipButton` visible and connect it to `_skip_tutorial()`.
 - Add a coach strip with no layout-changing focus animation.
 - Add `TutorialIntentButton` as the accessible intent target used during combat.
 
 Call `_build_tutorial_view()` from `_build_ui()` and update `_render_state()` so
 the briefing view is visible only while the tutorial is in `BRIEFING`.
+
+At the end of this task, keep `TutorialStartButton` disabled with the tooltip
+`训练场景将在战斗引导就绪后启用`. Task 3 connects and enables it in the same
+commit that creates `_start_tutorial_encounter()`. `TutorialSkipButton` is
+active because Task 1 already provides `_skip_tutorial()`.
 
 - [ ] **Step 4: Render the briefing and coach copy**
 
@@ -516,6 +554,9 @@ func _start_tutorial_encounter() -> void:
 	exhaust_pile.clear()
 	_render_state()
 ```
+
+Connect `TutorialStartButton.pressed` to `_start_tutorial_encounter()` and set
+`tutorial_start_button.disabled = false` after the fixture functions exist.
 
 - [ ] **Step 4: Gate real card and end-turn methods**
 
@@ -674,9 +715,8 @@ git commit -m "feat: guide ch09 tutorial practice combat"
 
 **Interfaces:**
 - Produces: `func _complete_tutorial(record_path: String = "") -> bool`
-- Produces: `func _skip_tutorial(record_path: String = "") -> bool`
-- Produces: `func _start_clean_formal_run() -> void`
-- Consumes: `_save_tutorial_completion()`, `_reset_run()`, runtime
+- Consumes: `_skip_tutorial()`, `_start_clean_formal_run()`,
+  `_save_tutorial_completion()`, `_reset_run()`, runtime
   `begin_attempt()`, normal map rendering.
 
 - [ ] **Step 1: Write failing clean-run assertions**
@@ -733,27 +773,16 @@ Expected: FAIL because completion and skip methods do not exist.
 - [ ] **Step 3: Implement one shared clean transition**
 
 ```gdscript
-func _start_clean_formal_run() -> void:
-	tutorial_active = false
-	tutorial_step = TutorialStep.INACTIVE
-	_reset_run()
-	_render_state()
-
-
 func _complete_tutorial(record_path: String = "") -> bool:
-	var persisted := _save_tutorial_completion(record_path)
-	_start_clean_formal_run()
-	return persisted
-
-
-func _skip_tutorial(record_path: String = "") -> bool:
 	var persisted := _save_tutorial_completion(record_path)
 	_start_clean_formal_run()
 	return persisted
 ```
 
-Connect the completion button and skip button to these methods. A persistence
-failure still starts the run and returns `false`.
+Extend `_start_clean_formal_run()` with
+`tutorial_step = TutorialStep.INACTIVE`. Connect the completion button to
+`_complete_tutorial()`; the skip button already calls `_skip_tutorial()`. A
+persistence failure still starts the run and returns `false`.
 
 Add fixture validation and call it at the start of
 `_start_tutorial_encounter()`:
