@@ -31,6 +31,35 @@ godot --headless --path . --export-release Web
 
 导出目标为 `apps/player/public/assets/godot/ch09-env-spire/index.html`。
 
+## 视觉验证
+
+在游戏工程目录运行桌面与移动端原生捕获：
+
+```powershell
+godot.cmd --path . -s tests/capture_graybox.gd
+godot.cmd --path . -s tests/capture_graybox.gd -- --mobile
+```
+
+参考视口分别为 `1280 x 720` 和 `390 x 844`。截图输出到仓库根目录的 `.superpowers/visual-qa/ch09-env-spire`，覆盖普通流程、全部 Boss 阶段、结果页和节点实验室。
+
+Web 导出后，在仓库根目录启动本地预览：
+
+```powershell
+python .superpowers/serve_ch09.py 4179
+```
+
+普通流程预览：
+
+```text
+http://127.0.0.1:4179/index.html
+```
+
+节点实验室预览：
+
+```text
+http://127.0.0.1:4179/index.html?nodeLab=1
+```
+
 ## 节点实验室
 
 节点实验室用于单独体验全部普通故障、精英故障、事件、检查点、组件、商店、休整、奖励和 Boss 阶段，不属于课程闯关流程。

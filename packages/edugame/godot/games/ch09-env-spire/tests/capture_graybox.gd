@@ -72,6 +72,33 @@ func _run() -> void:
 	game._render_state()
 	await _capture("31-mobile-result.png" if mobile else "11-desktop-result.png")
 
+	game._reset_run()
+	game.current_node = {"type": "event", "contentId": "sensor_replacement"}
+	game.current_event = (game.event_defs.get("sensor_replacement", {}) as Dictionary).duplicate(true)
+	game.state = game.RunState.EVENT
+	game._render_state()
+	await _capture("35-mobile-event.png" if mobile else "15-desktop-event.png")
+
+	game._reset_run()
+	game.current_node = {"type": "component", "label": "工程组件"}
+	game._open_component_choice()
+	game._render_state()
+	await _capture("36-mobile-component.png" if mobile else "16-desktop-component.png")
+
+	game._reset_run()
+	game.current_layer = 11
+	game.current_node = {"type": "service", "label": "节点 11 · Boss 前整备"}
+	game.state = game.RunState.REST
+	game._render_state()
+	await _capture("37-mobile-service-node-11.png" if mobile else "17-desktop-service-node-11.png")
+
+	game._reset_run()
+	game.current_node = {"type": "ordinary", "contentId": "mq2_warmup"}
+	game.reward_choices.clear()
+	game.state = game.RunState.REWARD
+	game._render_state()
+	await _capture("38-mobile-reward-fallback.png" if mobile else "18-desktop-reward-fallback.png")
+
 	game._enter_node_lab()
 	await _capture("32-mobile-node-lab.png" if mobile else "12-desktop-node-lab.png")
 

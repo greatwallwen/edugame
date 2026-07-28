@@ -93,6 +93,8 @@ func _verify_viewport(size: Vector2i) -> void:
 	var enemy_intent = game.find_child("EnemyIntent", true, false)
 	var hand_dock = game.find_child("HandDock", true, false)
 	var point_counter = game.find_child("ProcessingPointCounter", true, false)
+	var reward_cards = game.find_child("RewardCards", true, false)
+	var reward_skip = game.find_child("RewardSkipButton", true, false)
 
 	_assert(header != null, "header should exist at %s" % size)
 	_assert(map_view != null and combat_view != null and choice_view != null and result_view != null, "all state views should exist")
@@ -183,6 +185,14 @@ func _verify_viewport(size: Vector2i) -> void:
 	game._render_state()
 	await process_frame
 	_assert(choice_description != null and choice_description.text.contains("调试报告"), "reward state should expose the latest debugging report")
+	_assert(reward_cards != null and reward_cards.get_child_count() == 3, "normal completed encounter should render three reward cards")
+	if reward_cards != null and reward_skip != null and reward_cards.get_child_count() > 0:
+		_assert((reward_cards as GridContainer).columns == (1 if size.x < 720 else 3), "normal reward cards should adapt their column count")
+		for reward_card in reward_cards.get_children():
+			_assert((reward_card as Control).custom_minimum_size.y >= 88.0, "normal reward cards should remain visually scannable")
+			_assert(viewport_rect.intersects((reward_card as Control).get_global_rect()), "normal reward card should remain visible at %s" % size)
+		_assert((reward_skip as Control).custom_minimum_size.y < (reward_cards.get_child(0) as Control).custom_minimum_size.y, "reward skip should be visually secondary to reward cards")
+	_assert_visible_primary_command_heights(game)
 
 	game.current_node = {"type": "boss", "contentId": "warehouse_acceptance"}
 	game._start_encounter("warehouse_acceptance", "boss")
@@ -197,25 +207,34 @@ func _verify_viewport(size: Vector2i) -> void:
 		_assert(end_turn.get_global_rect().end.y <= footer.get_global_rect().position.y, "boss phase three action should not be covered by the footer at %s" % size)
 
 	game.state = game.RunState.REWARD
-	game.reward_choices = [game._card_copy("threshold_judgement")]
+	game.reward_choices = []
 	game._render_state()
 	await process_frame
 	_assert(choice_view.visible and !combat_view.visible, "reward state should show choice view")
 	var choice_backdrop = game.find_child("SceneChoiceBackdrop", true, false)
 	var choice_context = game.find_child("SceneChoiceContext", true, false)
-	var reward_cards = game.find_child("RewardCards", true, false)
-	var reward_skip = game.find_child("RewardSkipButton", true, false)
 	_assert(choice_backdrop != null and choice_context != null, "choice states should retain scene context")
 	_assert(reward_cards != null, "reward should expose a dedicated card row")
-	if reward_cards != null and reward_skip != null and reward_cards.get_child_count() > 0:
-		_assert((reward_skip as Control).custom_minimum_size.y < (reward_cards.get_child(0) as Control).custom_minimum_size.y, "reward skip should be visually secondary to reward cards")
 	if choice_list != null:
 		_assert(choice_list is GridContainer, "choice states should use a responsive grid")
 		_assert((choice_list as GridContainer).columns == (1 if size.x < 720 else 2), "choice grid should adapt its column count")
 	if reward_cards != null:
-		_assert(reward_cards.get_child_count() == 1, "one reward should render in the dedicated reward row")
-		if reward_cards.get_child_count() > 0:
-			_assert((reward_cards.get_child(0) as Control).custom_minimum_size.y >= 88.0, "reward cards should be visually scannable")
+		_assert(reward_cards.get_child_count() == 0, "empty reward fallback should render no blank reward cards")
+	_assert(reward_skip != null and reward_skip.visible, "empty reward fallback should retain the skip command")
+	_assert_visible_primary_command_heights(game)
+
+	game.current_event = (game.event_defs.get("sensor_replacement", {}) as Dictionary).duplicate(true)
+	game.state = game.RunState.EVENT
+	game._render_state()
+	await process_frame
+	_assert(choice_list != null and choice_list.get_child_count() > 0, "normal event should render its commands")
+	_assert_visible_primary_command_heights(game)
+
+	game._open_shop()
+	game._render_state()
+	await process_frame
+	_assert(choice_list != null and choice_list.get_child_count() > 1, "normal shop should render stock and leave commands")
+	_assert_visible_primary_command_heights(game)
 
 	game.state = game.RunState.REST
 	game.current_layer = 10
@@ -244,8 +263,13 @@ func _verify_viewport(size: Vector2i) -> void:
 		_assert(choice_list.get_child_count() == 3, "component node should render three choices")
 		if choice_list.get_child_count() > 0:
 			_assert(!(choice_list.get_child(0) as Button).text.is_empty(), "component choice should have a readable label")
+		_assert_visible_primary_command_heights(game)
 
-	game._finish_run(true)
+	game.score = 87
+	game.current_layer = 12
+	game.stability = 55
+	game.checkpoints_passed = 2
+	game.state = game.RunState.RESULT
 	game._render_state()
 	await process_frame
 	_assert(result_view.visible and !choice_view.visible, "result state should show result view")
@@ -255,6 +279,12 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(result_heading != null and result_metrics != null and learning_summary != null, "result state should expose the refreshed result hierarchy")
 	if learning_summary != null:
 		_assert(learning_summary.text.contains("调试报告"), "result state should retain the run's debugging report summary")
+	if result_metrics != null:
+		_assert(result_metrics.text.contains("得分 87 / 100"), "result state should retain the score metric")
+		_assert(result_metrics.text.contains("到达节点 12 / 12"), "result state should retain the node-count metric")
+		_assert(result_metrics.text.contains("稳定度 55 / 70"), "result state should retain the stability metric")
+		_assert(result_metrics.text.contains("检查点 2 / 2"), "result state should retain the checkpoint metric")
+		_assert(result_metrics.text.contains("牌组 12 张"), "result state should retain the deck-size metric")
 	if restart_button != null:
 		_assert(restart_button.size.x <= 360.0, "desktop result action should not stretch across the work area")
 		_assert(viewport_rect.encloses(restart_button.get_global_rect()), "result action should stay inside viewport at %s" % size)
