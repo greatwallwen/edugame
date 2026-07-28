@@ -14,7 +14,7 @@ func _run() -> void:
 	var scene := load("res://scenes/main.tscn")
 	var game = scene.instantiate()
 	game.tutorial_record_path = TEST_RECORD_PATH
-	_assert(game._save_tutorial_completion(), "runtime test completion record should be writable")
+	_assert(game._save_tutorial_completion(TEST_RECORD_PATH), "runtime test completion record should be writable")
 	get_root().add_child(game)
 	var runtime = game.get("runtime")
 	_assert(runtime != null, "Ch09 should expose the shared runtime")
@@ -40,6 +40,22 @@ func _run() -> void:
 	var outbound_payloads: Array = []
 	runtime.bridge.outbound_payload.connect(func(payload: Dictionary) -> void: outbound_payloads.append(payload))
 	_assert(str(runtime.get_script().resource_path).ends_with("addons/dgbook_runtime/runtime.gd"), "Ch09 should use copied dgbook runtime")
+	game._start_tutorial_briefing()
+	game._start_tutorial_encounter()
+	_assert(game.confirm_tutorial_intent(), "tutorial action should advance from the briefing fixture")
+	_assert(game.play_card(0), "tutorial action should resolve its scripted defense")
+	_assert(!game.completed, "tutorial should not mark gameplay complete")
+	_assert(game.score == 0, "tutorial should not calculate a score")
+	_assert(game.current_layer == 0, "tutorial should not visit formal nodes")
+	_assert(int(game._run_stats().get("visitedNodes", -1)) == 0, "tutorial should not enter run stats")
+	_assert(!game.formal_run_active, "tutorial should not activate the formal attempt")
+	var tutorial_completions := outbound_payloads.filter(func(payload: Dictionary) -> bool: return payload.get("type") == "DGB_GODOT_COMPLETE")
+	_assert(tutorial_completions.is_empty(), "tutorial should not emit completion payloads")
+	_assert(game._skip_tutorial(TEST_RECORD_PATH), "tutorial skip should start the formal run")
+	_assert(game.formal_run_active, "tutorial skip should activate the formal attempt")
+	_assert(game.state == game.RunState.MAP, "tutorial skip should enter the formal map")
+	tutorial_completions = outbound_payloads.filter(func(payload: Dictionary) -> bool: return payload.get("type") == "DGB_GODOT_COMPLETE")
+	_assert(tutorial_completions.is_empty(), "tutorial skip should not emit completion payloads")
 	runtime.bridge.receive_payload({
 		"type": "DGB_GODOT_INIT",
 		"version": 1,

@@ -145,6 +145,7 @@ var tutorial_coach_layer: PanelContainer
 var tutorial_coach_text: Label
 var tutorial_skip_button: Button
 var tutorial_intent_button: Button
+var tutorial_complete_button: Button
 var map_view: PanelContainer
 var map_title: Label
 var map_composition: BoxContainer
@@ -341,6 +342,10 @@ func _start_clean_formal_run() -> void:
 
 
 func _skip_tutorial(record_path: String = "") -> bool:
+	return _complete_tutorial(record_path)
+
+
+func _complete_tutorial(record_path: String = "") -> bool:
 	var persisted := _save_tutorial_completion(record_path)
 	_start_clean_formal_run()
 	return persisted
@@ -660,6 +665,15 @@ func _build_tutorial_view() -> void:
 	tutorial_intent_button.custom_minimum_size = Vector2(0, 44)
 	tutorial_intent_button.pressed.connect(confirm_tutorial_intent)
 	coach_content.add_child(tutorial_intent_button)
+	tutorial_complete_button = Button.new()
+	tutorial_complete_button.name = "TutorialCompleteButton"
+	tutorial_complete_button.text = "开始正式调试"
+	_skin_button(tutorial_complete_button, Color("#2f7f8d"))
+	tutorial_complete_button.custom_minimum_size = Vector2(0, 44)
+	tutorial_complete_button.pressed.connect(func() -> void:
+		_complete_tutorial()
+	)
+	coach_content.add_child(tutorial_complete_button)
 
 
 func _build_map_view() -> void:
@@ -1117,6 +1131,9 @@ func _render_tutorial() -> void:
 	if tutorial_intent_button != null:
 		tutorial_intent_button.visible = tutorial_active and tutorial_step == TutorialStep.READ_INTENT
 		tutorial_intent_button.disabled = !tutorial_active or tutorial_step != TutorialStep.READ_INTENT
+	if tutorial_complete_button != null:
+		tutorial_complete_button.visible = tutorial_active and tutorial_step == TutorialStep.COMPLETE
+		tutorial_complete_button.disabled = !tutorial_active or tutorial_step != TutorialStep.COMPLETE
 	if tutorial_coach_text != null and tutorial_active:
 		match tutorial_step:
 			TutorialStep.READ_INTENT:
@@ -1648,6 +1665,10 @@ func _reset_combat_resources() -> void:
 
 
 func _start_tutorial_encounter() -> void:
+	if !_tutorial_fixture_available():
+		push_warning("Missing Ch09 tutorial fixture data; starting formal run.")
+		_start_clean_formal_run()
+		return
 	tutorial_active = true
 	tutorial_step = TutorialStep.READ_INTENT
 	formal_run_active = false
@@ -1666,6 +1687,13 @@ func _start_tutorial_encounter() -> void:
 	discard_pile.clear()
 	exhaust_pile.clear()
 	_render_state()
+
+
+func _tutorial_fixture_available() -> bool:
+	for card_id in ["sliding_average", "mq2_sample", "adc_convert", "led_alarm"]:
+		if !card_defs.has(card_id):
+			return false
+	return true
 
 
 func _tutorial_expected_card_id() -> String:

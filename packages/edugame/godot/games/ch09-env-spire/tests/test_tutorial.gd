@@ -55,14 +55,26 @@ func _run() -> void:
 	_assert(game.state == game.RunState.WAITING, "runtime reset should return to the tutorial briefing")
 	_assert(game.budget == 99, "runtime reset should not reset formal resources during tutorial")
 
-	game.stability = 9
-	game.current_layer = 4
-	_assert(game._skip_tutorial(TEST_RECORD_PATH), "skip should persist completion")
-	_assert(!game.tutorial_active, "skip should leave tutorial mode")
-	_assert(game.formal_run_active, "skip should activate a formal attempt")
-	_assert(game.state == game.RunState.MAP, "skip should open the formal map")
-	_assert(game.current_layer == 0, "skip should reset formal route progress")
-	_assert(game.stability == game.max_stability and game.budget == 30, "skip should restore formal resources")
+	_dirty_tutorial_state(game)
+	_assert(game._skip_tutorial(TEST_RECORD_PATH), "skip should enter a formal run")
+	_assert_clean_formal_run(game, "skip")
+
+	_enter_practice(game)
+	_dirty_tutorial_state(game)
+	_assert(game.has_method("_complete_tutorial"), "tutorial should expose a completion transition")
+	if game.has_method("_complete_tutorial"):
+		_assert(game._complete_tutorial(TEST_RECORD_PATH), "completion should enter a formal run")
+	_assert_clean_formal_run(game, "completion")
+
+	game._start_tutorial_briefing()
+	var saved_led := (game.card_defs.get("led_alarm", {}) as Dictionary).duplicate(true)
+	game.card_defs.erase("led_alarm")
+	game._start_tutorial_encounter()
+	_assert(
+		game.state == game.RunState.MAP and game.formal_run_active,
+		"missing tutorial fixture data should fall back to a formal run"
+	)
+	game.card_defs["led_alarm"] = saved_led
 
 	_enter_practice(game)
 	_assert(
@@ -71,6 +83,13 @@ func _run() -> void:
 	)
 	_assert(!game.play_card(0), "cards should be locked before intent confirmation")
 	_assert(!game._tutorial_end_turn_allowed(), "end turn should be locked before defense")
+	var premature_state: int = game.state
+	var premature_stability: int = game.stability
+	var premature_hand: Array = game.hand.duplicate(true)
+	_assert(!game.end_turn(), "public end turn should reject premature tutorial use")
+	_assert(game.state == premature_state, "premature end turn should preserve state")
+	_assert(game.stability == premature_stability, "premature end turn should preserve stability")
+	_assert(game.hand == premature_hand, "premature end turn should preserve hand")
 	_assert(game.confirm_tutorial_intent(), "intent target should advance the tutorial")
 	_assert(
 		game.tutorial_step == game.TutorialStep.PLAY_DEFENSE,
@@ -113,6 +132,29 @@ func _run() -> void:
 func _enter_practice(game) -> void:
 	game._start_tutorial_briefing()
 	game._start_tutorial_encounter()
+
+
+func _dirty_tutorial_state(game) -> void:
+	game.tutorial_active = true
+	game.tutorial_step = game.TutorialStep.PLAY_CONVERT
+	game.stability = 13
+	game.budget = 999
+	game.current_layer = 7
+	game.visited_nodes = [{"type": "tutorial"}]
+	game.deck = [game._card_copy("led_alarm")]
+	game.debug_reports = [{"encounterId": "training_signal_chain"}]
+
+
+func _assert_clean_formal_run(game, route: String) -> void:
+	_assert(!game.tutorial_active, "%s should clear tutorial activity" % route)
+	_assert(game.tutorial_step == game.TutorialStep.INACTIVE, "%s should clear tutorial step" % route)
+	_assert(game.formal_run_active, "%s should activate a formal attempt" % route)
+	_assert(game.state == game.RunState.MAP, "%s should enter the formal map" % route)
+	_assert(game.current_layer == 0 and game.visited_nodes.is_empty(), "%s formal route should be untouched" % route)
+	_assert(game.stability == game.max_stability, "%s should restore formal stability" % route)
+	_assert(game.budget == 30, "%s should restore the formal budget" % route)
+	_assert(game.deck.size() == game.STARTER_CARD_IDS.size(), "%s should rebuild the formal deck" % route)
+	_assert(game.debug_reports.is_empty(), "%s should clear tutorial reports" % route)
 
 
 func _assert(condition: bool, message: String) -> void:
