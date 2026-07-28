@@ -2,6 +2,8 @@ extends Control
 
 const DGBRuntime = preload("res://addons/dgbook_runtime/runtime.gd")
 const UI_FONT_PATH := "res://assets/fonts/NotoSansSC-VF.ttf"
+const TUTORIAL_VERSION := 1
+const TUTORIAL_RECORD_PATH := "user://ch09_tutorial.cfg"
 const STARTER_CARD_IDS := [
 	"mq2_sample", "mq2_sample", "bh1750_read", "hdc1080_read",
 	"adc_convert", "adc_convert", "i2c_transaction", "i2c_transaction",
@@ -94,6 +96,10 @@ var shop_cards: Array = []
 var message_log: Array = []
 var debug_reports: Array = []
 var node_lab_active := false
+var tutorial_active := false
+var formal_run_active := false
+var initial_experience_started := false
+var tutorial_record_path := TUTORIAL_RECORD_PATH
 var lab_current_entry := {}
 var lab_deck_fixture := "starter"
 var node_lab_overlay: CanvasLayer
@@ -161,7 +167,7 @@ func _ready() -> void:
 	state = RunState.WAITING
 	_render_state()
 	if _node_lab_requested():
-		call_deferred("_enter_node_lab")
+		call_deferred("_start_initial_experience")
 	else:
 		call_deferred("_start_standalone_preview_if_needed")
 
@@ -187,8 +193,10 @@ func _on_session_initialized(session: Dictionary) -> void:
 	var config := session.get("config", {}) as Dictionary
 	run_map_id = str(config.get("runMapId", run_map_id))
 	max_stability = int(config.get("maxStability", max_stability))
-	_reset_run()
-	_render_state()
+	if initial_experience_started:
+		_start_clean_formal_run()
+	else:
+		_start_initial_experience()
 	runtime.log_info("Ch09 environment spire initialized.")
 
 
@@ -201,15 +209,104 @@ func _start_standalone_preview_if_needed() -> void:
 	if !OS.has_feature("web"):
 		return
 	var top_level := bool(JavaScriptBridge.eval("window.self === window.parent", true))
-	_start_standalone_preview(top_level)
+	if top_level:
+		_start_initial_experience()
 
 
 func _start_standalone_preview(top_level: bool) -> bool:
 	if !top_level or state != RunState.WAITING:
 		return false
+	if initial_experience_started:
+		_start_clean_formal_run()
+	else:
+		_start_initial_experience()
+	return true
+
+
+func _select_initial_experience(
+	node_lab_requested: bool,
+	tutorial_forced: bool,
+	completed_version: int
+) -> String:
+	if node_lab_requested:
+		return "node_lab"
+	if tutorial_forced or completed_version != TUTORIAL_VERSION:
+		return "tutorial"
+	return "run"
+
+
+func _resolve_tutorial_record_path(path: String) -> String:
+	return tutorial_record_path if path.is_empty() else path
+
+
+func _load_tutorial_completed_version(path: String = "") -> int:
+	path = _resolve_tutorial_record_path(path)
+	var config := ConfigFile.new()
+	if config.load(path) != OK:
+		return 0
+	if !bool(config.get_value("tutorial", "completed", false)):
+		return 0
+	return int(config.get_value("tutorial", "version", 0))
+
+
+func _save_tutorial_completion(path: String = "") -> bool:
+	path = _resolve_tutorial_record_path(path)
+	var config := ConfigFile.new()
+	config.set_value("tutorial", "version", TUTORIAL_VERSION)
+	config.set_value("tutorial", "completed", true)
+	var result := config.save(path)
+	if result != OK:
+		push_warning("Could not persist Ch09 tutorial completion.")
+	return result == OK
+
+
+func _tutorial_forced() -> bool:
+	if OS.get_cmdline_user_args().has("--tutorial"):
+		return true
+	if OS.has_feature("web"):
+		var value = JavaScriptBridge.eval(
+			"new URLSearchParams(window.location.search).get('tutorial')",
+			true
+		)
+		return str(value) == "1"
+	return false
+
+
+func _start_initial_experience() -> void:
+	if initial_experience_started:
+		return
+	initial_experience_started = true
+	var mode := _select_initial_experience(
+		_node_lab_requested(),
+		_tutorial_forced(),
+		_load_tutorial_completed_version()
+	)
+	match mode:
+		"node_lab":
+			_enter_node_lab()
+		"tutorial":
+			_start_tutorial_briefing()
+		_:
+			_reset_run()
+	_render_state()
+
+
+func _start_tutorial_briefing() -> void:
+	formal_run_active = false
+	tutorial_active = true
+	state = RunState.WAITING
+
+
+func _start_clean_formal_run() -> void:
+	tutorial_active = false
 	_reset_run()
 	_render_state()
-	return true
+
+
+func _skip_tutorial(record_path: String = "") -> bool:
+	var persisted := _save_tutorial_completion(record_path)
+	_start_clean_formal_run()
+	return persisted
 
 
 func _node_lab_requested() -> bool:
@@ -226,6 +323,8 @@ func _node_lab_requested() -> bool:
 
 
 func _enter_node_lab() -> void:
+	formal_run_active = false
+	tutorial_active = false
 	if node_lab_overlay != null:
 		node_lab_active = true
 		node_lab_overlay.show_catalog()
@@ -1321,6 +1420,7 @@ func _index_by_id(items: Array) -> Dictionary:
 
 
 func _reset_run() -> void:
+	formal_run_active = true
 	if runtime != null and !node_lab_active:
 		runtime.begin_attempt()
 	completed = false
@@ -2274,6 +2374,7 @@ func _grant_random_relic() -> void:
 func _reset_lab_fixture(deck_fixture: String) -> void:
 	node_lab_active = true
 	_reset_run()
+	formal_run_active = false
 	lab_deck_fixture = deck_fixture
 	budget = 100
 	stability = max_stability
@@ -2375,7 +2476,7 @@ func _finish_run(won: bool) -> void:
 	victory = won
 	score = _calculate_score() if won else mini(59, int(round(40.0 * _run_progress())))
 	state = RunState.RESULT
-	if node_lab_active:
+	if !formal_run_active:
 		_render_state()
 		return
 	if runtime != null:
