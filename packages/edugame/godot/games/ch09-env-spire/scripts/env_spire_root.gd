@@ -139,10 +139,12 @@ var budget_label: Label
 var deck_label: Label
 var main_area: Control
 var tutorial_view: PanelContainer
+var tutorial_briefing_content: VBoxContainer
 var tutorial_route_summary: Label
 var tutorial_start_button: Button
 var tutorial_coach_layer: PanelContainer
 var tutorial_coach_text: Label
+var tutorial_coach_actions: HBoxContainer
 var tutorial_skip_button: Button
 var tutorial_intent_button: Button
 var tutorial_complete_button: Button
@@ -158,7 +160,9 @@ var combat_view: PanelContainer
 var combat_layout: BoxContainer
 var encounter_arena: BoxContainer
 var hand_dock: VBoxContainer
+var tutorial_combat_spacer: Control
 var dock_header: HBoxContainer
+var hand_title: Label
 var combat_actions: HBoxContainer
 var processing_point_counter: Label
 var encounter_name_label: Label
@@ -590,27 +594,28 @@ func _build_tutorial_view() -> void:
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margin.add_child(scroll)
-	var content := VBoxContainer.new()
-	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	content.add_theme_constant_override("separation", 12)
-	scroll.add_child(content)
+	tutorial_briefing_content = VBoxContainer.new()
+	tutorial_briefing_content.name = "TutorialBriefingContent"
+	tutorial_briefing_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tutorial_briefing_content.add_theme_constant_override("separation", 12)
+	scroll.add_child(tutorial_briefing_content)
 	var title := Label.new()
 	title.text = "训练导览 / 环境监测调试"
 	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color("#17343c"))
-	content.add_child(title)
+	tutorial_briefing_content.add_child(title)
 	tutorial_route_summary = Label.new()
 	tutorial_route_summary.name = "TutorialRouteSummary"
 	tutorial_route_summary.text = "12 节点单线调试\n故障与检查点：验证工程证据\n事件、组件、商店与休整：调整卡组\n节点 11：Boss 前整备\n节点 12：三阶段综合验收"
 	tutorial_route_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tutorial_route_summary.add_theme_color_override("font_color", Color("#3e565d"))
 	tutorial_route_summary.add_theme_font_size_override("font_size", 16)
-	content.add_child(tutorial_route_summary)
+	tutorial_briefing_content.add_child(tutorial_route_summary)
 	var briefing_note := Label.new()
 	briefing_note.text = "训练战斗将依次练习：读取故障意图、建立防御、结束回合与工程数据链。"
 	briefing_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	briefing_note.add_theme_color_override("font_color", Color("#486068"))
-	content.add_child(briefing_note)
+	tutorial_briefing_content.add_child(briefing_note)
 	tutorial_start_button = Button.new()
 	tutorial_start_button.name = "TutorialStartButton"
 	tutorial_start_button.text = "开始训练"
@@ -622,22 +627,7 @@ func _build_tutorial_view() -> void:
 	_skin_button(tutorial_start_button, Color("#2f7f8d"))
 	tutorial_start_button.custom_minimum_size = Vector2(260, 44)
 	tutorial_start_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	content.add_child(tutorial_start_button)
-
-	tutorial_skip_button = Button.new()
-	tutorial_skip_button.name = "TutorialSkipButton"
-	tutorial_skip_button.text = "跳过教程"
-	tutorial_skip_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	tutorial_skip_button.offset_left = -138
-	tutorial_skip_button.offset_top = 10
-	tutorial_skip_button.offset_right = -10
-	tutorial_skip_button.offset_bottom = 54
-	_skin_button(tutorial_skip_button, Color("#697b80"))
-	tutorial_skip_button.custom_minimum_size = Vector2(128, 44)
-	tutorial_skip_button.pressed.connect(func() -> void:
-		_skip_tutorial()
-	)
-	main_area.add_child(tutorial_skip_button)
+	tutorial_briefing_content.add_child(tutorial_start_button)
 
 	tutorial_coach_layer = PanelContainer.new()
 	tutorial_coach_layer.name = "TutorialCoachLayer"
@@ -658,22 +648,40 @@ func _build_tutorial_view() -> void:
 	tutorial_coach_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tutorial_coach_text.add_theme_color_override("font_color", Color("#173f47"))
 	coach_content.add_child(tutorial_coach_text)
+	tutorial_coach_actions = HBoxContainer.new()
+	tutorial_coach_actions.name = "TutorialCoachActions"
+	tutorial_coach_actions.add_theme_constant_override("separation", 8)
+	coach_content.add_child(tutorial_coach_actions)
+	var coach_spacer := Control.new()
+	coach_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tutorial_coach_actions.add_child(coach_spacer)
+	tutorial_skip_button = Button.new()
+	tutorial_skip_button.name = "TutorialSkipButton"
+	tutorial_skip_button.text = "跳过教程"
+	_skin_button(tutorial_skip_button, Color("#697b80"))
+	tutorial_skip_button.custom_minimum_size = Vector2(128, 44)
+	tutorial_skip_button.pressed.connect(func() -> void:
+		_skip_tutorial()
+	)
+	tutorial_coach_actions.add_child(tutorial_skip_button)
 	tutorial_intent_button = Button.new()
 	tutorial_intent_button.name = "TutorialIntentButton"
 	tutorial_intent_button.text = "查看故障意图"
 	_skin_button(tutorial_intent_button, Color("#2f7f8d"))
 	tutorial_intent_button.custom_minimum_size = Vector2(0, 44)
+	tutorial_intent_button.size_flags_horizontal = Control.SIZE_SHRINK_END
 	tutorial_intent_button.pressed.connect(confirm_tutorial_intent)
-	coach_content.add_child(tutorial_intent_button)
+	tutorial_coach_actions.add_child(tutorial_intent_button)
 	tutorial_complete_button = Button.new()
 	tutorial_complete_button.name = "TutorialCompleteButton"
 	tutorial_complete_button.text = "开始正式调试"
 	_skin_button(tutorial_complete_button, Color("#2f7f8d"))
 	tutorial_complete_button.custom_minimum_size = Vector2(0, 44)
+	tutorial_complete_button.size_flags_horizontal = Control.SIZE_SHRINK_END
 	tutorial_complete_button.pressed.connect(func() -> void:
 		_complete_tutorial()
 	)
-	coach_content.add_child(tutorial_complete_button)
+	tutorial_coach_actions.add_child(tutorial_complete_button)
 
 
 func _build_map_view() -> void:
@@ -827,10 +835,15 @@ func _build_combat_view() -> void:
 	hand_dock.custom_minimum_size = Vector2(0, 274)
 	hand_dock.add_theme_constant_override("separation", 8)
 	combat_layout.add_child(hand_dock)
+	tutorial_combat_spacer = Control.new()
+	tutorial_combat_spacer.name = "TutorialCombatSpacer"
+	tutorial_combat_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	combat_layout.add_child(tutorial_combat_spacer)
 	dock_header = HBoxContainer.new()
 	dock_header.add_theme_constant_override("separation", 10)
 	hand_dock.add_child(dock_header)
-	var hand_title := Label.new()
+	hand_title = Label.new()
+	hand_title.name = "HandTitle"
 	hand_title.text = "手牌 / 点击执行工程动作"
 	hand_title.add_theme_color_override("font_color", Color("#294b54"))
 	dock_header.add_child(hand_title)
@@ -1052,8 +1065,13 @@ func _apply_responsive_layout() -> void:
 			encounter_arena.move_child(fault_unit, 2)
 	if hand_dock != null:
 		hand_dock.custom_minimum_size.y = 274.0 if compact else 176.0
+	if hand_title != null:
+		hand_title.visible = !tutorial_active
+	if tutorial_combat_spacer != null:
+		tutorial_combat_spacer.visible = tutorial_active and state == RunState.COMBAT
+		tutorial_combat_spacer.custom_minimum_size.y = 108.0 if compact else 84.0
 	if end_turn_button != null and dock_header != null and combat_actions != null:
-		var end_turn_parent := combat_actions if compact else dock_header
+		var end_turn_parent := combat_actions if compact and !tutorial_active else dock_header
 		if end_turn_button.get_parent() != end_turn_parent:
 			end_turn_button.reparent(end_turn_parent)
 		combat_actions.visible = compact
@@ -1094,6 +1112,16 @@ func _apply_responsive_layout() -> void:
 		for child in hand_row.get_children():
 			if child is Button:
 				(child as Button).custom_minimum_size = Vector2(154, 188) if compact else Vector2(176, 120)
+	if tutorial_briefing_content != null:
+		tutorial_briefing_content.add_theme_constant_override("separation", 10 if compact else 12)
+	if tutorial_coach_layer != null:
+		tutorial_coach_layer.offset_left = 10.0 if compact else 18.0
+		tutorial_coach_layer.offset_top = -108.0 if compact else -84.0
+		tutorial_coach_layer.offset_right = -10.0 if compact else -18.0
+		tutorial_coach_layer.offset_bottom = -12.0
+	if tutorial_coach_text != null:
+		tutorial_coach_text.max_lines_visible = 2
+		tutorial_coach_text.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
 
 func _render_state() -> void:
@@ -1125,7 +1153,7 @@ func _render_tutorial() -> void:
 	if tutorial_view != null:
 		tutorial_view.visible = tutorial_active and tutorial_step == TutorialStep.BRIEFING
 	if tutorial_coach_layer != null:
-		tutorial_coach_layer.visible = tutorial_active and tutorial_step != TutorialStep.BRIEFING
+		tutorial_coach_layer.visible = tutorial_active
 	if tutorial_skip_button != null:
 		tutorial_skip_button.visible = tutorial_active
 	if tutorial_intent_button != null:
@@ -1136,6 +1164,8 @@ func _render_tutorial() -> void:
 		tutorial_complete_button.disabled = !tutorial_active or tutorial_step != TutorialStep.COMPLETE
 	if tutorial_coach_text != null and tutorial_active:
 		match tutorial_step:
+			TutorialStep.BRIEFING:
+				tutorial_coach_text.text = "跟随训练步骤完成环境监测调试。"
 			TutorialStep.READ_INTENT:
 				tutorial_coach_text.text = "先读取故障意图，再选择防御动作。"
 			TutorialStep.PLAY_DEFENSE:
@@ -1300,8 +1330,31 @@ func _render_combat() -> void:
 				_render_state()
 			)
 		button.custom_minimum_size = Vector2(154 if size.x < 720.0 else 176, 188 if size.x < 720.0 else 120)
+		if tutorial_active and str(card.get("id", "")) == _tutorial_expected_card_id():
+			button.name = "TutorialRequiredCard"
+			_apply_tutorial_card_focus(button)
 		hand_row.add_child(button)
 	end_turn_button.disabled = tutorial_active and !_tutorial_end_turn_allowed()
+	if tutorial_active and !_tutorial_expected_card_id().is_empty():
+		call_deferred("_reveal_tutorial_required_card")
+
+
+func _apply_tutorial_card_focus(button: Button) -> void:
+	for state_name in ["normal", "hover", "pressed"]:
+		var base_style := button.get_theme_stylebox(state_name)
+		if base_style is StyleBoxFlat:
+			var focus_style := (base_style as StyleBoxFlat).duplicate() as StyleBoxFlat
+			focus_style.border_color = Color("#c57b23")
+			focus_style.set_border_width_all(3)
+			button.add_theme_stylebox_override(state_name, focus_style)
+
+
+func _reveal_tutorial_required_card() -> void:
+	if hand_scroll == null:
+		return
+	var required_card := find_child("TutorialRequiredCard", true, false) as Control
+	if required_card != null:
+		hand_scroll.scroll_horizontal = int(required_card.position.x)
 
 
 func _active_gate_met(tier: String) -> bool:

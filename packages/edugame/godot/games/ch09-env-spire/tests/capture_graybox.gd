@@ -21,6 +21,31 @@ func _run() -> void:
 	get_root().add_child(game)
 	await _settle()
 	print("capture viewport=", get_root().size, " control=", game.size, " window=", DisplayServer.window_get_size())
+	game._start_tutorial_briefing()
+	game._render_state()
+	await _capture("39-mobile-tutorial-briefing.png" if mobile else "19-desktop-tutorial-briefing.png")
+
+	game._start_tutorial_encounter()
+	await _capture("40-mobile-tutorial-intent.png" if mobile else "20-desktop-tutorial-intent.png")
+
+	game.confirm_tutorial_intent()
+	await _capture("41-mobile-tutorial-defense.png" if mobile else "21-desktop-tutorial-defense.png")
+
+	game.play_card(0)
+	await _capture("42-mobile-tutorial-end-turn.png" if mobile else "22-desktop-tutorial-end-turn.png")
+
+	game.end_turn()
+	await _capture("43-mobile-tutorial-sample.png" if mobile else "23-desktop-tutorial-sample.png")
+
+	game.play_card(0)
+	await _capture("44-mobile-tutorial-convert.png" if mobile else "24-desktop-tutorial-convert.png")
+
+	game.play_card(0)
+	await _capture("45-mobile-tutorial-output.png" if mobile else "25-desktop-tutorial-output.png")
+
+	game.play_card(0)
+	await _capture("46-mobile-tutorial-complete.png" if mobile else "26-desktop-tutorial-complete.png")
+
 	game._reset_run()
 	game._render_state()
 	await _capture("21-mobile-map.png" if mobile else "01-desktop-map.png")

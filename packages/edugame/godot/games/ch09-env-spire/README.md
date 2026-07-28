@@ -8,11 +8,26 @@
 godot --path .
 ```
 
+## 交互式教程
+
+正常首次运行会从 `user://ch09_tutorial.cfg` 读取教程完成记录并进入教程。用于 QA 的强制入口会忽略已完成记录，但不会删除该记录：
+
+```powershell
+godot.cmd --path . -- --tutorial
+```
+
+教程自动化验证：
+
+```powershell
+godot.cmd --headless --path . -s tests/test_tutorial.gd
+```
+
 ## 测试
 
 ```powershell
 godot --headless --path . -s tests/test_data_contract.gd
 godot --headless --path . -s tests/test_card_rules.gd
+godot.cmd --headless --path . -s tests/test_tutorial.gd
 godot --headless --path . -s tests/test_run_flow.gd
 godot --headless --path . -s tests/test_random_robustness.gd
 godot --headless --path . -s tests/test_graybox_ui.gd
@@ -52,6 +67,12 @@ python .superpowers/serve_ch09.py 4179
 
 ```text
 http://127.0.0.1:4179/index.html
+```
+
+强制教程 QA 预览：
+
+```text
+http://127.0.0.1:<preview-port>/index.html?tutorial=1
 ```
 
 节点实验室预览：

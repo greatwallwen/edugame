@@ -28,12 +28,11 @@ func _verify_live_resize() -> void:
 	game.size = Vector2(desktop_size)
 	await process_frame
 	await process_frame
-	game._start_clean_formal_run()
+	game._start_tutorial_briefing()
+	game._start_tutorial_encounter()
+	_assert(game.confirm_tutorial_intent(), "live resize setup should reach the guided defense step")
 	await process_frame
-	game.current_node = {"type": "ordinary", "contentId": "mq2_warmup"}
-	game._start_encounter("mq2_warmup", "ordinary")
-	game._render_state()
-	await process_frame
+	var tutorial_step_before_resize = game.tutorial_step
 
 	DisplayServer.window_set_size(mobile_size)
 	get_root().size = mobile_size
@@ -43,7 +42,12 @@ func _verify_live_resize() -> void:
 	var hand_row = game.find_child("HandRow", true, false)
 	var end_turn = game.find_child("EndTurnButton", true, false)
 	var footer = game.get_node_or_null("Shell/RunFooter")
+	var required_card = game.find_child("TutorialRequiredCard", true, false) as Control
 	_assert(hand_row != null and hand_row.get_child_count() > 0, "live resize should retain the rendered hand")
+	_assert(game.tutorial_step == tutorial_step_before_resize, "live resize should preserve the tutorial step")
+	_assert(required_card != null, "live resize should retain the active tutorial card target")
+	if required_card != null:
+		_assert(Rect2(Vector2.ZERO, Vector2(mobile_size)).encloses(required_card.get_global_rect()), "live resize should keep the active tutorial card inside the viewport")
 	if hand_row != null and hand_row.get_child_count() > 0:
 		_assert((hand_row.get_child(0) as Control).custom_minimum_size.y <= 200.0, "live resize should compact existing cards")
 	if end_turn != null and footer != null:
@@ -139,6 +143,29 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(viewport_rect.encloses(tutorial_start.get_global_rect()), "tutorial start should fit the viewport")
 	_assert(viewport_rect.encloses(tutorial_skip.get_global_rect()), "tutorial skip should fit the viewport")
 	_assert(tutorial_start.custom_minimum_size.y >= 44.0, "tutorial start should be a touch target")
+	_assert_tutorial_bounds(game, viewport_rect, footer, "", "briefing")
+
+	game._start_tutorial_encounter()
+	await process_frame
+	_assert_tutorial_bounds(game, viewport_rect, footer, "", "intent")
+	_assert(game.confirm_tutorial_intent(), "tutorial intent should advance to guided defense")
+	await process_frame
+	_assert_tutorial_bounds(game, viewport_rect, footer, "sliding_average", "defense")
+	_assert(game.play_card(0), "tutorial defense should be playable for layout verification")
+	await process_frame
+	_assert_tutorial_bounds(game, viewport_rect, footer, "", "end turn")
+	_assert(game.end_turn(), "tutorial end turn should advance to data-chain practice")
+	await process_frame
+	_assert_tutorial_bounds(game, viewport_rect, footer, "mq2_sample", "sample")
+	_assert(game.play_card(0), "tutorial sample should be playable for layout verification")
+	await process_frame
+	_assert_tutorial_bounds(game, viewport_rect, footer, "adc_convert", "convert")
+	_assert(game.play_card(0), "tutorial conversion should be playable for layout verification")
+	await process_frame
+	_assert_tutorial_bounds(game, viewport_rect, footer, "led_alarm", "output")
+	_assert(game.play_card(0), "tutorial output should be playable for layout verification")
+	await process_frame
+	_assert_tutorial_bounds(game, viewport_rect, footer, "", "complete")
 	game._start_clean_formal_run()
 	await process_frame
 	_assert(viewport_rect.encloses(run_hud.get_global_rect()), "RunHud should stay in the viewport")
@@ -401,6 +428,35 @@ func _assert_visible_primary_command_heights(root: Node) -> void:
 		var button := raw_button as Button
 		if button != null and button.is_visible_in_tree():
 			_assert(button.size.y >= 44.0, "%s should be at least 44 px high when visible" % button.name)
+
+
+func _assert_tutorial_bounds(game, viewport_rect: Rect2, footer: Control, expected_card_id: String, step_name: String) -> void:
+	var tutorial_coach = game.find_child("TutorialCoachLayer", true, false) as Control
+	var tutorial_text = game.find_child("TutorialCoachText", true, false) as Label
+	var tutorial_skip = game.find_child("TutorialSkipButton", true, false) as Control
+	_assert(tutorial_coach != null, "%s tutorial state should expose the coach" % step_name)
+	_assert(tutorial_text != null and tutorial_text.is_visible_in_tree(), "%s coach text should remain visible" % step_name)
+	if tutorial_text != null:
+		_assert(tutorial_text.get_global_rect().size.y > 0.0, "%s coach text should reserve readable space" % step_name)
+	_assert(tutorial_skip != null, "%s tutorial state should expose skip" % step_name)
+	if tutorial_coach != null and footer != null:
+		_assert(viewport_rect.encloses(tutorial_coach.get_global_rect()), "%s coach should fit the viewport" % step_name)
+		_assert(tutorial_coach.get_global_rect().end.y <= footer.get_global_rect().position.y, "%s coach should stay above the footer" % step_name)
+	if tutorial_skip != null:
+		_assert(viewport_rect.encloses(tutorial_skip.get_global_rect()), "%s skip should remain reachable" % step_name)
+	if !expected_card_id.is_empty():
+		var required_card = game.find_child("TutorialRequiredCard", true, false) as Control
+		_assert(required_card != null, "%s active tutorial card should expose a stable target" % step_name)
+		if required_card != null:
+			_assert(viewport_rect.encloses(required_card.get_global_rect()), "%s required card should be fully visible" % step_name)
+			if tutorial_coach != null:
+				_assert(!tutorial_coach.get_global_rect().intersects(required_card.get_global_rect()), "%s coach should not cover the required card" % step_name)
+	if step_name == "end turn":
+		var end_turn = game.find_child("EndTurnButton", true, false) as Control
+		_assert(end_turn != null and end_turn.is_visible_in_tree(), "end turn tutorial state should expose the end-turn target")
+		if end_turn != null and tutorial_coach != null:
+			_assert(viewport_rect.encloses(end_turn.get_global_rect()), "end turn tutorial target should fit the viewport")
+			_assert(!tutorial_coach.get_global_rect().intersects(end_turn.get_global_rect()), "end turn coach should not cover the end-turn target")
 
 
 func _finish() -> void:
