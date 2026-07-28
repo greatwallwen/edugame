@@ -86,6 +86,13 @@ func _verify_viewport(size: Vector2i) -> void:
 	var choice_description = game.find_child("ChoiceDescription", true, false)
 	var gate_label = game.find_child("GateLabel", true, false)
 	var restart_button = game.find_child("RestartButton", true, false)
+	var arena = game.find_child("EncounterArena", true, false)
+	var device_unit = game.find_child("DeviceUnit", true, false)
+	var evidence_bridge = game.find_child("EvidenceBridge", true, false)
+	var fault_unit = game.find_child("FaultUnit", true, false)
+	var enemy_intent = game.find_child("EnemyIntent", true, false)
+	var hand_dock = game.find_child("HandDock", true, false)
+	var point_counter = game.find_child("ProcessingPointCounter", true, false)
 
 	_assert(header != null, "header should exist at %s" % size)
 	_assert(map_view != null and combat_view != null and choice_view != null and result_view != null, "all state views should exist")
@@ -96,6 +103,10 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(hand_row != null and end_turn != null and log_label != null and repair_bar != null, "combat controls, repair progress, and log should exist")
 	_assert(choice_list != null, "choice states should expose a stable choice grid")
 	_assert(gate_label != null and restart_button != null, "boss gate and result action should expose stable controls")
+	_assert(arena != null, "combat should expose an encounter arena")
+	_assert(device_unit != null and evidence_bridge != null and fault_unit != null, "combat should render device, evidence, and fault zones")
+	_assert(enemy_intent != null, "fault intent should have a stable visual anchor")
+	_assert(hand_dock != null and point_counter != null, "combat should expose a fixed action dock")
 	_assert(map_route != null and map_route.get_child_count() == 12, "map climb should render twelve route nodes")
 	_assert(map_enter != null and map_enter.custom_minimum_size.y >= 44.0, "map enter should be a full touch target")
 	_assert(mission_summary != null and next_detail != null, "map should expose mission and next-node context")
@@ -141,6 +152,18 @@ func _verify_viewport(size: Vector2i) -> void:
 	await process_frame
 	_assert(combat_view.visible and !map_view.visible, "combat state should show only combat view")
 	_assert(hand_row.get_child_count() == game.hand.size(), "hand row should render one button per card")
+	if point_counter != null:
+		_assert(point_counter.text.contains(str(game.processing_points)), "processing point counter should render the live point total")
+	if arena != null and hand_dock != null:
+		_assert(hand_dock.get_global_rect().position.y >= arena.get_global_rect().end.y, "hand dock should remain below the encounter arena at %s" % size)
+	if footer != null and hand_dock != null:
+		_assert(hand_dock.get_global_rect().end.y <= footer.get_global_rect().position.y, "hand dock should remain above the footer at %s" % size)
+	if size.x < 720 and fault_unit != null and evidence_bridge != null and device_unit != null:
+		_assert(fault_unit.get_global_rect().position.y <= evidence_bridge.get_global_rect().position.y and evidence_bridge.get_global_rect().position.y <= device_unit.get_global_rect().position.y, "compact arena should stack fault, evidence, then device")
+	elif size.x >= 720 and device_unit != null and evidence_bridge != null and fault_unit != null:
+		_assert(device_unit.get_global_rect().position.x <= evidence_bridge.get_global_rect().position.x and evidence_bridge.get_global_rect().position.x <= fault_unit.get_global_rect().position.x, "desktop arena should order device, evidence, then fault")
+		if enemy_intent != null:
+			_assert(enemy_intent.get_global_rect().end.y <= game.encounter_name_label.get_global_rect().position.y, "desktop enemy intent should sit above the fault details")
 	if hand_row.get_child_count() > 0:
 		var minimum_card_height := 180.0 if size.x < 720 else 220.0
 		_assert((hand_row.get_child(0) as Control).custom_minimum_size.y >= minimum_card_height, "cards should use the available work area")

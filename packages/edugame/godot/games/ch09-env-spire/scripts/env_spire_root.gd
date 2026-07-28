@@ -118,6 +118,9 @@ var map_next_detail: Label
 var map_enter_button: Button
 var combat_view: PanelContainer
 var combat_layout: BoxContainer
+var encounter_arena: BoxContainer
+var hand_dock: VBoxContainer
+var processing_point_counter: Label
 var encounter_name_label: Label
 var encounter_meta_label: Label
 var intent_label: Label
@@ -487,82 +490,124 @@ func _build_combat_view() -> void:
 	combat_view.add_child(margin)
 	combat_layout = BoxContainer.new()
 	combat_layout.name = "CombatLayout"
-	combat_layout.add_theme_constant_override("separation", 14)
+	combat_layout.vertical = true
+	combat_layout.add_theme_constant_override("separation", 12)
 	margin.add_child(combat_layout)
-	var left_column := VBoxContainer.new()
-	left_column.name = "LeftColumn"
-	left_column.custom_minimum_size = Vector2(260, 0)
-	left_column.add_theme_constant_override("separation", 10)
-	combat_layout.add_child(left_column)
-	encounter_name_label = Label.new()
-	encounter_name_label.add_theme_font_size_override("font_size", 24)
-	encounter_name_label.add_theme_color_override("font_color", Color("#8d2f2a"))
-	left_column.add_child(encounter_name_label)
-	encounter_meta_label = Label.new()
-	encounter_meta_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	encounter_meta_label.add_theme_color_override("font_color", Color("#3e565d"))
-	left_column.add_child(encounter_meta_label)
-	intent_label = Label.new()
-	intent_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	intent_label.add_theme_stylebox_override("normal", _button_style(Color("#fff0df"), Color("#b16a2c")))
-	intent_label.add_theme_color_override("font_color", Color("#693914"))
-	left_column.add_child(intent_label)
+	encounter_arena = BoxContainer.new()
+	encounter_arena.name = "EncounterArena"
+	encounter_arena.vertical = false
+	encounter_arena.custom_minimum_size = Vector2(0, 172)
+	encounter_arena.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	encounter_arena.add_theme_constant_override("separation", 10)
+	combat_layout.add_child(encounter_arena)
+	var device_unit := PanelContainer.new()
+	device_unit.name = "DeviceUnit"
+	device_unit.custom_minimum_size = Vector2(220, 0)
+	device_unit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	device_unit.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	device_unit.add_theme_stylebox_override("panel", _panel_style(Color("#edf4f2"), Color("#7b9a91")))
+	encounter_arena.add_child(device_unit)
+	var device_content := VBoxContainer.new()
+	device_content.add_theme_constant_override("separation", 8)
+	device_unit.add_child(device_content)
+	status_label = Label.new()
+	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status_label.add_theme_color_override("font_color", Color("#52666b"))
+	device_content.add_child(status_label)
+	data_label = Label.new()
+	data_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	data_label.add_theme_color_override("font_color", Color("#24434b"))
+	device_content.add_child(data_label)
+
+	var evidence_bridge := PanelContainer.new()
+	evidence_bridge.name = "EvidenceBridge"
+	evidence_bridge.custom_minimum_size = Vector2(220, 0)
+	evidence_bridge.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	evidence_bridge.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	evidence_bridge.add_theme_stylebox_override("panel", _panel_style(Color("#e8f1ee"), Color("#3c8d72")))
+	encounter_arena.add_child(evidence_bridge)
+	var evidence_content := VBoxContainer.new()
+	evidence_content.add_theme_constant_override("separation", 8)
+	evidence_bridge.add_child(evidence_content)
 	repair_label = Label.new()
 	repair_label.add_theme_font_size_override("font_size", 18)
 	repair_label.add_theme_color_override("font_color", Color("#226c59"))
-	left_column.add_child(repair_label)
+	evidence_content.add_child(repair_label)
 	repair_bar = ProgressBar.new()
 	repair_bar.name = "RepairBar"
 	repair_bar.show_percentage = false
 	repair_bar.custom_minimum_size = Vector2(0, 16)
 	repair_bar.add_theme_stylebox_override("background", _button_style(Color("#dce7e5"), Color("#8aa09d")))
 	repair_bar.add_theme_stylebox_override("fill", _button_style(Color("#3c8d72"), Color("#226c59")))
-	left_column.add_child(repair_bar)
+	evidence_content.add_child(repair_bar)
 	gate_label = Label.new()
 	gate_label.name = "GateLabel"
 	gate_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	gate_label.add_theme_font_size_override("font_size", 14)
 	gate_label.add_theme_color_override("font_color", Color("#486068"))
-	left_column.add_child(gate_label)
-	data_label = Label.new()
-	data_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	data_label.add_theme_stylebox_override("normal", _button_style(Color("#edf4f2"), Color("#7b9a91")))
-	data_label.add_theme_color_override("font_color", Color("#24434b"))
-	left_column.add_child(data_label)
-	status_label = Label.new()
-	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status_label.add_theme_stylebox_override("normal", _button_style(Color("#f1f0f6"), Color("#8b7ca6")))
-	status_label.add_theme_color_override("font_color", Color("#52666b"))
-	left_column.add_child(status_label)
+	evidence_content.add_child(gate_label)
 
-	var right_column := VBoxContainer.new()
-	right_column.name = "RightColumn"
-	right_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	right_column.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	right_column.add_theme_constant_override("separation", 10)
-	combat_layout.add_child(right_column)
+	var fault_unit := PanelContainer.new()
+	fault_unit.name = "FaultUnit"
+	fault_unit.custom_minimum_size = Vector2(220, 0)
+	fault_unit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fault_unit.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	fault_unit.add_theme_stylebox_override("panel", _panel_style(Color("#fff4ee"), Color("#b75a3a")))
+	encounter_arena.add_child(fault_unit)
+	var fault_content := VBoxContainer.new()
+	fault_content.add_theme_constant_override("separation", 8)
+	fault_unit.add_child(fault_content)
+	intent_label = Label.new()
+	intent_label.name = "EnemyIntent"
+	intent_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intent_label.add_theme_stylebox_override("normal", _button_style(Color("#fff0df"), Color("#b16a2c")))
+	intent_label.add_theme_color_override("font_color", Color("#693914"))
+	fault_content.add_child(intent_label)
+	encounter_name_label = Label.new()
+	encounter_name_label.add_theme_font_size_override("font_size", 24)
+	encounter_name_label.add_theme_color_override("font_color", Color("#8d2f2a"))
+	fault_content.add_child(encounter_name_label)
+	encounter_meta_label = Label.new()
+	encounter_meta_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	encounter_meta_label.add_theme_color_override("font_color", Color("#3e565d"))
+	fault_content.add_child(encounter_meta_label)
+
+	hand_dock = VBoxContainer.new()
+	hand_dock.name = "HandDock"
+	hand_dock.custom_minimum_size = Vector2(0, 274)
+	hand_dock.add_theme_constant_override("separation", 8)
+	combat_layout.add_child(hand_dock)
+	var dock_header := HBoxContainer.new()
+	dock_header.add_theme_constant_override("separation", 10)
+	hand_dock.add_child(dock_header)
 	var hand_title := Label.new()
 	hand_title.text = "手牌 / 点击执行工程动作"
 	hand_title.add_theme_color_override("font_color", Color("#294b54"))
-	right_column.add_child(hand_title)
+	dock_header.add_child(hand_title)
+	var dock_spacer := Control.new()
+	dock_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dock_header.add_child(dock_spacer)
+	processing_point_counter = Label.new()
+	processing_point_counter.name = "ProcessingPointCounter"
+	processing_point_counter.add_theme_color_override("font_color", Color("#226c59"))
+	dock_header.add_child(processing_point_counter)
 	hand_scroll = ScrollContainer.new()
 	hand_scroll.name = "HandScroll"
 	hand_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	hand_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	hand_scroll.custom_minimum_size = Vector2(0, 190)
-	right_column.add_child(hand_scroll)
+	hand_scroll.custom_minimum_size = Vector2(0, 192)
+	hand_dock.add_child(hand_scroll)
 	hand_row = HBoxContainer.new()
 	hand_row.name = "HandRow"
 	hand_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	hand_row.custom_minimum_size = Vector2(0, 260)
+	hand_row.custom_minimum_size = Vector2(0, 188)
 	hand_row.add_theme_constant_override("separation", 8)
 	hand_scroll.add_child(hand_row)
 	var combat_actions := HBoxContainer.new()
 	combat_actions.name = "CombatActions"
 	combat_actions.alignment = BoxContainer.ALIGNMENT_END
 	combat_actions.add_theme_constant_override("separation", 10)
-	right_column.add_child(combat_actions)
+	hand_dock.add_child(combat_actions)
 	end_turn_button = Button.new()
 	end_turn_button.name = "EndTurnButton"
 	end_turn_button.text = "结束回合"
@@ -635,7 +680,23 @@ func _apply_responsive_layout() -> void:
 	if combat_layout == null:
 		return
 	var compact := size.x < 720.0
-	combat_layout.vertical = compact
+	combat_layout.vertical = true
+	if encounter_arena != null:
+		encounter_arena.vertical = compact
+		encounter_arena.custom_minimum_size.y = 248.0 if compact else 172.0
+		var device_unit := encounter_arena.get_node_or_null("DeviceUnit")
+		var evidence_bridge := encounter_arena.get_node_or_null("EvidenceBridge")
+		var fault_unit := encounter_arena.get_node_or_null("FaultUnit")
+		if compact:
+			encounter_arena.move_child(fault_unit, 0)
+			encounter_arena.move_child(evidence_bridge, 1)
+			encounter_arena.move_child(device_unit, 2)
+		else:
+			encounter_arena.move_child(device_unit, 0)
+			encounter_arena.move_child(evidence_bridge, 1)
+			encounter_arena.move_child(fault_unit, 2)
+	if hand_dock != null:
+		hand_dock.custom_minimum_size.y = 274.0 if compact else 342.0
 	if map_composition != null:
 		map_composition.vertical = compact
 	if map_mission_summary != null:
@@ -799,7 +860,7 @@ func _render_combat() -> void:
 	var tier := str(current_encounter.get("tier", "ordinary"))
 	var phase_text := " · 阶段 %d/3" % (boss_phase + 1) if tier == "boss" else ""
 	encounter_meta_label.text = "%s%s\n弱点：%s" % [_node_type_name(tier), phase_text, " / ".join(current_encounter.get("weaknessTags", []))]
-	intent_label.text = "下一行动：%s" % _current_intent_text()
+	intent_label.text = _current_intent_text()
 	repair_label.text = "修复进度 %d / %d" % [repair_progress, repair_target]
 	repair_bar.max_value = maxi(repair_target, 1)
 	repair_bar.value = repair_progress
@@ -810,6 +871,7 @@ func _render_combat() -> void:
 		int(trusted_data.smoke), int(trusted_data.light), int(trusted_data.temp), int(trusted_data.humidity)
 	]
 	status_label.text = "处理点 %d  ·  防护 %d  ·  连携 %d  ·  诊断 %d  ·  报警 %d" % [processing_points, block, chain_count, diagnosis, alarm_markers]
+	processing_point_counter.text = "处理点 %d" % processing_points
 	_clear_children(hand_row)
 	for index in range(hand.size()):
 		var card := hand[index] as Dictionary
@@ -821,7 +883,7 @@ func _render_combat() -> void:
 			_skin_button(button, Color("#9b3f3b"))
 		else:
 			var cost := _card_cost_preview(card)
-			button.text = "%s  [%d]\n%s\n\n%s" % [card.get("name", "卡牌"), cost, card.get("type", ""), card.get("upgradedEffectText", "") if bool(card.get("upgraded", false)) else card.get("effectText", "")]
+			button.text = "[%d]\n%s\n%s\n\n%s" % [cost, card.get("name", "卡牌"), card.get("type", ""), card.get("upgradedEffectText", "") if bool(card.get("upgraded", false)) else card.get("effectText", "")]
 			button.tooltip_text = str(card.get("knowledgePoint", ""))
 			button.disabled = processing_points < cost or !_card_requirements_met(card)
 			_skin_button(button, _card_accent(card))
