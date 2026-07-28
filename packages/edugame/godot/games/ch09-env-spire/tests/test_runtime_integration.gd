@@ -1,5 +1,7 @@
 extends SceneTree
 
+const TEST_RECORD_PATH := "user://ch09_runtime_tutorial_test.cfg"
+
 var failures := 0
 
 
@@ -8,8 +10,11 @@ func _init() -> void:
 
 
 func _run() -> void:
+	_remove_test_record()
 	var scene := load("res://scenes/main.tscn")
 	var game = scene.instantiate()
+	game.tutorial_record_path = TEST_RECORD_PATH
+	_assert(game._save_tutorial_completion(), "runtime test completion record should be writable")
 	get_root().add_child(game)
 	var runtime = game.get("runtime")
 	_assert(runtime != null, "Ch09 should expose the shared runtime")
@@ -98,8 +103,14 @@ func _assert(condition: bool, message: String) -> void:
 
 
 func _finish() -> void:
+	_remove_test_record()
 	if failures > 0:
 		quit(1)
 	else:
 		print("Ch09 runtime integration tests passed")
 		quit(0)
+
+
+func _remove_test_record() -> void:
+	if FileAccess.file_exists(TEST_RECORD_PATH):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_RECORD_PATH))
