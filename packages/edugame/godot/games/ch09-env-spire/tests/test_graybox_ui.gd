@@ -111,6 +111,10 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(map_enter != null and map_enter.custom_minimum_size.y >= 44.0, "map enter should be a full touch target")
 	_assert(mission_summary != null and next_detail != null, "map should expose mission and next-node context")
 	_assert(map_composition != null and map_route_scroll != null, "map should expose its responsive route composition")
+	var viewport_rect := Rect2(Vector2.ZERO, Vector2(size))
+	_assert(viewport_rect.encloses(run_hud.get_global_rect()), "RunHud should stay in the viewport")
+	_assert(viewport_rect.intersects(map_enter.get_global_rect()), "Available map action should remain visible")
+	_assert_visible_primary_command_heights(game)
 	if size.x < 720 and map_composition != null and map_route_scroll != null:
 		_assert(map_composition.vertical, "compact map composition should stack vertically")
 		_assert(!mission_summary.visible, "compact map should hide the mission summary")
@@ -167,11 +171,12 @@ func _verify_viewport(size: Vector2i) -> void:
 	if hand_row.get_child_count() > 0:
 		var minimum_card_height := 180.0 if size.x < 720 else 220.0
 		_assert((hand_row.get_child(0) as Control).custom_minimum_size.y >= minimum_card_height, "cards should use the available work area")
-	var viewport_rect := Rect2(Vector2.ZERO, Vector2(size))
 	if !viewport_rect.encloses(end_turn.get_global_rect()):
 		print("END_TURN_RECT %s VIEWPORT %s" % [end_turn.get_global_rect(), viewport_rect])
 	_assert(viewport_rect.encloses(end_turn.get_global_rect()), "end turn button should stay inside viewport at %s" % size)
 	_assert(end_turn.custom_minimum_size.y >= 44.0, "primary touch target should be at least 44 px high")
+	_assert(end_turn.get_global_rect().end.y <= run_footer.get_global_rect().position.y, "End turn should stay above the footer")
+	_assert_visible_primary_command_heights(game)
 	game.encounter_evidence_tags = {"smoke": true, "adc": true}
 	game.repair_progress = game.repair_target
 	game._finish_encounter()
@@ -253,6 +258,7 @@ func _verify_viewport(size: Vector2i) -> void:
 	if restart_button != null:
 		_assert(restart_button.size.x <= 360.0, "desktop result action should not stretch across the work area")
 		_assert(viewport_rect.encloses(restart_button.get_global_rect()), "result action should stay inside viewport at %s" % size)
+	_assert_visible_primary_command_heights(game)
 
 	if !game.has_method("_enter_node_lab"):
 		_assert(false, "game should expose the hidden node lab launcher")
@@ -266,6 +272,7 @@ func _verify_viewport(size: Vector2i) -> void:
 		var lab_root = game.find_child("NodeLabRoot", true, false)
 		_assert(lab_catalog != null and lab_catalog.visible, "node lab catalog should be visible at %s" % size)
 		_assert(lab_root != null and lab_root.theme == game.ui_theme, "node lab should inherit the bundled UI font theme")
+		_assert(!game.shell.visible, "node lab catalog should hide the normal shell")
 		_assert(lab_return != null and lab_restart != null, "node lab should expose stable scenario controls")
 		_assert(lab_scenario != null, "node lab should render generated scenario buttons")
 		if lab_scenario != null:
@@ -278,9 +285,13 @@ func _verify_viewport(size: Vector2i) -> void:
 		})
 		await process_frame
 		_assert(!lab_catalog.visible, "starting a lab scenario should hide the catalog")
+		_assert(!run_hud.visible and game.shell.visible and game.shell.offset_top == 58.0, "scenario toolbar should replace RunHud")
 		_assert(lab_return.visible and lab_restart.visible, "scenario controls should remain visible during lab play")
 		_assert(viewport_rect.encloses(lab_return.get_global_rect()), "lab return control should stay inside viewport at %s" % size)
 		_assert(viewport_rect.encloses(lab_restart.get_global_rect()), "lab restart control should stay inside viewport at %s" % size)
+		_assert_visible_primary_command_heights(game)
+		var lab_runtime_calls: Array = []
+		game.runtime.bridge.outbound_payload.connect(func(payload: Dictionary) -> void: lab_runtime_calls.append(payload))
 		game.start_lab_scenario({
 			"id": "mq2_warmup",
 			"kind": "enemy",
@@ -290,6 +301,14 @@ func _verify_viewport(size: Vector2i) -> void:
 		await process_frame
 		_assert(!header.visible, "lab toolbar should replace the normal game header during scenarios")
 		_assert(end_turn.get_global_rect().end.y <= footer.get_global_rect().position.y, "lab combat action should stay above the footer at %s" % size)
+		_assert(arena.is_visible_in_tree() and hand_dock.is_visible_in_tree(), "lab combat should expose the redesigned arena and hand dock")
+		_assert(bool(game.restart_lab_scenario()), "lab restart should relaunch the current scenario")
+		await process_frame
+		_assert(lab_runtime_calls.is_empty(), "lab restart should not call the runtime")
+		game.return_to_node_lab()
+		await process_frame
+		_assert(lab_catalog.visible and !game.shell.visible and run_hud.visible and game.shell.offset_top == 0.0, "lab return should restore the catalog")
+		_assert_visible_primary_command_heights(game)
 
 	game.queue_free()
 	await process_frame
@@ -300,6 +319,13 @@ func _assert(condition: bool, message: String) -> void:
 		return
 	failures += 1
 	push_error(message)
+
+
+func _assert_visible_primary_command_heights(root: Node) -> void:
+	for raw_button in root.find_children("*", "Button", true, false):
+		var button := raw_button as Button
+		if button != null and button.is_visible_in_tree():
+			_assert(button.size.y >= 44.0, "%s should be at least 44 px high when visible" % button.name)
 
 
 func _finish() -> void:

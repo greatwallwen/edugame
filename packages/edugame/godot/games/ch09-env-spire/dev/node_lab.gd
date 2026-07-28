@@ -18,6 +18,7 @@ var group_grids: Array[GridContainer] = []
 
 func configure(game_root: Control) -> void:
 	game = game_root
+	game.node_lab_overlay = self
 	entries = _build_catalog()
 	if lab_root == null:
 		_build_ui()
@@ -272,9 +273,11 @@ func show_catalog() -> void:
 	starter_button.visible = true
 	coverage_button.visible = true
 	_set_fixture(deck_fixture)
-	game.header_panel.visible = true
-	game.shell.offset_top = 0
-	game.shell.visible = false
+	var header: PanelContainer = game.header_panel
+	var game_shell: VBoxContainer = game.shell
+	header.visible = true
+	game_shell.offset_top = 0
+	game_shell.visible = false
 	_apply_responsive_layout()
 
 
@@ -287,9 +290,11 @@ func show_scenario_controls() -> void:
 	restart_button.visible = true
 	starter_button.visible = true
 	coverage_button.visible = true
-	game.header_panel.visible = false
-	game.shell.visible = true
-	game.shell.offset_top = 58
+	var header: PanelContainer = game.header_panel
+	var game_shell: VBoxContainer = game.shell
+	header.visible = false
+	game_shell.visible = true
+	game_shell.offset_top = 58
 	_apply_responsive_layout()
 
 
