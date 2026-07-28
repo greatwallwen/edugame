@@ -120,6 +120,8 @@ var combat_view: PanelContainer
 var combat_layout: BoxContainer
 var encounter_arena: BoxContainer
 var hand_dock: VBoxContainer
+var dock_header: HBoxContainer
+var combat_actions: HBoxContainer
 var processing_point_counter: Label
 var encounter_name_label: Label
 var encounter_meta_label: Label
@@ -136,6 +138,10 @@ var choice_view: PanelContainer
 var choice_title: Label
 var choice_description: Label
 var choice_list: GridContainer
+var reward_encounter_backdrop: BoxContainer
+var resolved_device_context: Label
+var resolved_evidence_context: Label
+var resolved_fault_context: Label
 var reward_cards: GridContainer
 var reward_skip_button: Button
 var service_bench: PanelContainer
@@ -581,7 +587,7 @@ func _build_combat_view() -> void:
 	hand_dock.custom_minimum_size = Vector2(0, 274)
 	hand_dock.add_theme_constant_override("separation", 8)
 	combat_layout.add_child(hand_dock)
-	var dock_header := HBoxContainer.new()
+	dock_header = HBoxContainer.new()
 	dock_header.add_theme_constant_override("separation", 10)
 	hand_dock.add_child(dock_header)
 	var hand_title := Label.new()
@@ -607,7 +613,7 @@ func _build_combat_view() -> void:
 	hand_row.custom_minimum_size = Vector2(0, 188)
 	hand_row.add_theme_constant_override("separation", 8)
 	hand_scroll.add_child(hand_row)
-	var combat_actions := HBoxContainer.new()
+	combat_actions = HBoxContainer.new()
 	combat_actions.name = "CombatActions"
 	combat_actions.alignment = BoxContainer.ALIGNMENT_END
 	combat_actions.add_theme_constant_override("separation", 10)
@@ -630,6 +636,59 @@ func _build_choice_view() -> void:
 	backdrop.color = Color("#dbe7e7")
 	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	choice_view.add_child(backdrop)
+	reward_encounter_backdrop = BoxContainer.new()
+	reward_encounter_backdrop.name = "ResolvedEncounterBackdrop"
+	reward_encounter_backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	reward_encounter_backdrop.offset_left = 18
+	reward_encounter_backdrop.offset_top = 18
+	reward_encounter_backdrop.offset_right = -18
+	reward_encounter_backdrop.offset_bottom = -18
+	reward_encounter_backdrop.add_theme_constant_override("separation", 10)
+	reward_encounter_backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	reward_encounter_backdrop.modulate = Color(1, 1, 1, 0.58)
+	backdrop.add_child(reward_encounter_backdrop)
+	var resolved_device_panel := PanelContainer.new()
+	resolved_device_panel.name = "ResolvedDeviceUnit"
+	resolved_device_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	resolved_device_panel.add_theme_stylebox_override("panel", _button_style(Color("#dce9e6"), Color("#8da39e")))
+	resolved_device_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	reward_encounter_backdrop.add_child(resolved_device_panel)
+	resolved_device_context = Label.new()
+	resolved_device_context.name = "ResolvedDeviceContext"
+	resolved_device_context.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	resolved_device_context.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	resolved_device_context.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	resolved_device_context.add_theme_color_override("font_color", Color("#627875"))
+	resolved_device_context.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	resolved_device_panel.add_child(resolved_device_context)
+	var resolved_evidence_panel := PanelContainer.new()
+	resolved_evidence_panel.name = "ResolvedEvidenceBridge"
+	resolved_evidence_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	resolved_evidence_panel.add_theme_stylebox_override("panel", _button_style(Color("#e2e8e5"), Color("#91a39c")))
+	resolved_evidence_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	reward_encounter_backdrop.add_child(resolved_evidence_panel)
+	resolved_evidence_context = Label.new()
+	resolved_evidence_context.name = "ResolvedEvidenceContext"
+	resolved_evidence_context.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	resolved_evidence_context.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	resolved_evidence_context.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	resolved_evidence_context.add_theme_color_override("font_color", Color("#667773"))
+	resolved_evidence_context.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	resolved_evidence_panel.add_child(resolved_evidence_context)
+	var resolved_fault_panel := PanelContainer.new()
+	resolved_fault_panel.name = "ResolvedFaultUnit"
+	resolved_fault_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	resolved_fault_panel.add_theme_stylebox_override("panel", _button_style(Color("#eee4df"), Color("#b49a8c")))
+	resolved_fault_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	reward_encounter_backdrop.add_child(resolved_fault_panel)
+	resolved_fault_context = Label.new()
+	resolved_fault_context.name = "ResolvedFaultContext"
+	resolved_fault_context.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	resolved_fault_context.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	resolved_fault_context.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	resolved_fault_context.add_theme_color_override("font_color", Color("#826b62"))
+	resolved_fault_context.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	resolved_fault_panel.add_child(resolved_fault_context)
 	var margin := _content_margin()
 	choice_view.add_child(margin)
 	var content := VBoxContainer.new()
@@ -739,7 +798,7 @@ func _apply_responsive_layout() -> void:
 	combat_layout.vertical = true
 	if encounter_arena != null:
 		encounter_arena.vertical = compact
-		encounter_arena.custom_minimum_size.y = 248.0 if compact else 172.0
+		encounter_arena.custom_minimum_size.y = 248.0 if compact else 260.0
 		var device_unit := encounter_arena.get_node_or_null("DeviceUnit")
 		var evidence_bridge := encounter_arena.get_node_or_null("EvidenceBridge")
 		var fault_unit := encounter_arena.get_node_or_null("FaultUnit")
@@ -752,7 +811,12 @@ func _apply_responsive_layout() -> void:
 			encounter_arena.move_child(evidence_bridge, 1)
 			encounter_arena.move_child(fault_unit, 2)
 	if hand_dock != null:
-		hand_dock.custom_minimum_size.y = 274.0 if compact else 342.0
+		hand_dock.custom_minimum_size.y = 274.0 if compact else 176.0
+	if end_turn_button != null and dock_header != null and combat_actions != null:
+		var end_turn_parent := combat_actions if compact else dock_header
+		if end_turn_button.get_parent() != end_turn_parent:
+			end_turn_button.reparent(end_turn_parent)
+		combat_actions.visible = compact
 	if map_composition != null:
 		map_composition.vertical = compact
 	if map_mission_summary != null:
@@ -765,6 +829,18 @@ func _apply_responsive_layout() -> void:
 		choice_list.columns = 1 if compact else 2
 	if reward_cards != null:
 		reward_cards.columns = 1 if compact else 3
+	if reward_encounter_backdrop != null:
+		reward_encounter_backdrop.vertical = false
+		var resolved_device_unit := reward_encounter_backdrop.get_node_or_null("ResolvedDeviceUnit")
+		var resolved_evidence_bridge := reward_encounter_backdrop.get_node_or_null("ResolvedEvidenceBridge")
+		var resolved_fault_unit := reward_encounter_backdrop.get_node_or_null("ResolvedFaultUnit")
+		reward_encounter_backdrop.move_child(resolved_device_unit, 0)
+		reward_encounter_backdrop.move_child(resolved_evidence_bridge, 1)
+		reward_encounter_backdrop.move_child(resolved_fault_unit, 2)
+		var resolved_font_size := 12 if compact else 16
+		resolved_device_context.add_theme_font_size_override("font_size", resolved_font_size)
+		resolved_evidence_context.add_theme_font_size_override("font_size", resolved_font_size)
+		resolved_fault_context.add_theme_font_size_override("font_size", resolved_font_size)
 	if budget_label != null:
 		budget_label.visible = !compact
 	if deck_label != null:
@@ -772,12 +848,12 @@ func _apply_responsive_layout() -> void:
 	if brand_label != null:
 		brand_label.text = "ENV" if compact else "ENV / SPIRE"
 	if hand_scroll != null:
-		hand_scroll.custom_minimum_size.y = 192.0 if compact else 276.0
+		hand_scroll.custom_minimum_size.y = 192.0 if compact else 124.0
 	if hand_row != null:
-		hand_row.custom_minimum_size.y = 188.0 if compact else 260.0
+		hand_row.custom_minimum_size.y = 188.0 if compact else 120.0
 		for child in hand_row.get_children():
 			if child is Button:
-				(child as Button).custom_minimum_size = Vector2(154, 188) if compact else Vector2(176, 260)
+				(child as Button).custom_minimum_size = Vector2(154, 188) if compact else Vector2(176, 120)
 
 
 func _render_state() -> void:
@@ -951,7 +1027,7 @@ func _render_combat() -> void:
 				play_card(index)
 				_render_state()
 			)
-		button.custom_minimum_size = Vector2(154 if size.x < 720.0 else 176, 188 if size.x < 720.0 else 260)
+		button.custom_minimum_size = Vector2(154 if size.x < 720.0 else 176, 188 if size.x < 720.0 else 120)
 		hand_row.add_child(button)
 	end_turn_button.disabled = false
 
@@ -1024,12 +1100,21 @@ func _render_choices() -> void:
 	_clear_children(choice_list)
 	_clear_children(reward_cards)
 	var scene_kind := _choice_scene_kind()
+	reward_encounter_backdrop.visible = scene_kind == "reward"
 	reward_cards.visible = scene_kind == "reward"
 	reward_skip_button.visible = scene_kind == "reward"
 	service_bench.visible = scene_kind == "service"
 	choice_list.visible = scene_kind != "reward"
 	match state:
 		RunState.REWARD:
+			var evidence_tags: Array[String] = []
+			for raw_tag in encounter_evidence_tags.keys():
+				if bool(encounter_evidence_tags.get(raw_tag, false)):
+					evidence_tags.append(str(raw_tag))
+			evidence_tags.sort()
+			resolved_device_context.text = "环境监测设备 · 已恢复\n稳定度 %d / %d" % [stability, max_stability]
+			resolved_evidence_context.text = "已验证工程证据\n%s" % (" / ".join(evidence_tags) if !evidence_tags.is_empty() else "无额外证据")
+			resolved_fault_context.text = "已解决故障\n%s\n%s" % [current_encounter.get("name", "故障诊断"), _node_type_name(str(current_encounter.get("tier", "ordinary")))]
 			choice_title.text = "故障已解决 · 选择后续工具"
 			choice_description.text = "本次故障已定位并完成修复。"
 			var debug_summary := _latest_debug_summary()

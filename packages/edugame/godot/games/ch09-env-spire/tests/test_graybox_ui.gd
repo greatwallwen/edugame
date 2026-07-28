@@ -164,6 +164,11 @@ func _verify_viewport(size: Vector2i) -> void:
 		_assert(hand_dock.get_global_rect().position.y >= arena.get_global_rect().end.y, "hand dock should remain below the encounter arena at %s" % size)
 	if footer != null and hand_dock != null:
 		_assert(hand_dock.get_global_rect().end.y <= footer.get_global_rect().position.y, "hand dock should remain above the footer at %s" % size)
+	if size == Vector2i(1280, 720) and arena != null and hand_dock != null and run_hud != null and run_footer != null:
+		var playable_height: float = run_footer.get_global_rect().position.y - run_hud.get_global_rect().end.y
+		var dock_proportion: float = hand_dock.size.y / playable_height
+		_assert(dock_proportion >= 0.27 and dock_proportion <= 0.33, "desktop hand dock should use approximately 30%% of playable height, got %.1f%%" % (dock_proportion * 100.0))
+		_assert(arena.size.y > hand_dock.size.y, "desktop encounter arena should be taller than the hand dock")
 	if size.x < 720 and fault_unit != null and evidence_bridge != null and device_unit != null:
 		_assert(fault_unit.get_global_rect().position.y <= evidence_bridge.get_global_rect().position.y and evidence_bridge.get_global_rect().position.y <= device_unit.get_global_rect().position.y, "compact arena should stack fault, evidence, then device")
 	elif size.x >= 720 and device_unit != null and evidence_bridge != null and fault_unit != null:
@@ -171,7 +176,7 @@ func _verify_viewport(size: Vector2i) -> void:
 		if enemy_intent != null:
 			_assert(enemy_intent.get_global_rect().end.y <= game.encounter_name_label.get_global_rect().position.y, "desktop enemy intent should sit above the fault details")
 	if hand_row.get_child_count() > 0:
-		var minimum_card_height := 180.0 if size.x < 720 else 220.0
+		var minimum_card_height := 180.0 if size.x < 720 else 112.0
 		_assert((hand_row.get_child(0) as Control).custom_minimum_size.y >= minimum_card_height, "cards should use the available work area")
 	if !viewport_rect.encloses(end_turn.get_global_rect()):
 		print("END_TURN_RECT %s VIEWPORT %s" % [end_turn.get_global_rect(), viewport_rect])
@@ -179,11 +184,24 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(end_turn.custom_minimum_size.y >= 44.0, "primary touch target should be at least 44 px high")
 	_assert(end_turn.get_global_rect().end.y <= run_footer.get_global_rect().position.y, "End turn should stay above the footer")
 	_assert_visible_primary_command_heights(game)
+	var resolved_fault_name := str(game.current_encounter.get("name", ""))
+	var resolved_stability: int = game.stability
 	game.encounter_evidence_tags = {"smoke": true, "adc": true}
 	game.repair_progress = game.repair_target
 	game._finish_encounter()
 	game._render_state()
 	await process_frame
+	var resolved_backdrop := game.find_child("ResolvedEncounterBackdrop", true, false) as Control
+	var resolved_device := game.find_child("ResolvedDeviceContext", true, false) as Label
+	var resolved_evidence := game.find_child("ResolvedEvidenceContext", true, false) as Label
+	var resolved_fault := game.find_child("ResolvedFaultContext", true, false) as Label
+	_assert(resolved_backdrop != null and resolved_backdrop.visible, "reward should retain a visible resolved encounter backdrop")
+	if resolved_backdrop != null:
+		_assert(resolved_backdrop.mouse_filter == Control.MOUSE_FILTER_IGNORE, "resolved encounter backdrop should be non-interactive")
+		_assert(resolved_backdrop.find_children("*", "Button", true, false).is_empty(), "resolved encounter backdrop should not expose commands")
+	_assert(resolved_device != null and resolved_device.text.contains(str(resolved_stability)), "reward backdrop should retain the resolved device stability")
+	_assert(resolved_evidence != null and resolved_evidence.text.contains("smoke") and resolved_evidence.text.contains("adc"), "reward backdrop should retain collected encounter evidence")
+	_assert(resolved_fault != null and !resolved_fault_name.is_empty() and resolved_fault.text.contains(resolved_fault_name), "reward backdrop should retain the actual resolved fault")
 	_assert(choice_description != null and choice_description.text.contains("调试报告"), "reward state should expose the latest debugging report")
 	_assert(reward_cards != null and reward_cards.get_child_count() == 3, "normal completed encounter should render three reward cards")
 	if reward_cards != null and reward_skip != null and reward_cards.get_child_count() > 0:
