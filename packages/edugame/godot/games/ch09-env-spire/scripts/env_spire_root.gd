@@ -201,6 +201,10 @@ func _on_session_initialized(session: Dictionary) -> void:
 
 
 func _on_runtime_reset() -> void:
+	if tutorial_active:
+		_start_tutorial_briefing()
+		_render_state()
+		return
 	_reset_run()
 	_render_state()
 

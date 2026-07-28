@@ -47,8 +47,14 @@ func _run() -> void:
 	)
 
 	game._start_tutorial_briefing()
-	game.stability = 9
 	game.budget = 99
+	game._on_runtime_reset()
+	_assert(game.tutorial_active, "runtime reset should keep tutorial mode active")
+	_assert(!game.formal_run_active, "runtime reset should not begin a formal attempt during tutorial")
+	_assert(game.state == game.RunState.WAITING, "runtime reset should return to the tutorial briefing")
+	_assert(game.budget == 99, "runtime reset should not reset formal resources during tutorial")
+
+	game.stability = 9
 	game.current_layer = 4
 	_assert(game._skip_tutorial(TEST_RECORD_PATH), "skip should persist completion")
 	_assert(!game.tutorial_active, "skip should leave tutorial mode")
