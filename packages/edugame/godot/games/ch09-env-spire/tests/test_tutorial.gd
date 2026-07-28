@@ -64,9 +64,55 @@ func _run() -> void:
 	_assert(game.current_layer == 0, "skip should reset formal route progress")
 	_assert(game.stability == game.max_stability and game.budget == 30, "skip should restore formal resources")
 
+	_enter_practice(game)
+	_assert(
+		game.tutorial_step == game.TutorialStep.READ_INTENT,
+		"practice should begin by reading intent"
+	)
+	_assert(!game.play_card(0), "cards should be locked before intent confirmation")
+	_assert(!game._tutorial_end_turn_allowed(), "end turn should be locked before defense")
+	_assert(game.confirm_tutorial_intent(), "intent target should advance the tutorial")
+	_assert(
+		game.tutorial_step == game.TutorialStep.PLAY_DEFENSE,
+		"confirmed intent should unlock defense"
+	)
+	_assert(
+		str((game.hand[0] as Dictionary).get("id", "")) == "sliding_average",
+		"first scripted hand should contain sliding average"
+	)
+	_assert(game.play_card(0), "required defense card should be playable")
+	_assert(game.block == 7, "defense card should create seven real block")
+	_assert(
+		game.tutorial_step == game.TutorialStep.END_TURN,
+		"defense should unlock end turn"
+	)
+
+	var stability_before: int = game.stability
+	_assert(game.end_turn(), "guided end turn should resolve")
+	_assert(game.stability == stability_before, "seven block should absorb six damage")
+	_assert(game.block == 0, "defense should reset when the next turn begins")
+	_assert(game.tutorial_step == game.TutorialStep.PLAY_SAMPLE, "turn two should begin at sampling")
+
+	_assert(!game.play_card(1), "ADC conversion should be rejected before sampling")
+	_assert(game.play_card(0), "MQ-2 sampling should succeed")
+	_assert(int(game.raw_data.get("smoke", 0)) == 1, "sampling should create raw smoke data")
+
+	_assert(game.play_card(0), "ADC conversion should succeed after sampling")
+	_assert(int(game.raw_data.get("smoke", 0)) == 0, "conversion should consume raw smoke")
+	_assert(int(game.trusted_data.get("smoke", 0)) == 1, "conversion should create trusted smoke")
+
+	_assert(game.play_card(0), "LED output should consume trusted smoke")
+	_assert(int(game.trusted_data.get("smoke", 0)) == 0, "output should consume trusted smoke")
+	_assert(game.tutorial_step == game.TutorialStep.COMPLETE, "output should complete the practice")
+
 	game.queue_free()
 	await process_frame
 	_finish()
+
+
+func _enter_practice(game) -> void:
+	game._start_tutorial_briefing()
+	game._start_tutorial_encounter()
 
 
 func _assert(condition: bool, message: String) -> void:

@@ -13,6 +13,17 @@ const SOURCE_ORDER := ["smoke", "light", "temp", "humidity"]
 const STAGE_ORDER := ["collect", "interface", "process", "output"]
 const BOSS_DRAW_SEED := 90909
 const RUN_NODE_COUNT := 12
+const TUTORIAL_ENCOUNTER := {
+	"id": "training_signal_chain",
+	"name": "训练故障：信号链中断",
+	"tier": "tutorial",
+	"repairTarget": 20,
+	"weaknessTags": ["smoke", "adc", "alarm"],
+	"evidenceGroups": [["smoke"], ["adc"]],
+	"intentPattern": [
+		{"type": "damage", "amount": 6, "text": "模拟漂移：稳定度 -6"}
+	]
+}
 const LAB_COVERAGE_CARD_IDS := [
 	"mq2_sample", "bh1750_read", "hdc1080_read", "adc_convert",
 	"i2c_transaction", "sliding_average", "lcd_display",
@@ -600,6 +611,9 @@ func _build_tutorial_view() -> void:
 	tutorial_start_button.text = "开始训练"
 	tutorial_start_button.disabled = true
 	tutorial_start_button.tooltip_text = "训练场景将在战斗引导就绪后启用"
+	tutorial_start_button.pressed.connect(_start_tutorial_encounter)
+	tutorial_start_button.disabled = false
+	tutorial_start_button.tooltip_text = ""
 	_skin_button(tutorial_start_button, Color("#2f7f8d"))
 	tutorial_start_button.custom_minimum_size = Vector2(260, 44)
 	tutorial_start_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -644,6 +658,7 @@ func _build_tutorial_view() -> void:
 	tutorial_intent_button.text = "查看故障意图"
 	_skin_button(tutorial_intent_button, Color("#2f7f8d"))
 	tutorial_intent_button.custom_minimum_size = Vector2(0, 44)
+	tutorial_intent_button.pressed.connect(confirm_tutorial_intent)
 	coach_content.add_child(tutorial_intent_button)
 
 
@@ -1099,6 +1114,25 @@ func _render_tutorial() -> void:
 		tutorial_coach_layer.visible = tutorial_active and tutorial_step != TutorialStep.BRIEFING
 	if tutorial_skip_button != null:
 		tutorial_skip_button.visible = tutorial_active
+	if tutorial_intent_button != null:
+		tutorial_intent_button.visible = tutorial_active and tutorial_step == TutorialStep.READ_INTENT
+		tutorial_intent_button.disabled = !tutorial_active or tutorial_step != TutorialStep.READ_INTENT
+	if tutorial_coach_text != null and tutorial_active:
+		match tutorial_step:
+			TutorialStep.READ_INTENT:
+				tutorial_coach_text.text = "先读取故障意图，再选择防御动作。"
+			TutorialStep.PLAY_DEFENSE:
+				tutorial_coach_text.text = "使用滑动平均滤波，建立防护。"
+			TutorialStep.END_TURN:
+				tutorial_coach_text.text = "防护已建立。结束回合，观察它抵消漂移。"
+			TutorialStep.PLAY_SAMPLE:
+				tutorial_coach_text.text = "使用 MQ-2 采样，获取烟雾原始数据。"
+			TutorialStep.PLAY_CONVERT:
+				tutorial_coach_text.text = "使用 ADC 转换，将原始数据变为可信数据。"
+			TutorialStep.PLAY_OUTPUT:
+				tutorial_coach_text.text = "使用 LED 报警，将可信烟雾数据输出为行动。"
+			TutorialStep.COMPLETE:
+				tutorial_coach_text.text = "训练完成。你已完成意图、防御、采样、转换和输出链路。"
 
 
 func _render_header() -> void:
@@ -1242,7 +1276,7 @@ func _render_combat() -> void:
 			var cost := _card_cost_preview(card)
 			button.text = "[%d]\n%s\n%s\n\n%s" % [cost, card.get("name", "卡牌"), card.get("type", ""), card.get("upgradedEffectText", "") if bool(card.get("upgraded", false)) else card.get("effectText", "")]
 			button.tooltip_text = str(card.get("knowledgePoint", ""))
-			button.disabled = processing_points < cost or !_card_requirements_met(card)
+			button.disabled = processing_points < cost or !_card_requirements_met(card) or (tutorial_active and !_tutorial_card_allowed(str(card.get("id", ""))))
 			_skin_button(button, _card_accent(card))
 			button.pressed.connect(func() -> void:
 				play_card(index)
@@ -1250,7 +1284,7 @@ func _render_combat() -> void:
 			)
 		button.custom_minimum_size = Vector2(154 if size.x < 720.0 else 176, 188 if size.x < 720.0 else 120)
 		hand_row.add_child(button)
-	end_turn_button.disabled = false
+	end_turn_button.disabled = tutorial_active and !_tutorial_end_turn_allowed()
 
 
 func _active_gate_met(tier: String) -> bool:
@@ -1543,6 +1577,8 @@ func _index_by_id(items: Array) -> Dictionary:
 
 func _reset_run() -> void:
 	formal_run_active = true
+	tutorial_active = false
+	tutorial_step = TutorialStep.INACTIVE
 	if runtime != null and !node_lab_active:
 		runtime.begin_attempt()
 	completed = false
@@ -1609,6 +1645,69 @@ func _reset_combat_resources() -> void:
 	intent_index = 0
 	repair_target = 0
 	repair_progress = 0
+
+
+func _start_tutorial_encounter() -> void:
+	tutorial_active = true
+	tutorial_step = TutorialStep.READ_INTENT
+	formal_run_active = false
+	state = RunState.COMBAT
+	_reset_combat_resources()
+	current_node = {"type": "tutorial", "contentId": "training_signal_chain"}
+	current_encounter = TUTORIAL_ENCOUNTER.duplicate(true)
+	current_intents = (current_encounter.get("intentPattern", []) as Array).duplicate(true)
+	repair_target = 20
+	repair_progress = 0
+	intent_index = 0
+	stability = max_stability
+	turn_number = 1
+	hand = [_card_copy("sliding_average")]
+	draw_pile.clear()
+	discard_pile.clear()
+	exhaust_pile.clear()
+	_render_state()
+
+
+func _tutorial_expected_card_id() -> String:
+	return {
+		TutorialStep.PLAY_DEFENSE: "sliding_average",
+		TutorialStep.PLAY_SAMPLE: "mq2_sample",
+		TutorialStep.PLAY_CONVERT: "adc_convert",
+		TutorialStep.PLAY_OUTPUT: "led_alarm"
+	}.get(tutorial_step, "")
+
+
+func _tutorial_card_allowed(card_id: String) -> bool:
+	return tutorial_active and card_id == _tutorial_expected_card_id()
+
+
+func _tutorial_end_turn_allowed() -> bool:
+	return tutorial_active and tutorial_step == TutorialStep.END_TURN
+
+
+func confirm_tutorial_intent() -> bool:
+	if !tutorial_active or tutorial_step != TutorialStep.READ_INTENT:
+		return false
+	tutorial_step = TutorialStep.PLAY_DEFENSE
+	_render_state()
+	return true
+
+
+func _advance_tutorial_after_card(card_id: String) -> void:
+	match tutorial_step:
+		TutorialStep.PLAY_DEFENSE:
+			if card_id == "sliding_average":
+				tutorial_step = TutorialStep.END_TURN
+		TutorialStep.PLAY_SAMPLE:
+			if card_id == "mq2_sample":
+				tutorial_step = TutorialStep.PLAY_CONVERT
+		TutorialStep.PLAY_CONVERT:
+			if card_id == "adc_convert":
+				tutorial_step = TutorialStep.PLAY_OUTPUT
+		TutorialStep.PLAY_OUTPUT:
+			if card_id == "led_alarm":
+				tutorial_step = TutorialStep.COMPLETE
+	_render_state()
 
 
 func _card_copy(card_id: String) -> Dictionary:
@@ -1793,6 +1892,10 @@ func play_card(hand_index: int) -> bool:
 	var card := hand[hand_index] as Dictionary
 	if bool(card.get("negative", false)):
 		return false
+	var card_id := str(card.get("id", ""))
+	if tutorial_active and !_tutorial_card_allowed(card_id):
+		_log("请先完成当前教学操作。")
+		return false
 	var cost := _card_cost_preview(card)
 	if processing_points < cost:
 		return false
@@ -1833,8 +1936,12 @@ func play_card(hand_index: int) -> bool:
 	else:
 		discard_pile.append(card)
 	if repair_progress >= repair_target:
-		if str(current_encounter.get("tier", "")) != "checkpoint" or _checkpoint_requirements_met():
+		if tutorial_active:
+			pass
+		elif str(current_encounter.get("tier", "")) != "checkpoint" or _checkpoint_requirements_met():
 			_finish_encounter()
+	if tutorial_active:
+		_advance_tutorial_after_card(card_id)
 	return true
 
 
@@ -2136,25 +2243,40 @@ func _take_damage(amount: int) -> void:
 	stability = maxi(0, stability - (amount - blocked))
 
 
-func end_turn() -> void:
+func end_turn() -> bool:
 	if state != RunState.COMBAT:
-		return
+		return false
+	if tutorial_active and !_tutorial_end_turn_allowed():
+		_log("请先完成当前教学操作。")
+		return false
 	for raw_card in hand:
 		discard_pile.append(raw_card)
 	hand.clear()
+	if tutorial_active and tutorial_step == TutorialStep.END_TURN:
+		_resolve_intent()
+		_reset_turn_state(true)
+		hand = [
+			_card_copy("mq2_sample"),
+			_card_copy("adc_convert"),
+			_card_copy("led_alarm")
+		]
+		tutorial_step = TutorialStep.PLAY_SAMPLE
+		_render_state()
+		return true
 	_resolve_intent()
 	if stability <= 0:
 		_handle_defeat()
-		return
+		return true
 	if str(current_encounter.get("tier", "")) == "checkpoint" and turn_number >= 2:
 		_finish_checkpoint(repair_progress >= repair_target)
-		return
+		return true
 	if !retain_data and str(current_encounter.get("tier", "")) != "checkpoint":
 		raw_data = {"smoke": 0, "light": 0, "temp": 0, "humidity": 0}
 		trusted_data = {"smoke": 0, "light": 0, "temp": 0, "humidity": 0}
 	retain_data = false
 	powers.erase("chain_energy_used")
 	_reset_turn_state(false)
+	return true
 
 
 func _resolve_intent() -> void:
