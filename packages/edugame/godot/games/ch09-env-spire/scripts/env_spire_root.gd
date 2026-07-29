@@ -496,6 +496,7 @@ func _build_ui() -> void:
 	_build_combat_view()
 	_build_choice_view()
 	_build_result_view()
+	_build_card_selection_modal()
 	_build_tutorial_view()
 
 	var footer := PanelContainer.new()
@@ -968,13 +969,16 @@ func _build_combat_view() -> void:
 	action_trailing_spacer = Control.new()
 	action_trailing_spacer.custom_minimum_size = Vector2(1, 0)
 	combat_actions.add_child(action_trailing_spacer)
+
+
+func _build_card_selection_modal() -> void:
 	card_selection_modal = PanelContainer.new()
 	card_selection_modal.name = "CardSelectionModal"
 	card_selection_modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	card_selection_modal.add_theme_stylebox_override("panel", _panel_style(Color("#f7fbf8"), Color("#2f7f8d")))
 	card_selection_modal.mouse_filter = Control.MOUSE_FILTER_STOP
 	card_selection_modal.visible = false
-	combat_view.add_child(card_selection_modal)
+	main_area.add_child(card_selection_modal)
 	var selection_margin := MarginContainer.new()
 	selection_margin.add_theme_constant_override("margin_left", 24)
 	selection_margin.add_theme_constant_override("margin_top", 24)
@@ -1270,6 +1274,7 @@ func _render_state() -> void:
 			_render_choices()
 		RunState.RESULT:
 			_render_result()
+	_render_card_selection_overlay()
 	if log_label != null:
 		log_label.text = "  /  ".join(message_log.slice(maxi(0, message_log.size() - 2), message_log.size()))
 	_apply_responsive_layout()
@@ -1423,10 +1428,6 @@ func _lane_color(lane: String) -> Color:
 
 func _render_combat() -> void:
 	var selection_open := !pending_card_selection.is_empty()
-	if card_selection_modal != null:
-		card_selection_modal.visible = selection_open
-		if selection_open:
-			_render_card_selection_modal()
 	encounter_name_label.text = str(current_encounter.get("name", "故障诊断"))
 	var tier := str(current_encounter.get("tier", "ordinary"))
 	var phase_text := " · 阶段 %d/3" % (boss_phase + 1) if tier == "boss" else ""
@@ -1512,6 +1513,16 @@ func _render_combat() -> void:
 		call_deferred("_reveal_tutorial_required_card")
 
 
+func _render_card_selection_overlay() -> void:
+	if card_selection_modal == null:
+		return
+	var owner := str(pending_card_selection.get("owner", "combat"))
+	var selection_open := !pending_card_selection.is_empty() and _selection_owner_matches_state(owner)
+	card_selection_modal.visible = selection_open
+	if selection_open:
+		_render_card_selection_modal()
+
+
 func _render_card_selection_modal() -> void:
 	if card_selection_title == null or card_selection_options == null:
 		return
@@ -1523,13 +1534,21 @@ func _render_card_selection_modal() -> void:
 		"retain_one": "选择 1 张手牌保留到下回合",
 		"raw_source": "选择 1 个原始数据源"
 	}.get(kind, "选择一个工程动作")
+	if kind == "event_card":
+		card_selection_title.text = "Select an event card"
+	elif kind == "event_component":
+		card_selection_title.text = "Select an event component"
 	card_selection_options.columns = 1 if size.x < 720.0 else 3
 	var options: Array = pending_card_selection.get("options", []) as Array
 	for index in range(options.size()):
 		var option = options[index]
 		var button := Button.new()
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		if option is Dictionary:
+		if kind == "event_component" and option is Dictionary:
+			var component := option as Dictionary
+			button.text = "%s\n%s" % [component.get("name", "component"), component.get("description", "")]
+			_skin_button(button, Color("#8b6b23"))
+		elif option is Dictionary:
 			var card := option as Dictionary
 			button.text = "%s  [%d]\n%s" % [card.get("name", "卡牌"), _card_cost_preview(card), card.get("upgradedEffectText", "") if bool(card.get("upgraded", false)) else card.get("effectText", "")]
 			button.tooltip_text = str(card.get("knowledgePoint", ""))
@@ -2424,7 +2443,23 @@ func play_card(hand_index: int) -> bool:
 	var repair_before := repair_progress
 	var effects: Array = card.get("upgradeEffects", []) if bool(card.get("upgraded", false)) else card.get("effects", [])
 	_apply_card_effects(effects, card)
+	var card_finalizer := {
+		"card": card.duplicate(true),
+		"repairBefore": repair_before
+	}
+	if !pending_card_selection.is_empty():
+		pending_card_selection["cardFinalizer"] = card_finalizer
+	else:
+		_finalize_played_card(card_finalizer)
+	return true
+
+
+func _finalize_played_card(finalizer: Dictionary) -> void:
+	var card := finalizer.get("card", {}) as Dictionary
+	if card.is_empty():
+		return
 	_resolve_fault_rule_after_card(card)
+	var repair_before := int(finalizer.get("repairBefore", repair_progress))
 	var matched_weaknesses := _matched_weakness_tags(card)
 	if !matched_weaknesses.is_empty():
 		var bonus_text := "  ·  诊断修复 +2" if diagnosis > 0 and repair_progress > repair_before else ""
@@ -2440,8 +2475,7 @@ func play_card(hand_index: int) -> bool:
 		elif str(current_encounter.get("tier", "")) != "checkpoint" or _checkpoint_requirements_met():
 			_finish_encounter()
 	if tutorial_active:
-		_advance_tutorial_after_card(card_id)
-	return true
+		_advance_tutorial_after_card(str(card.get("id", "")))
 
 
 func begin_reroute() -> bool:
@@ -2582,12 +2616,14 @@ func _mark_effect_use(effect: Dictionary, card: Dictionary) -> void:
 	turn_effect_uses[effect_id] = int(turn_effect_uses.get(effect_id, 0)) + 1
 
 
-func _open_card_selection(kind: String, options: Array, hand_indexes: Array = []) -> void:
+func _open_card_selection(kind: String, options: Array, hand_indexes: Array = [], owner: String = "combat", context: Dictionary = {}) -> void:
 	if options.is_empty():
 		return
-	pending_card_selection = {"kind": kind, "options": options.duplicate()}
+	pending_card_selection = {"owner": owner, "kind": kind, "options": options.duplicate(true)}
 	if !hand_indexes.is_empty():
 		pending_card_selection["handIndexes"] = hand_indexes.duplicate()
+	if !context.is_empty():
+		pending_card_selection["context"] = context.duplicate(true)
 
 
 func _open_hand_selection(kind: String) -> void:
@@ -2620,13 +2656,15 @@ func _return_cards_to_draw_top(cards: Array) -> void:
 
 
 func choose_pending_card(index: int) -> bool:
-	if state != RunState.COMBAT or pending_card_selection.is_empty():
+	if pending_card_selection.is_empty():
 		return false
 	var selection := pending_card_selection.duplicate(true)
+	var owner := str(selection.get("owner", "combat"))
+	if !_selection_owner_matches_state(owner):
+		return false
 	var options: Array = selection.get("options", []) as Array
 	if index < 0 or index >= options.size():
 		return false
-	pending_card_selection.clear()
 	var kind := str(selection.get("kind", ""))
 	var selected = options[index]
 	match kind:
@@ -2658,18 +2696,51 @@ func choose_pending_card(index: int) -> bool:
 				discard_pile.append(card)
 			else:
 				retained_cards.append(card)
+		"event_card":
+			if !(selected is Dictionary):
+				return false
+			var card := (selected as Dictionary).duplicate(true)
+			var context := selection.get("context", {}) as Dictionary
+			if str(context.get("action", "")) != "add_card":
+				return false
+			deck.append(card)
+		"event_component":
+			if !(selected is Dictionary):
+				return false
+			var component := selected as Dictionary
+			var component_context := selection.get("context", {}) as Dictionary
+			var component_id := str(component.get("id", ""))
+			if str(component_context.get("action", "")) != "add_component" or component_id.is_empty() or relics.has(component_id):
+				return false
+			relics.append(component_id)
+			_activate_relic(component_id)
 		_:
 			return false
-	_resume_pending_card_effects(selection)
+	pending_card_selection.clear()
+	if owner == "combat":
+		_resume_pending_card_effects(selection)
+	elif owner == "event":
+		_resume_pending_event_effects(selection)
+	else:
+		return false
 	return true
+
+
+func _selection_owner_matches_state(owner: String) -> bool:
+	return (owner == "combat" and state == RunState.COMBAT) or (owner == "event" and state == RunState.EVENT)
 
 
 func _resume_pending_card_effects(selection: Dictionary) -> void:
 	var card := selection.get("card", {}) as Dictionary
 	var remaining: Array = selection.get("remainingEffects", []) as Array
-	if card.is_empty() or remaining.is_empty():
+	var finalizer := selection.get("cardFinalizer", {}) as Dictionary
+	if !card.is_empty() and !remaining.is_empty():
+		_apply_card_effects(remaining, card, int(selection.get("trustedSpent", 0)))
+	if !pending_card_selection.is_empty():
+		if !finalizer.is_empty():
+			pending_card_selection["cardFinalizer"] = finalizer.duplicate(true)
 		return
-	_apply_card_effects(remaining, card, int(selection.get("trustedSpent", 0)))
+	_finalize_played_card(finalizer)
 
 
 func _prepare_counter(counter_tag: String) -> void:
@@ -3207,17 +3278,39 @@ func choose_reward(card_id: String) -> bool:
 
 
 func choose_event_option(option_index: int) -> bool:
-	if state != RunState.EVENT:
+	if state != RunState.EVENT or !pending_card_selection.is_empty():
 		return false
 	var options: Array = current_event.get("options", [])
 	if option_index < 0 or option_index >= options.size():
 		return false
 	var option := options[option_index] as Dictionary
-	for raw_effect in option.get("effects", []):
-		_apply_run_effect(raw_effect as Dictionary)
+	_apply_event_effects(option.get("effects", []) as Array)
+	return true
+
+
+func _apply_event_effects(effects: Array) -> void:
+	for index in range(effects.size()):
+		_apply_run_effect(effects[index] as Dictionary)
+		if !pending_card_selection.is_empty():
+			var remaining: Array = []
+			for remaining_index in range(index + 1, effects.size()):
+				remaining.append(effects[remaining_index])
+			pending_card_selection["eventRemainingEffects"] = remaining
+			return
+	_finish_event_option()
+
+
+func _resume_pending_event_effects(selection: Dictionary) -> void:
+	var remaining: Array = selection.get("eventRemainingEffects", []) as Array
+	if remaining.is_empty():
+		_finish_event_option()
+		return
+	_apply_event_effects(remaining)
+
+
+func _finish_event_option() -> void:
 	current_event = {}
 	state = RunState.MAP
-	return true
 
 
 func _apply_run_effect(effect: Dictionary) -> void:
@@ -3246,6 +3339,34 @@ func _apply_run_effect(effect: Dictionary) -> void:
 					deck.remove_at(index)
 		"next_diagnosis":
 			powers["next_diagnosis"] = int(powers.get("next_diagnosis", 0)) + amount
+		"select_card":
+			_open_event_card_selection(effect)
+		"select_component":
+			_open_event_component_selection(effect)
+
+
+func _open_event_card_selection(effect: Dictionary) -> void:
+	var options: Array = []
+	var card_ids: Array = effect.get("cardIds", []) as Array
+	if effect.has("cardId"):
+		card_ids.append(effect.get("cardId", ""))
+	for raw_card_id in card_ids:
+		var card_id := str(raw_card_id)
+		if card_defs.has(card_id):
+			options.append(_card_copy(card_id))
+	_open_card_selection("event_card", options, [], "event", {"action": "add_card"})
+
+
+func _open_event_component_selection(effect: Dictionary) -> void:
+	var options: Array = []
+	var component_ids: Array = effect.get("componentIds", []) as Array
+	if effect.has("componentId"):
+		component_ids.append(effect.get("componentId", ""))
+	for raw_component_id in component_ids:
+		var component_id := str(raw_component_id)
+		if relic_defs.has(component_id) and !relics.has(component_id):
+			options.append((relic_defs[component_id] as Dictionary).duplicate(true))
+	_open_card_selection("event_component", options, [], "event", {"action": "add_component"})
 
 
 func _upgrade_first_card() -> bool:

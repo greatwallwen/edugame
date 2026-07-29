@@ -221,6 +221,8 @@ func _run() -> void:
 	_assert(game._boss_phase_requirements_met(), "persistent scheduler plus current UART should satisfy final acceptance")
 
 	_assert_card_selection_effects(game)
+	_assert_deferred_card_finalization(game)
+	_assert_event_owned_selection(game)
 	_assert_card_resolution_effects(game)
 	_assert_chain_draw_state_template(game)
 	_assert_reward_composition(game)
@@ -298,6 +300,111 @@ func _assert_card_selection_effects(game) -> void:
 	if _choose_pending_card(game, 0, "upgraded data cache should select a retained card"):
 		_assert(game.end_turn(), "retained-card selection should resolve before end turn")
 		_assert(game._hand_has_card("mq2_sample"), "retained cards should return before normal next-turn draw")
+
+
+func _assert_deferred_card_finalization(game) -> void:
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.current_encounter["faultRule"] = {
+		"id": "mq2_uncalibrated",
+		"timing": "after_card",
+		"triggerStage": "collect",
+		"triggerCount": 1,
+		"negativeCard": "abnormal_reading",
+		"counterTags": []
+	}
+	game.current_encounter["evidenceGroups"] = []
+	game.repair_target = 0
+	game.repair_progress = 0
+	game.draw_pile = [game._card_copy("mq2_sample"), game._card_copy("sliding_average")]
+	game.discard_pile.clear()
+	game.hand = [game._card_copy("polling_scan")]
+	game.processing_points = 3
+	_assert(game.play_card(0), "polling scan should begin its deferred effect chain")
+	var selection := _pending_selection(game)
+	_assert(selection.get("owner", "") == "combat", "combat card selection should declare its owner")
+	_assert(selection.get("kind", "") == "raw_source", "polling scan should pause on raw-source selection")
+	_assert(game.state == game.RunState.COMBAT, "selection should keep the encounter in COMBAT before card finalization")
+	_assert(!_pile_has_card_id(game.discard_pile, "polling_scan") and !_pile_has_card_id(game.draw_pile, "polling_scan"), "played polling scan should stay out of discard and draw while selection is open")
+	_assert(!_pile_has_card_id(game.discard_pile, "abnormal_reading"), "fault-added negatives should not finalize before selection")
+	_assert(!bool(game.fault_rule_state.get("triggered", false)), "fault resolution should wait for deferred card effects")
+	_assert(game.cards_played_this_turn == 0, "card-play bookkeeping should wait for deferred card effects")
+	if _choose_pending_card(game, 0, "polling scan should resolve its first selection"):
+		selection = _pending_selection(game)
+		_assert(selection.get("kind", "") == "discard_one", "polling scan should continue to its discard selection")
+		_assert(game.state == game.RunState.COMBAT, "continued selection should not transition before finalization")
+		_assert(!_pile_has_card_id(game.discard_pile, "polling_scan") and !_pile_has_card_id(game.draw_pile, "polling_scan"), "played polling scan should remain pending through the full effect chain")
+		_assert(!bool(game.fault_rule_state.get("triggered", false)) and game.cards_played_this_turn == 0, "fault and bookkeeping should remain deferred through chained selections")
+		if _choose_pending_card(game, 0, "polling scan should resolve its final selection"):
+			_assert(game.state == game.RunState.REWARD, "card finalization should transition only after the full effect chain resolves")
+			_assert(bool(game.fault_rule_state.get("triggered", false)), "fault resolution should run after the final selection")
+			_assert(_count_card_id(game.discard_pile, "polling_scan") == 1, "shared card finalizer should discard polling scan exactly once")
+			_assert(_count_card_id(game.discard_pile, "abnormal_reading") == 1, "shared card finalizer should add its fault negative exactly once")
+			_assert(game.cards_played_this_turn == 1, "shared card finalizer should increment card bookkeeping exactly once")
+			_assert(!game.choose_pending_card(0), "a completed card finalizer should not be callable twice")
+			_assert(_count_card_id(game.discard_pile, "polling_scan") == 1 and game.cards_played_this_turn == 1, "rejected repeat selections should not repeat finalization")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.current_encounter["faultRule"] = {
+		"id": "mq2_uncalibrated",
+		"timing": "after_card",
+		"triggerStage": "collect",
+		"triggerCount": 1,
+		"negativeCard": "abnormal_reading",
+		"counterTags": []
+	}
+	game.draw_pile.clear()
+	game.discard_pile.clear()
+	game.hand = [game._card_copy("polling_scan")]
+	game.processing_points = 3
+	_assert(game.play_card(0), "polling scan should defer before an empty-pile draw")
+	if _choose_pending_card(game, 0, "polling scan should resolve an empty-pile source selection"):
+		_assert(_pending_selection(game).is_empty(), "deferred draw should not create a discard choice from the played card")
+		_assert(!_pile_has_card_id(game.hand, "polling_scan") and !_pile_has_card_id(game.hand, "abnormal_reading"), "polling scan and its fault negative should not redraw from the deferred pile")
+		_assert(_count_card_id(game.discard_pile, "polling_scan") == 1 and _count_card_id(game.discard_pile, "abnormal_reading") == 1, "empty-pile polling scan should finalize only after its draw effect completes")
+
+
+func _assert_event_owned_selection(game) -> void:
+	game._reset_run()
+	var budget_before: int = game.budget
+	game.current_event = {
+		"id": "event_card_selection",
+		"options": [{
+			"effects": [
+				{"op": "select_card", "cardIds": ["logic_probe"]},
+				{"op": "budget", "amount": 7}
+			]
+		}]
+	}
+	game.state = game.RunState.EVENT
+	_assert(game.choose_event_option(0), "event should open its owned card selection")
+	var selection := _pending_selection(game)
+	_assert(game.state == game.RunState.EVENT, "event selection should keep the state in EVENT")
+	_assert(selection.get("owner", "") == "event" and selection.get("kind", "") == "event_card" and (selection.get("context", {}) as Dictionary).get("action", "") == "add_card", "event card selection should declare event ownership and context")
+	_assert(!game.play_card(0), "event-owned selection should not expose combat card play")
+	if _choose_pending_card(game, 0, "event should accept its declared selection owner"):
+		_assert(game.state == game.RunState.MAP, "event selection should resume and complete its event continuation")
+		_assert(_pile_has_card_id(game.deck, "logic_probe"), "event card selection should add the chosen card")
+		_assert(game.budget == budget_before + 7, "event selection should resume remaining event effects")
+
+	game._reset_run()
+	budget_before = game.budget
+	game.current_event = {
+		"id": "event_component_selection",
+		"options": [{
+			"effects": [
+				{"op": "select_component", "componentIds": ["state_template"]},
+				{"op": "budget", "amount": 5}
+			]
+		}]
+	}
+	game.state = game.RunState.EVENT
+	_assert(game.choose_event_option(0), "event should open its owned component selection")
+	selection = _pending_selection(game)
+	_assert(game.state == game.RunState.EVENT and selection.get("owner", "") == "event" and selection.get("kind", "") == "event_component" and (selection.get("context", {}) as Dictionary).get("action", "") == "add_component", "event component selection should remain in EVENT with event ownership")
+	if _choose_pending_card(game, 0, "event component selection should accept its declared selection owner"):
+		_assert(game.state == game.RunState.MAP, "event component selection should resume event completion")
+		_assert(game.relics.has("state_template") and int(game.powers.get("chain_draw", 0)) == 1, "event component selection should activate the chosen component")
+		_assert(game.budget == budget_before + 5, "event component selection should continue remaining effects")
 
 
 func _assert_card_resolution_effects(game) -> void:
@@ -449,6 +556,18 @@ func _card_id_at(cards: Array, index: int) -> String:
 	if index < 0 or index >= cards.size():
 		return ""
 	return str((cards[index] as Dictionary).get("id", ""))
+
+
+func _pile_has_card_id(cards: Array, card_id: String) -> bool:
+	return _count_card_id(cards, card_id) > 0
+
+
+func _count_card_id(cards: Array, card_id: String) -> int:
+	var count := 0
+	for raw_card in cards:
+		if str((raw_card as Dictionary).get("id", "")) == card_id:
+			count += 1
+	return count
 
 
 func _assert(condition: bool, message: String) -> void:

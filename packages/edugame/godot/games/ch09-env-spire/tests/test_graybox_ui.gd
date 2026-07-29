@@ -354,6 +354,35 @@ func _verify_viewport(size: Vector2i) -> void:
 	await process_frame
 	_assert(choice_list != null and choice_list.get_child_count() > 0, "normal event should render its commands")
 	_assert_visible_primary_command_heights(game)
+	var event_selection_budget: int = game.budget
+	game.current_event = {
+		"id": "event_selection_overlay",
+		"options": [{
+			"effects": [
+				{"op": "select_card", "cardIds": ["logic_probe"]},
+				{"op": "budget", "amount": 3}
+			]
+		}]
+	}
+	game.state = game.RunState.EVENT
+	_assert(game.choose_event_option(0), "event selection setup should open an event-owned card choice")
+	game._render_state()
+	await process_frame
+	var selection_modal = game.find_child("CardSelectionModal", true, false) as Control
+	var selection_options = game.find_child("CardSelectionOptions", true, false)
+	_assert(game.state == game.RunState.EVENT, "event-owned selection should preserve the EVENT view")
+	_assert(selection_modal != null and selection_modal.is_visible_in_tree(), "shared card-selection overlay should be visible during EVENT")
+	_assert(selection_modal != null and selection_modal.get_parent() == scene_stage, "shared card-selection overlay should live above the state-specific views")
+	_assert(selection_options != null and selection_options.get_child_count() == 1, "event-owned selection should render its available choice")
+	_assert(combat_view != null and !combat_view.visible and end_turn != null and !end_turn.is_visible_in_tree(), "event-owned selection should not expose combat actions")
+	_assert(game.choose_pending_card(0), "event-owned overlay should dispatch to its declared owner")
+	game._render_state()
+	await process_frame
+	_assert(game.state == game.RunState.MAP and game.budget == event_selection_budget + 3, "event-owned overlay should resume its event continuation")
+	_assert(selection_modal != null and !selection_modal.is_visible_in_tree(), "shared overlay should close after its event continuation resolves")
+	for deck_index in range(game.deck.size() - 1, -1, -1):
+		if str((game.deck[deck_index] as Dictionary).get("id", "")) == "logic_probe":
+			game.deck.remove_at(deck_index)
 
 	game._open_shop()
 	game._render_state()
