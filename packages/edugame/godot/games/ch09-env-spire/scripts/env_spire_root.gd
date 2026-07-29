@@ -181,6 +181,7 @@ var map_next_detail: Label
 var map_enter_button: Button
 var combat_view: PanelContainer
 var combat_layout: BoxContainer
+var combat_margin: MarginContainer
 var encounter_arena: BoxContainer
 var hand_dock: VBoxContainer
 var tutorial_combat_spacer: Control
@@ -795,13 +796,13 @@ func _build_map_view() -> void:
 
 
 func _build_combat_view() -> void:
-	var margin := _content_margin()
-	combat_view.add_child(margin)
+	combat_margin = _content_margin()
+	combat_view.add_child(combat_margin)
 	combat_layout = BoxContainer.new()
 	combat_layout.name = "CombatLayout"
 	combat_layout.vertical = true
 	combat_layout.add_theme_constant_override("separation", 12)
-	margin.add_child(combat_layout)
+	combat_margin.add_child(combat_layout)
 	encounter_arena = BoxContainer.new()
 	encounter_arena.name = "EncounterArena"
 	encounter_arena.vertical = false
@@ -1253,6 +1254,11 @@ func _apply_responsive_layout() -> void:
 		return
 	var compact := size.x < 720.0
 	combat_layout.vertical = true
+	if combat_margin != null:
+		combat_margin.add_theme_constant_override("margin_left", 10 if compact else 18)
+		combat_margin.add_theme_constant_override("margin_right", 10 if compact else 18)
+		combat_margin.add_theme_constant_override("margin_top", 10 if compact else 14)
+		combat_margin.add_theme_constant_override("margin_bottom", 10 if compact else 14)
 	if encounter_arena != null:
 		encounter_arena.vertical = compact
 		encounter_arena.custom_minimum_size.y = 248.0 if compact else 260.0
@@ -1283,7 +1289,28 @@ func _apply_responsive_layout() -> void:
 				action.reparent(action_parent)
 		if action_trailing_spacer != null:
 			action_parent.move_child(action_trailing_spacer, -1)
-		combat_actions.visible = compact
+		var compact_actions := compact and !tutorial_active
+		var counter_parent := combat_actions if compact_actions else dock_header
+		if processing_point_counter != null and processing_point_counter.get_parent() != counter_parent:
+			processing_point_counter.reparent(counter_parent)
+		if processing_point_counter != null:
+			if compact_actions:
+				combat_actions.move_child(processing_point_counter, 0)
+			elif reroute_button != null and processing_point_counter.get_index() > reroute_button.get_index():
+				dock_header.move_child(processing_point_counter, reroute_button.get_index())
+			processing_point_counter.size_flags_horizontal = Control.SIZE_SHRINK_CENTER if compact_actions else Control.SIZE_FILL
+		if reroute_button != null and reroute_cancel_button != null and end_turn_button != null:
+			reroute_button.custom_minimum_size.x = 58.0 if compact_actions else 74.0
+			reroute_cancel_button.custom_minimum_size.x = 58.0 if compact_actions else 74.0
+			end_turn_button.custom_minimum_size.x = 96.0 if compact_actions else 104.0
+			for action_button in [reroute_button, reroute_cancel_button, end_turn_button]:
+				action_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER if compact_actions else Control.SIZE_FILL
+		combat_actions.visible = compact_actions
+		if hand_dock != null and hand_scroll != null:
+			if compact_actions and combat_actions.get_index() > hand_scroll.get_index():
+				hand_dock.move_child(combat_actions, hand_scroll.get_index())
+			elif !compact_actions and combat_actions.get_index() < hand_scroll.get_index():
+				hand_dock.move_child(combat_actions, hand_scroll.get_index())
 	if map_composition != null:
 		map_composition.vertical = compact
 	if map_mission_summary != null:

@@ -90,6 +90,7 @@ func _verify_viewport(size: Vector2i) -> void:
 	var mission_summary = game.find_child("MapMissionSummary", true, false)
 	var next_detail = game.find_child("MapNextDetail", true, false)
 	var choice_list = game.find_child("ChoiceList", true, false)
+	var choice_scroll = game.find_child("ChoiceScroll", true, false) as ScrollContainer
 	var choice_description = game.find_child("ChoiceDescription", true, false)
 	var gate_label = game.find_child("GateLabel", true, false)
 	var restart_button = game.find_child("RestartButton", true, false)
@@ -103,6 +104,8 @@ func _verify_viewport(size: Vector2i) -> void:
 	var fault_counter_row = game.find_child("FaultCounterRow", true, false) as Label
 	var fault_rule_state = game.find_child("FaultRuleState", true, false) as Label
 	var hand_dock = game.find_child("HandDock", true, false)
+	var hand_scroll = game.find_child("HandScroll", true, false) as Control
+	var combat_actions = game.find_child("CombatActions", true, false) as Control
 	var point_counter = game.find_child("ProcessingPointCounter", true, false)
 	var chain_strip = game.find_child("EngineeringChainStrip", true, false) as Control
 	var chain_collect = game.find_child("ChainCollect", true, false) as Control
@@ -140,6 +143,7 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(run_hud.theme == game.ui_theme, "RunHud should use the bundled UI theme")
 	_assert(hand_row != null and end_turn != null and log_label != null and repair_bar != null, "combat controls, repair progress, and log should exist")
 	_assert(choice_list != null, "choice states should expose a stable choice grid")
+	_assert(choice_scroll != null, "choice states should expose a stable vertical scroll container")
 	_assert(gate_label != null and restart_button != null, "boss gate and result action should expose stable controls")
 	_assert(arena != null, "combat should expose an encounter arena")
 	_assert(device_unit != null and evidence_bridge != null and fault_unit != null, "combat should render device, evidence, and fault zones")
@@ -289,12 +293,16 @@ func _verify_viewport(size: Vector2i) -> void:
 		for index in range(fault_rows.size()):
 			for other_index in range(index + 1, fault_rows.size()):
 				_assert(!(fault_rows[index] as Control).get_global_rect().intersects((fault_rows[other_index] as Control).get_global_rect()), "%s and %s should not overlap at %s" % [fault_rows[index].name, fault_rows[other_index].name, size])
+		if fault_unit != null:
+			var fault_panel_rect := (fault_unit as Control).get_global_rect().grow(0.5)
+			for row in [fault_intent_row, fault_rule_row, fault_counter_row]:
+				_assert(fault_panel_rect.encloses(row.get_global_rect()), "%s should fit inside the fault panel at %s" % [row.name, size])
 	if point_counter != null:
 		_assert(point_counter.text.contains(str(game.processing_points)), "processing point counter should render the live point total")
 	if arena != null and hand_dock != null:
 		_assert(hand_dock.get_global_rect().position.y >= arena.get_global_rect().end.y, "hand dock should remain below the encounter arena at %s" % size)
 	if footer != null and hand_dock != null:
-		_assert(hand_dock.get_global_rect().end.y <= footer.get_global_rect().position.y, "hand dock should remain above the footer at %s" % size)
+		_assert(hand_dock.get_global_rect().end.y <= footer.get_global_rect().position.y, "hand dock should remain above the footer at %s: dock=%s footer=%s" % [size, hand_dock.get_global_rect(), footer.get_global_rect()])
 	if size == Vector2i(1280, 720) and arena != null and hand_dock != null and run_hud != null and run_footer != null:
 		var playable_height: float = run_footer.get_global_rect().position.y - run_hud.get_global_rect().end.y
 		var dock_proportion: float = hand_dock.size.y / playable_height
@@ -317,13 +325,34 @@ func _verify_viewport(size: Vector2i) -> void:
 	if chain_strip != null and chain_collect != null and chain_interface != null and chain_process != null and chain_output != null:
 		_assert(chain_strip.is_visible_in_tree(), "engineering-chain strip should stay visible at %s" % size)
 		_assert(chain_collect.is_visible_in_tree() and chain_interface.is_visible_in_tree() and chain_process.is_visible_in_tree() and chain_output.is_visible_in_tree(), "engineering-chain stages should stay visible at %s" % size)
+		if hand_scroll != null:
+			_assert(chain_strip.get_global_rect().end.y <= hand_scroll.get_global_rect().position.y, "engineering-chain strip should sit above the horizontal hand dock at %s" % size)
+	if size.x < 720 and combat_actions != null and hand_scroll != null:
+		_assert(
+			combat_actions.get_global_rect().end.y <= hand_scroll.get_global_rect().position.y,
+			"compact processing and combat actions should sit above the horizontal hand at %s: actions=%s[%d] hand=%s[%d]" % [
+				size,
+				combat_actions.get_global_rect(),
+				combat_actions.get_index(),
+				hand_scroll.get_global_rect(),
+				hand_scroll.get_index()
+			]
+		)
+		_assert(point_counter != null and point_counter.get_parent() == combat_actions, "compact processing counter should share the reroute and end-turn row at %s" % size)
+		if point_counter != null:
+			_assert(viewport_rect.encloses(point_counter.get_global_rect()), "compact processing counter should remain fully visible at %s" % size)
 	if reroute_button != null and reroute_cancel_button != null:
 		_assert(reroute_button.is_visible_in_tree() and !reroute_button.disabled, "reroute should be available before the first card at %s" % size)
+		_assert(reroute_button.size.y >= 44.0 and end_turn.size.y >= 44.0, "reroute and end turn should be at least 44 px high at %s" % size)
+		_assert(!reroute_button.get_global_rect().intersects(end_turn.get_global_rect()), "reroute and end turn should be disjoint at %s" % size)
 		_assert(game.begin_reroute(), "reroute should enter selection mode for UI verification")
 		await process_frame
 		_assert(reroute_cancel_button.is_visible_in_tree() and !reroute_cancel_button.disabled, "reroute cancellation should be visible during selection at %s" % size)
 		_assert(reroute_button.custom_minimum_size.y >= 44.0 and reroute_cancel_button.custom_minimum_size.y >= 44.0, "reroute controls should use 44 px touch targets at %s" % size)
 		_assert(!reroute_button.get_global_rect().intersects(end_turn.get_global_rect()) and !reroute_cancel_button.get_global_rect().intersects(end_turn.get_global_rect()), "reroute controls should not overlap end turn at %s" % size)
+		if size.x < 720:
+			for action in [point_counter, reroute_button, reroute_cancel_button, end_turn]:
+				_assert(viewport_rect.encloses((action as Control).get_global_rect()), "%s should remain fully visible during compact reroute selection at %s" % [action.name, size])
 		_assert(game.cancel_reroute(), "reroute should cancel after UI verification")
 	_assert_visible_primary_command_heights(game)
 	var resolved_fault_name := str(game.current_encounter.get("name", ""))
@@ -385,26 +414,22 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(reward_skip != null and reward_skip.visible, "empty reward fallback should retain the skip command")
 	_assert_visible_primary_command_heights(game)
 
-	game._begin_question_event((game.event_defs.get("basic_adc_spike", {}) as Dictionary).duplicate(true))
-	game._render_state()
-	await process_frame
-	_assert(question_frame != null and question_frame.is_visible_in_tree(), "question event should render its dedicated frame")
-	_assert(question_tag != null and question_tag.text.contains("adc"), "question event should render knowledge tags")
-	_assert(question_prompt != null and !question_prompt.text.is_empty(), "question event should render its prompt")
-	if question_interaction != null:
-		var waveform_lines := question_interaction.find_children("*", "Line2D", true, false)
-		_assert(!waveform_lines.is_empty(), "structured waveform samples should render with Line2D")
-		if !waveform_lines.is_empty():
-			_assert((waveform_lines[0] as Line2D).points.size() == 6, "waveform line should preserve all structured samples")
-	var wrong_option = game.find_child("QuestionOption_steady_drift", true, false) as Button
-	_assert(wrong_option != null, "question options should expose stable ID-based controls")
-	if wrong_option != null and question_submit != null:
-		wrong_option.emit_signal("pressed")
-		question_submit.emit_signal("pressed")
-		await process_frame
-		_assert(question_explanation.visible and !question_explanation.text.is_empty(), "answered event should show its explanation")
-		_assert(question_consequence.visible, "answered event should show its consequence")
-		_assert(question_continue.visible and question_continue.custom_minimum_size.y >= 44.0, "resolved event should expose a touch-sized continue command")
+	await _verify_question_type_rendering(
+		game,
+		size,
+		choice_scroll,
+		question_frame,
+		question_tag,
+		question_prompt,
+		question_interaction
+	)
+	await _verify_question_resolution_scrolling(
+		game,
+		size,
+		choice_scroll,
+		question_explanation,
+		question_consequence
+	)
 	_assert_visible_primary_command_heights(game)
 
 	var missing_waveform := (game.event_defs.get("basic_adc_spike", {}) as Dictionary).duplicate(true)
@@ -431,17 +456,6 @@ func _verify_viewport(size: Vector2i) -> void:
 	await process_frame
 	_assert(question_explanation != null and question_explanation.visible and question_explanation.text.contains("事件数据无效"), "malformed event should display its safe data-error explanation immediately")
 	_assert(question_continue != null and question_continue.visible, "malformed event should expose a safe continue command")
-
-	game._begin_question_event((game.event_defs.get("basic_signal_order", {}) as Dictionary).duplicate(true))
-	game._render_state()
-	await process_frame
-	var order_up = game.find_child("QuestionOrderUp_0", true, false) as Button
-	var order_down = game.find_child("QuestionOrderDown_0", true, false) as Button
-	_assert(order_up != null and order_down != null, "ordering question should render move controls")
-	if order_up != null and order_down != null:
-		_assert(order_up.custom_minimum_size.x >= 44.0 and order_up.custom_minimum_size.y >= 44.0, "ordering move-up icon should use a 44 px target")
-		_assert(order_down.custom_minimum_size.x >= 44.0 and order_down.custom_minimum_size.y >= 44.0, "ordering move-down icon should use a 44 px target")
-	_assert_visible_primary_command_heights(game)
 
 	var event_selection_budget: int = game.budget
 	game.current_event = {
@@ -496,20 +510,17 @@ func _verify_viewport(size: Vector2i) -> void:
 	await process_frame
 	_assert(service_bench != null and !service_bench.visible, "service bench should hide outside the service state")
 
-	var run_states: Dictionary = game.get_script().get_script_constant_map().get("RunState", {})
-	if !run_states.has("COMPONENT"):
-		_assert(false, "component node should expose a dedicated run state")
-	else:
-		game.state = game.RunState.MAP
-		game.current_layer = 5
-		game.choose_node(0)
-		game._render_state()
-		await process_frame
-		_assert(choice_view.visible, "component state should reuse the choice view")
-		_assert(choice_list.get_child_count() == 3, "component node should render three choices")
-		if choice_list.get_child_count() > 0:
-			_assert(!(choice_list.get_child(0) as Button).text.is_empty(), "component choice should have a readable label")
-		_assert_visible_primary_command_heights(game)
+	game.state = game.RunState.MAP
+	game.current_layer = 5
+	var event_history_before_node_six: int = game.event_history.size()
+	_assert(game.choose_node(0), "node 6 should launch its advanced question event")
+	game._render_state()
+	await process_frame
+	_assert(choice_view.visible and game.state == game.RunState.EVENT, "node 6 should use the question-event choice view")
+	_assert(str(game.current_event.get("tier", "")) == "advanced", "node 6 should select an advanced question event")
+	_assert(game.event_history.size() == event_history_before_node_six + 1, "node 6 should record its selected question event")
+	_assert(question_frame.is_visible_in_tree() and question_prompt.is_visible_in_tree() and question_interaction.is_visible_in_tree(), "node 6 should render the advanced question UI")
+	_assert_visible_primary_command_heights(game)
 
 	game.score = 87
 	game.current_layer = 12
@@ -544,16 +555,20 @@ func _verify_viewport(size: Vector2i) -> void:
 		var lab_catalog = game.find_child("NodeLabCatalog", true, false)
 		var lab_return = game.find_child("NodeLabReturn", true, false)
 		var lab_restart = game.find_child("NodeLabRestart", true, false)
+		var lab_toolbar = game.find_child("NodeLabToolbar", true, false) as Control
 		var lab_scenario = game.find_child("NodeLabScenario_mq2_warmup", true, false)
 		var lab_root = game.find_child("NodeLabRoot", true, false)
 		_assert(lab_catalog != null and lab_catalog.visible, "node lab catalog should be visible at %s" % size)
 		_assert(lab_root != null and lab_root.theme == game.ui_theme, "node lab should inherit the bundled UI font theme")
 		_assert(!game.shell.visible, "node lab catalog should hide the normal shell")
 		_assert(lab_return != null and lab_restart != null, "node lab should expose stable scenario controls")
+		_assert(lab_toolbar != null and lab_toolbar.is_visible_in_tree(), "node lab should expose a stable toolbar")
 		_assert(lab_scenario != null, "node lab should render generated scenario buttons")
 		if lab_scenario != null:
 			_assert((lab_scenario as Control).custom_minimum_size.y >= 44.0, "lab scenario touch target should be at least 44 px")
 			_assert(viewport_rect.intersects((lab_scenario as Control).get_global_rect()), "first lab scenario should be visible at %s" % size)
+			if lab_toolbar != null:
+				_assert(lab_toolbar.get_global_rect().end.y <= (lab_scenario as Control).get_global_rect().position.y, "Node Lab toolbar should sit above catalog scenario content at %s" % size)
 		game.start_lab_scenario({
 			"id": "basic_mq2_warmup",
 			"kind": "event",
@@ -565,6 +580,8 @@ func _verify_viewport(size: Vector2i) -> void:
 		_assert(game.state == game.RunState.EVENT and game.run_seed == 777, "Node Lab should launch the requested question event with an overridable seed")
 		_assert(!run_hud.visible and game.shell.visible and game.shell.offset_top == 58.0, "scenario toolbar should replace RunHud")
 		_assert(lab_return.visible and lab_restart.visible, "scenario controls should remain visible during lab play")
+		if lab_toolbar != null:
+			_assert(lab_toolbar.get_global_rect().end.y <= question_frame.get_global_rect().position.y, "Node Lab toolbar should not overlap the question event at %s" % size)
 		_assert(viewport_rect.encloses(lab_return.get_global_rect()), "lab return control should stay inside viewport at %s" % size)
 		_assert(viewport_rect.encloses(lab_restart.get_global_rect()), "lab restart control should stay inside viewport at %s" % size)
 		_assert_visible_primary_command_heights(game)
@@ -578,6 +595,8 @@ func _verify_viewport(size: Vector2i) -> void:
 		}, "coverage")
 		await process_frame
 		_assert(!header.visible, "lab toolbar should replace the normal game header during scenarios")
+		if lab_toolbar != null:
+			_assert(lab_toolbar.get_global_rect().end.y <= arena.get_global_rect().position.y, "Node Lab toolbar should not overlap combat scenario content at %s" % size)
 		_assert(end_turn.get_global_rect().end.y <= footer.get_global_rect().position.y, "lab combat action should stay above the footer at %s" % size)
 		_assert(arena.is_visible_in_tree() and hand_dock.is_visible_in_tree(), "lab combat should expose the redesigned arena and hand dock")
 		_assert(bool(game.restart_lab_scenario()), "lab restart should relaunch the current scenario")
@@ -590,6 +609,104 @@ func _verify_viewport(size: Vector2i) -> void:
 
 	game.queue_free()
 	await process_frame
+
+
+func _verify_question_type_rendering(
+	game,
+	size: Vector2i,
+	choice_scroll: ScrollContainer,
+	question_frame: Control,
+	question_tag: Label,
+	question_prompt: Label,
+	question_interaction: Control
+) -> void:
+	var cases: Array[Dictionary] = [
+		{"type": "diagnosis", "event_id": "basic_mq2_warmup"},
+		{"type": "ordering", "event_id": "basic_signal_order"},
+		{"type": "code_trace", "event_id": "basic_i2c_result"},
+		{"type": "parameter", "event_id": "basic_sample_period"},
+		{"type": "waveform", "event_id": "basic_adc_spike"},
+		{"type": "tradeoff", "event_id": "basic_raw_trusted"}
+	]
+	for case in cases:
+		var event_id := str(case.get("event_id", ""))
+		var question_type := str(case.get("type", ""))
+		var event := (game.event_defs.get(event_id, {}) as Dictionary).duplicate(true)
+		_assert(!event.is_empty(), "%s fixture should exist for %s rendering" % [event_id, size])
+		if event.is_empty():
+			continue
+		choice_scroll.scroll_vertical = 0
+		game._begin_question_event(event)
+		game._render_state()
+		await process_frame
+		await process_frame
+		var scroll_rect := choice_scroll.get_global_rect()
+		_assert(game.state == game.RunState.EVENT, "%s should enter the event state at %s" % [question_type, size])
+		_assert(str(game.current_event.get("questionType", "")) == question_type, "%s fixture should preserve its question type at %s" % [event_id, size])
+		_assert(question_frame.is_visible_in_tree(), "%s should render the question frame at %s" % [question_type, size])
+		_assert(question_tag.is_visible_in_tree() and !question_tag.text.strip_edges().is_empty(), "%s should render nonblank knowledge tags at %s" % [question_type, size])
+		_assert(question_prompt.is_visible_in_tree() and !question_prompt.text.strip_edges().is_empty(), "%s should render a visible prompt at %s" % [question_type, size])
+		_assert(question_interaction.is_visible_in_tree() and question_interaction.get_child_count() > 0, "%s should render a visible interaction at %s" % [question_type, size])
+		_assert(scroll_rect.intersects(question_prompt.get_global_rect()), "%s prompt should be visible in the event scroll area at %s" % [question_type, size])
+		_assert(scroll_rect.intersects(question_interaction.get_global_rect()), "%s interaction should be visible in the event scroll area at %s" % [question_type, size])
+		if question_type == "ordering":
+			var order_up := game.find_child("QuestionOrderUp_0", true, false) as Button
+			var order_down := game.find_child("QuestionOrderDown_0", true, false) as Button
+			var last_order_down := game.find_child("QuestionOrderDown_3", true, false) as Button
+			_assert(order_up != null and order_down != null and last_order_down != null, "ordering should render stable up/down controls at %s" % size)
+			if order_up != null and order_down != null and last_order_down != null:
+				_assert(order_up.custom_minimum_size.x >= 44.0 and order_up.custom_minimum_size.y >= 44.0, "ordering move-up control should use a 44 px target at %s" % size)
+				_assert(order_down.custom_minimum_size.x >= 44.0 and order_down.custom_minimum_size.y >= 44.0, "ordering move-down control should use a 44 px target at %s" % size)
+				_assert(choice_scroll.is_ancestor_of(order_up) and choice_scroll.is_ancestor_of(last_order_down), "ordering controls should remain inside the event scroll area at %s" % size)
+				_assert(scroll_rect.intersects(order_up.get_global_rect()) and scroll_rect.intersects(order_down.get_global_rect()), "ordering up/down controls should be initially reachable at %s" % size)
+				choice_scroll.ensure_control_visible(last_order_down)
+				await process_frame
+				_assert(scroll_rect.intersects(last_order_down.get_global_rect()), "ordering final move-down control should be reachable by scrolling at %s" % size)
+		elif question_type == "waveform":
+			var waveform_plot := game.find_child("QuestionWaveformPlot", true, false) as Control
+			var waveform_fallback := game.find_child("QuestionWaveformFallback", true, false) as Label
+			var waveform_readings := game.find_child("QuestionWaveformReadings", true, false) as Label
+			var waveform_nonblank := false
+			if waveform_plot != null and waveform_plot.is_visible_in_tree():
+				var waveform_lines := waveform_plot.find_children("*", "Line2D", true, false)
+				waveform_nonblank = !waveform_lines.is_empty() and (waveform_lines[0] as Line2D).points.size() > 1
+				waveform_nonblank = waveform_nonblank and waveform_readings != null and !waveform_readings.text.strip_edges().is_empty()
+			elif waveform_fallback != null:
+				waveform_nonblank = waveform_fallback.is_visible_in_tree() and !waveform_fallback.text.strip_edges().is_empty()
+			_assert(waveform_nonblank, "waveform should render a nonblank plot or fallback table at %s" % size)
+
+
+func _verify_question_resolution_scrolling(
+	game,
+	size: Vector2i,
+	choice_scroll: ScrollContainer,
+	question_explanation: Label,
+	question_consequence: Control
+) -> void:
+	var event := (game.event_defs.get("basic_mq2_warmup", {}) as Dictionary).duplicate(true)
+	var explanation := str(event.get("explanation", ""))
+	event["id"] = "ui_scroll_diagnosis"
+	event["explanation"] = (explanation + "\n").repeat(14)
+	choice_scroll.scroll_vertical = 0
+	game._begin_question_event(event)
+	game._render_state()
+	await process_frame
+	_assert(game.submit_event_answer(event.get("correctAnswer")), "scroll fixture should accept its correct answer at %s" % size)
+	game._render_state()
+	await process_frame
+	await process_frame
+	_assert(question_explanation.is_visible_in_tree() and !question_explanation.text.strip_edges().is_empty(), "resolved question explanation should be visible at %s" % size)
+	_assert(question_consequence.is_visible_in_tree() and question_consequence.get_child_count() > 0, "resolved question consequence should be visible at %s" % size)
+	_assert(choice_scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED, "resolved question content should retain vertical scrolling at %s" % size)
+	_assert(choice_scroll.is_ancestor_of(question_explanation) and choice_scroll.is_ancestor_of(question_consequence), "explanation and consequence should remain inside the event scroll area at %s" % size)
+	var scroll_bar := choice_scroll.get_v_scroll_bar()
+	_assert(scroll_bar.max_value > scroll_bar.page, "long explanation and consequence should overflow into scrolling rather than clip at %s" % size)
+	choice_scroll.ensure_control_visible(question_explanation)
+	await process_frame
+	_assert(choice_scroll.get_global_rect().intersects(question_explanation.get_global_rect()), "question explanation should be reachable by scrolling at %s" % size)
+	choice_scroll.ensure_control_visible(question_consequence)
+	await process_frame
+	_assert(choice_scroll.get_global_rect().intersects(question_consequence.get_global_rect()), "question consequence should be reachable by scrolling at %s" % size)
 
 
 func _assert(condition: bool, message: String) -> void:
@@ -644,7 +761,7 @@ func _assert_tutorial_bounds(game, viewport_rect: Rect2, footer: Control, expect
 				if footer != null:
 					_assert(required_card.get_global_rect().end.y <= footer.get_global_rect().position.y, "%s required card should stay above the footer" % step_name)
 				if tutorial_coach != null:
-					_assert(!tutorial_coach.get_global_rect().intersects(required_card.get_global_rect()), "%s coach should not cover the required card" % step_name)
+					_assert(!tutorial_coach.get_global_rect().intersects(required_card.get_global_rect()), "%s coach should not cover the required card: coach=%s card=%s" % [step_name, tutorial_coach.get_global_rect(), required_card.get_global_rect()])
 	if step_name == "end turn":
 		var end_turn = game.find_child("EndTurnButton", true, false) as Control
 		_assert(end_turn != null and end_turn.is_visible_in_tree(), "end turn tutorial state should expose the end-turn target")

@@ -25,23 +25,23 @@ godot.cmd --headless --path . -s tests/test_tutorial.gd
 ## 测试
 
 ```powershell
-godot --headless --path . -s tests/test_data_contract.gd
-godot --headless --path . -s tests/test_card_rules.gd
+godot.cmd --headless --path . -s tests/test_data_contract.gd
+godot.cmd --headless --path . -s tests/test_card_rules.gd
 godot.cmd --headless --path . -s tests/test_tutorial.gd
-godot --headless --path . -s tests/test_run_flow.gd
-godot --headless --path . -s tests/test_random_robustness.gd
-godot --headless --path . -s tests/test_graybox_ui.gd
-godot --headless --path . -s tests/test_runtime_integration.gd
-godot --headless --path . -s tests/test_node_lab.gd
-godot --headless --path . -s tests/test_full_run.gd -- --map=mvp_a
-godot --headless --path . -s tests/test_full_run.gd -- --map=mvp_b
-godot --headless --path . -s tests/test_full_run.gd -- --map=mvp_c
+godot.cmd --headless --path . -s tests/test_run_flow.gd
+godot.cmd --headless --path . -s tests/test_random_robustness.gd
+godot.cmd --headless --path . -s tests/test_graybox_ui.gd
+godot.cmd --headless --path . -s tests/test_runtime_integration.gd
+godot.cmd --headless --path . -s tests/test_node_lab.gd
+godot.cmd --headless --path . -s tests/test_full_run.gd -- --map=mvp_a
+godot.cmd --headless --path . -s tests/test_full_run.gd -- --map=mvp_b
+godot.cmd --headless --path . -s tests/test_full_run.gd -- --map=mvp_c
 ```
 
 ## Web 导出
 
 ```powershell
-godot --headless --path . --export-release Web
+godot.cmd --headless --path . --export-release Web
 ```
 
 导出目标为 `apps/player/public/assets/godot/ch09-env-spire/index.html`。
@@ -55,7 +55,7 @@ godot.cmd --path . -s tests/capture_graybox.gd
 godot.cmd --path . -s tests/capture_graybox.gd -- --mobile
 ```
 
-参考视口分别为 `1280 x 720` 和 `390 x 844`。截图输出到仓库根目录的 `.superpowers/visual-qa/ch09-env-spire`，覆盖普通流程、全部 Boss 阶段、结果页和节点实验室。
+参考视口分别为 `1280 x 720` 和 `390 x 844`。截图输出到仓库根目录的 `.superpowers/visual-qa/ch09-env-spire`，覆盖普通流程、换牌、故障触发与反制、六种题型、正确/错误结果、全部 Boss 阶段、结果页和节点实验室。
 
 Web 导出后，在仓库根目录启动本地预览：
 
@@ -83,7 +83,7 @@ http://127.0.0.1:4179/index.html?nodeLab=1
 
 ## 节点实验室
 
-节点实验室用于单独体验全部普通故障、精英故障、事件、检查点、组件、商店、休整、奖励和 Boss 阶段，不属于课程闯关流程。
+节点实验室用于单独体验全部普通故障、精英故障、事件、检查点、组件、商店、休整、奖励和 Boss 阶段，不属于课程闯关流程。它可以强制载入全部六种题型、正确/错误答案结果，以及每条非 Boss 故障规则的触发路径与反制路径。
 
 本地启动：
 
