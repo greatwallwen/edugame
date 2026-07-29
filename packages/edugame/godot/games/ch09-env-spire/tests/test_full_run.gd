@@ -126,20 +126,25 @@ func _best_card_index() -> int:
 		var score := 10
 		var trust_mode: bool = (str(game.current_encounter.get("tier", "")) == "boss" and game.boss_phase == 1) or str(game.current_node.get("type", "")) == "checkpoint_trust"
 		var trusted_count: int = game.phase_trusted_sources.size() if str(game.current_encounter.get("tier", "")) == "boss" else game.trusted_sources_seen.size()
-		var filter_count: int = game.phase_filters_played if str(game.current_encounter.get("tier", "")) == "boss" else game.filters_played
+		var preparation_count: int = (
+			game.phase_filters_played + game.phase_calibrations_played
+			if str(game.current_encounter.get("tier", "")) == "boss"
+			else game.filters_played
+		)
 		var tier := str(game.current_encounter.get("tier", ""))
 		if _card_advances_required_gate(card):
-			score = 220 if tier == "boss" and game.boss_phase == 2 and tags.has("alarm") else 200
+			score = 220 if tier == "boss" and game.boss_phase == 2 else 200
 		elif ["ordinary", "elite"].has(tier) and _card_fills_missing_evidence(card):
 			score = 170
 		elif trust_mode:
-			if tags.has("filter") and trusted_count >= 2 and filter_count == 0:
+			var is_preparation := tags.has("filter") or tags.has("calibration")
+			if is_preparation and trusted_count >= 2 and preparation_count == 0:
 				score = 150
 			elif _card_can_convert_available_raw(card):
 				score = 130
 			elif raw_total == 0 and stage == "collect":
 				score = 120
-			elif tags.has("filter") and filter_count == 0:
+			elif is_preparation and preparation_count == 0:
 				score = 110
 		elif str(game.current_encounter.get("tier", "")) == "boss":
 			match game.boss_phase:
@@ -147,9 +152,7 @@ func _best_card_index() -> int:
 					score = 120 if stage == "collect" else 60
 				2:
 					var gate_met: bool = game._boss_phase_requirements_met()
-					var fills_report: bool = (tags.has("display") or tags.has("uart")) and !gate_met
-					var fills_control: bool = (tags.has("alarm") or tags.has("scheduler")) and !gate_met
-					if fills_report or fills_control:
+					if !gate_met and _card_adds_distinct_boss_output(card):
 						score = 140
 					elif gate_met:
 						score = 100 + _card_repair_value(card)
@@ -195,10 +198,7 @@ func _reward_choice_id() -> String:
 	if !missing.is_empty():
 		for raw_card in game.reward_choices:
 			var card := raw_card as Dictionary
-			var tags: Array = card.get("tags", [])
-			if missing[0] == "control" and tags.has("scheduler"):
-				return str(card.get("id", ""))
-			if missing[0] != "control" and _card_fills_boss_deck_gap(card, missing[0]):
+			if _card_fills_boss_deck_gap(card, missing[0]):
 				return str(card.get("id", ""))
 		return ""
 	for preferred_reason in ["补链", "反制", "协同"]:
@@ -211,12 +211,16 @@ func _reward_choice_id() -> String:
 
 func _card_fills_boss_deck_gap(card: Dictionary, gap: String) -> bool:
 	var tags: Array = card.get("tags", [])
+	if gap == "output":
+		var existing_outputs: Dictionary = game._deck_output_types()
+		for output_tag in game.BOSS_OUTPUT_TAGS:
+			if tags.has(output_tag) and !existing_outputs.has(output_tag):
+				return true
+		return false
 	var required_tags := {
 		"source": ["smoke", "light", "temp", "humidity"],
 		"trusted": ["adc", "i2c", "calculation", "trusted_data"],
-		"filter": ["filter"],
-		"report": ["display", "uart"],
-		"control": ["alarm", "scheduler"]
+		"filter": ["filter", "calibration"]
 	}.get(gap, []) as Array
 	for raw_tag in required_tags:
 		if tags.has(str(raw_tag)):
@@ -277,14 +281,28 @@ func _card_advances_required_gate(card: Dictionary) -> bool:
 		0:
 			return _card_collects_new_source(card, game.phase_source_coverage)
 		1:
-			if game.phase_filters_played == 0 and tags.has("filter"):
+			if (
+				game.phase_filters_played == 0
+				and game.phase_calibrations_played == 0
+				and (tags.has("filter") or tags.has("calibration"))
+			):
 				return true
 			if game.phase_trusted_sources.size() < 2:
 				return _card_can_convert_new_source(card, game.phase_trusted_sources) or _card_collects_new_source(card, game.phase_trusted_sources)
 		2:
-			var needs_report := !bool(game.phase_output_types.get("display", false)) and !bool(game.phase_output_types.get("uart", false)) and !bool(game.persistent_output_types.get("display", false)) and !bool(game.persistent_output_types.get("uart", false))
-			var needs_control := !bool(game.phase_output_types.get("alarm", false)) and !bool(game.phase_output_types.get("scheduler", false)) and !bool(game.persistent_output_types.get("alarm", false)) and !bool(game.persistent_output_types.get("scheduler", false))
-			return (needs_report and (tags.has("display") or tags.has("uart"))) or (needs_control and (tags.has("alarm") or tags.has("scheduler")))
+			return _card_adds_distinct_boss_output(card)
+	return false
+
+
+func _card_adds_distinct_boss_output(card: Dictionary) -> bool:
+	var tags: Array = card.get("tags", [])
+	for output_tag in game.BOSS_OUTPUT_TAGS:
+		if (
+			tags.has(output_tag)
+			and !bool(game.phase_output_types.get(output_tag, false))
+			and !bool(game.persistent_output_types.get(output_tag, false))
+		):
+			return true
 	return false
 
 

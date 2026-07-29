@@ -11,12 +11,11 @@ const STARTER_CARD_IDS := [
 ]
 const SOURCE_ORDER := ["smoke", "light", "temp", "humidity"]
 const STAGE_ORDER := ["collect", "interface", "process", "output"]
+const BOSS_OUTPUT_TAGS := ["display", "uart", "alarm", "scheduler"]
 const BOSS_STAGE_TAG_REQUIREMENTS := [
 	{"id": "source", "tags": ["smoke", "light", "temp", "humidity"]},
 	{"id": "trusted", "tags": ["adc", "i2c", "calculation", "trusted_data"]},
-	{"id": "filter", "tags": ["filter"]},
-	{"id": "report", "tags": ["display", "uart"]},
-	{"id": "control", "tags": ["alarm", "scheduler"]}
+	{"id": "filter", "tags": ["filter", "calibration"]}
 ]
 const BOSS_DRAW_SEED := 90909
 const RUN_NODE_COUNT := 12
@@ -116,7 +115,9 @@ var encounter_evidence_tags := {}
 var phase_source_coverage := {}
 var phase_trusted_sources := {}
 var phase_filters_played := 0
+var phase_calibrations_played := 0
 var phase_output_types := {}
+var phase_output_uses := {}
 var persistent_output_types := {}
 var repair_penalty := 0
 var i2c_cost_penalty := 0
@@ -189,6 +190,9 @@ var dock_header: HBoxContainer
 var hand_title: Label
 var engineering_chain_strip: HBoxContainer
 var chain_stage_labels := {}
+var chain_current_status: Label
+var chain_next_status: Label
+var chain_reward_status: Label
 var combat_actions: HBoxContainer
 var processing_point_counter: Label
 var encounter_name_label: Label
@@ -609,7 +613,8 @@ func _button_style(background: Color, border: Color) -> StyleBoxFlat:
 
 
 func _skin_button(button: Button, accent: Color = Color("#2f7f8d")) -> void:
-	button.custom_minimum_size = Vector2(120, 44)
+	if button.custom_minimum_size == Vector2.ZERO:
+		button.custom_minimum_size = Vector2(120, 44)
 	button.add_theme_stylebox_override("normal", _button_style(Color("#e6eff1"), accent))
 	button.add_theme_stylebox_override("hover", _button_style(Color("#d5e9ec"), accent.lightened(0.1)))
 	button.add_theme_stylebox_override("pressed", _button_style(Color("#c3dde1"), accent.darkened(0.1)))
@@ -937,6 +942,30 @@ func _build_combat_view() -> void:
 		stage_label.add_theme_color_override("font_color", Color("#52666b"))
 		engineering_chain_strip.add_child(stage_label)
 		chain_stage_labels[stage] = stage_label
+	for status_spec in [
+		{"name": "ChainCurrentStatus", "target": "current"},
+		{"name": "ChainNextStatus", "target": "next"},
+		{"name": "ChainRewardStatus", "target": "reward"}
+	]:
+		var chain_status := Label.new()
+		chain_status.name = str(status_spec.get("name", "ChainStatus"))
+		chain_status.add_theme_font_size_override("font_size", 11)
+		chain_status.add_theme_color_override("font_color", Color("#355158"))
+		chain_status.clip_text = true
+		chain_status.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		chain_status.tooltip_text = {
+			"current": "Current chain stage",
+			"next": "Next chain stage",
+			"reward": "Pending threshold reward"
+		}.get(str(status_spec.get("target", "")), "Chain status")
+		engineering_chain_strip.add_child(chain_status)
+		match str(status_spec.get("target", "")):
+			"current":
+				chain_current_status = chain_status
+			"next":
+				chain_next_status = chain_status
+			"reward":
+				chain_reward_status = chain_status
 	var dock_spacer := Control.new()
 	dock_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dock_header.add_child(dock_spacer)
@@ -982,6 +1011,7 @@ func _build_combat_view() -> void:
 	end_turn_button = Button.new()
 	end_turn_button.name = "EndTurnButton"
 	end_turn_button.text = "结束回合"
+	end_turn_button.tooltip_text = "结束当前回合"
 	_skin_button(end_turn_button, Color("#b16a2c"))
 	end_turn_button.custom_minimum_size = Vector2(104, 44)
 	end_turn_button.pressed.connect(func() -> void:
@@ -1276,7 +1306,21 @@ func _apply_responsive_layout() -> void:
 	if hand_dock != null:
 		hand_dock.custom_minimum_size.y = 274.0 if compact else 176.0
 	if hand_title != null:
-		hand_title.visible = !tutorial_active
+		hand_title.visible = !tutorial_active and !compact
+	if engineering_chain_strip != null:
+		engineering_chain_strip.add_theme_constant_override("separation", 2 if compact else 4)
+		for stage in STAGE_ORDER:
+			var responsive_stage_label := chain_stage_labels.get(stage, null) as Label
+			if responsive_stage_label != null:
+				responsive_stage_label.custom_minimum_size.x = 20.0 if compact else 24.0
+	var chain_status_nodes := [chain_current_status, chain_next_status, chain_reward_status]
+	var chain_status_widths := [52.0, 64.0, 88.0] if compact else [64.0, 72.0, 100.0]
+	for status_index in range(chain_status_nodes.size()):
+		var chain_status := chain_status_nodes[status_index] as Label
+		if chain_status != null:
+			chain_status.visible = !tutorial_active
+			chain_status.custom_minimum_size.x = chain_status_widths[status_index]
+			chain_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var tutorial_completion_visible := tutorial_active and tutorial_step == TutorialStep.COMPLETE
 	var tutorial_coach_height := (208.0 if compact else 148.0) if tutorial_completion_visible else (108.0 if compact else 84.0)
 	if tutorial_combat_spacer != null:
@@ -1303,6 +1347,7 @@ func _apply_responsive_layout() -> void:
 			reroute_button.custom_minimum_size.x = 58.0 if compact_actions else 74.0
 			reroute_cancel_button.custom_minimum_size.x = 58.0 if compact_actions else 74.0
 			end_turn_button.custom_minimum_size.x = 96.0 if compact_actions else 104.0
+			end_turn_button.text = "结束" if compact_actions else "结束回合"
 			for action_button in [reroute_button, reroute_cancel_button, end_turn_button]:
 				action_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER if compact_actions else Control.SIZE_FILL
 		combat_actions.visible = compact_actions
@@ -1575,6 +1620,14 @@ func _render_combat() -> void:
 	]
 	status_label.text = "处理点 %d  ·  防护 %d  ·  连携 %d  ·  诊断 %d  ·  报警 %d" % [processing_points, block, chain_count, diagnosis, alarm_markers]
 	processing_point_counter.text = "处理点 %d" % processing_points
+	var next_chain_stage := _next_chain_stage()
+	var next_chain_preview := _chain_preview_for_stage(next_chain_stage)
+	if chain_current_status != null:
+		chain_current_status.text = "C:%s" % (last_stage if !last_stage.is_empty() else "none")
+	if chain_next_status != null:
+		chain_next_status.text = "N:%s" % next_chain_stage
+	if chain_reward_status != null:
+		chain_reward_status.text = "R:%s" % str(next_chain_preview.get("pendingReward", "none"))
 	for stage in STAGE_ORDER:
 		var stage_label := chain_stage_labels.get(stage, null) as Label
 		if stage_label == null:
@@ -1598,6 +1651,7 @@ func _render_combat() -> void:
 	for index in range(hand.size()):
 		var card := hand[index] as Dictionary
 		var button := Button.new()
+		button.name = "HandCard_%s_%d" % [str(card.get("id", "card")), index]
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		if bool(card.get("negative", false)):
 			button.text = "%s\n\n负面状态\n%s" % [card.get("name", "状态"), _negative_effect_text(card)]
@@ -1605,7 +1659,16 @@ func _render_combat() -> void:
 			_skin_button(button, Color("#9b3f3b"))
 		else:
 			var cost := _card_cost_preview(card)
-			button.text = "[%d]\n%s\n%s\n\n%s" % [cost, card.get("name", "卡牌"), card.get("type", ""), card.get("upgradedEffectText", "") if bool(card.get("upgraded", false)) else card.get("effectText", "")]
+			var chain_preview := _chain_preview_for_stage(str(card.get("stage", "")))
+			button.text = "[%d] %s · %s\n%s\nChain %s · pending %s" % [
+				cost,
+				card.get("name", "卡牌"),
+				card.get("type", ""),
+				card.get("upgradedEffectText", "") if bool(card.get("upgraded", false)) else card.get("effectText", ""),
+				chain_preview.get("decision", "preserves"),
+				chain_preview.get("pendingReward", "none")
+			]
+			button.add_theme_font_size_override("font_size", 13)
 			button.tooltip_text = str(card.get("knowledgePoint", ""))
 			button.disabled = selection_open or (!reroute_mode and (processing_points < cost or !_card_requirements_met(card) or (tutorial_active and !_tutorial_card_allowed(str(card.get("id", ""))))))
 			_skin_button(button, _card_accent(card))
@@ -1754,11 +1817,10 @@ func _gate_status_text(tier: String) -> String:
 			0:
 				return "验收证据  ·  来源覆盖 %d / 2" % phase_source_coverage.size()
 			1:
-				return "验收证据  ·  可信来源 %d / 2  ·  滤波 %d / 1" % [phase_trusted_sources.size(), mini(phase_filters_played, 1)]
+				var preparation_count := 1 if phase_filters_played > 0 or phase_calibrations_played > 0 else 0
+				return "验收证据  ·  可信来源 %d / 2  ·  filter/calibration %d / 1" % [phase_trusted_sources.size(), preparation_count]
 			2:
-				var has_report := bool(phase_output_types.get("display", false)) or bool(phase_output_types.get("uart", false)) or bool(persistent_output_types.get("display", false)) or bool(persistent_output_types.get("uart", false))
-				var has_control := bool(phase_output_types.get("alarm", false)) or bool(phase_output_types.get("scheduler", false)) or bool(persistent_output_types.get("alarm", false)) or bool(persistent_output_types.get("scheduler", false))
-				return "验收证据  ·  显示/上报 %d / 1  ·  报警/调度 %d / 1" % [1 if has_report else 0, 1 if has_control else 0]
+				return "验收证据  ·  distinct outputs %d / 2" % _boss_distinct_output_count()
 	if tier == "checkpoint":
 		if str(current_node.get("type", "")) == "checkpoint_sensor":
 			return "检查目标  ·  完成来源链路 %d / 2" % trusted_sources_seen.size()
@@ -1943,6 +2005,7 @@ func _render_question_event() -> void:
 	if event_answer_locked:
 		_render_question_consequence()
 	var can_continue := event_answer_locked and bool(event_result.get("resolved", false)) and !bool(event_result.get("rewardPending", false)) and pending_card_selection.is_empty()
+	question_continue.text = "无奖励，继续路线" if bool(event_result.get("rewardFallback", false)) else "继续路线"
 	question_continue.visible = can_continue
 	question_continue.disabled = !can_continue
 
@@ -2080,11 +2143,15 @@ func _render_question_waveform() -> void:
 
 func _render_question_consequence() -> void:
 	var result_label := Label.new()
+	result_label.name = "QuestionConsequenceStatus"
 	result_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if bool(event_result.get("dataError", false)):
 		result_label.text = "未应用奖励或惩罚。"
 	elif !bool(event_result.get("correct", false)):
 		result_label.text = "回答错误 · %s" % _event_effect_text(current_event.get("penalty", {}) as Dictionary)
+	elif bool(event_result.get("rewardFallback", false)):
+		result_label.name = "QuestionRewardFallback"
+		result_label.text = "回答正确 · 当前无可用奖励，可继续路线"
 	elif bool(event_result.get("rewardPending", false)):
 		result_label.text = "回答正确 · 选择一项奖励"
 	else:
@@ -2093,11 +2160,15 @@ func _render_question_consequence() -> void:
 	if !bool(event_result.get("rewardPending", false)):
 		return
 	var rewards: Array = event_result.get("rewardChoices", []) as Array
+	var available_indices: Array = event_result.get("availableRewardIndices", []) as Array
 	for index in range(rewards.size()):
 		var reward := rewards[index] as Dictionary
 		var reward_button := Button.new()
 		reward_button.name = "QuestionReward_%s" % str(reward.get("id", index))
 		reward_button.text = str(reward.get("label", "选择奖励"))
+		reward_button.disabled = !available_indices.has(index)
+		if reward_button.disabled:
+			reward_button.text += "（当前不可用）"
 		reward_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_skin_button(reward_button, Color("#517943"))
 		_size_choice_button(reward_button, 52)
@@ -2339,6 +2410,7 @@ func _reset_combat_resources() -> void:
 	fault_rule_state = {
 		"cardTagCounts": {},
 		"stageCounts": {},
+		"triggerMatches": 0,
 		"suppressed": false,
 		"triggered": false,
 		"nextEnergyPenalty": 0
@@ -2520,13 +2592,12 @@ func _resolve_fault_rule_after_card(card: Dictionary) -> void:
 	if !stage.is_empty():
 		stage_counts[stage] = int(stage_counts.get(stage, 0)) + 1
 	fault_rule_state["stageCounts"] = stage_counts
+	if _fault_rule_card_matches_trigger(rule, card):
+		fault_rule_state["triggerMatches"] = int(fault_rule_state.get("triggerMatches", 0)) + 1
 	if bool(fault_rule_state.get("suppressed", false)) or bool(fault_rule_state.get("triggered", false)):
 		return
 	var threshold := int(rule.get("triggerCount", 1))
-	var trigger_tag := str(rule.get("triggerTag", ""))
-	var trigger_stage := str(rule.get("triggerStage", ""))
-	var trigger_count := int(tag_counts.get(trigger_tag, 0)) if !trigger_tag.is_empty() else int(stage_counts.get(trigger_stage, 0))
-	if trigger_count < threshold:
+	if int(fault_rule_state.get("triggerMatches", 0)) < threshold:
 		return
 	_resolve_fault_rule(rule)
 
@@ -2562,16 +2633,22 @@ func _fault_rule_counter_for_card(rule: Dictionary, card: Dictionary) -> String:
 func _fault_rule_will_trigger(rule: Dictionary, card: Dictionary) -> bool:
 	if str(rule.get("timing", "")) != "after_card":
 		return false
+	if !_fault_rule_card_matches_trigger(rule, card):
+		return false
 	var threshold := int(rule.get("triggerCount", 1))
+	return int(fault_rule_state.get("triggerMatches", 0)) + 1 >= threshold
+
+
+func _fault_rule_card_matches_trigger(rule: Dictionary, card: Dictionary) -> bool:
 	var trigger_tag := str(rule.get("triggerTag", ""))
-	if !trigger_tag.is_empty() and (card.get("tags", []) as Array).has(trigger_tag):
-		var tag_counts := fault_rule_state.get("cardTagCounts", {}) as Dictionary
-		return int(tag_counts.get(trigger_tag, 0)) + 1 >= threshold
 	var trigger_stage := str(rule.get("triggerStage", ""))
-	if !trigger_stage.is_empty() and str(card.get("stage", "")) == trigger_stage:
-		var stage_counts := fault_rule_state.get("stageCounts", {}) as Dictionary
-		return int(stage_counts.get(trigger_stage, 0)) + 1 >= threshold
-	return false
+	if trigger_tag.is_empty() and trigger_stage.is_empty():
+		return false
+	if !trigger_tag.is_empty() and !(card.get("tags", []) as Array).has(trigger_tag):
+		return false
+	if !trigger_stage.is_empty() and str(card.get("stage", "")) != trigger_stage:
+		return false
+	return true
 
 
 func _fault_rule_behavior_counter(rule: Dictionary) -> String:
@@ -2752,7 +2829,9 @@ func _reset_boss_phase_metrics() -> void:
 	phase_source_coverage.clear()
 	phase_trusted_sources.clear()
 	phase_filters_played = 0
+	phase_calibrations_played = 0
 	phase_output_types.clear()
+	phase_output_uses.clear()
 
 
 func _reset_turn_state(first_turn: bool = false) -> void:
@@ -2775,6 +2854,7 @@ func _reset_turn_state(first_turn: bool = false) -> void:
 	pending_i2c_count = 0
 	fault_rule_state["cardTagCounts"] = {}
 	fault_rule_state["stageCounts"] = {}
+	fault_rule_state["triggerMatches"] = 0
 	fault_rule_state["suppressed"] = false
 	fault_rule_state["triggered"] = false
 	if !first_turn:
@@ -2786,7 +2866,7 @@ func _reset_turn_state(first_turn: bool = false) -> void:
 
 
 func play_card(hand_index: int) -> bool:
-	if state != RunState.COMBAT or !pending_card_selection.is_empty() or hand_index < 0 or hand_index >= hand.size():
+	if state != RunState.COMBAT or reroute_mode or !pending_card_selection.is_empty() or hand_index < 0 or hand_index >= hand.size():
 		return false
 	var card := hand[hand_index] as Dictionary
 	if bool(card.get("negative", false)):
@@ -2822,6 +2902,8 @@ func play_card(hand_index: int) -> bool:
 		filters_played += 1
 		if str(current_encounter.get("tier", "")) == "boss":
 			phase_filters_played += 1
+	if tags.has("calibration") and str(current_encounter.get("tier", "")) == "boss":
+		phase_calibrations_played += 1
 	var repair_before := repair_progress
 	var effects: Array = card.get("upgradeEffects", []) if bool(card.get("upgraded", false)) else card.get("effects", [])
 	_apply_card_effects(effects, card)
@@ -2850,7 +2932,11 @@ func _finalize_played_card(finalizer: Dictionary) -> void:
 		exhaust_pile.append(card)
 	else:
 		discard_pile.append(card)
+	_record_boss_output_use(card)
 	cards_played_this_turn += 1
+	if stability <= 0:
+		_handle_defeat()
+		return
 	if repair_progress >= repair_target:
 		if tutorial_active:
 			pass
@@ -2877,31 +2963,35 @@ func cancel_reroute() -> bool:
 
 
 func reroute_card(hand_index: int) -> bool:
-	if !reroute_mode or hand_index < 0 or hand_index >= hand.size():
+	if !_reroute_action_allowed() or hand_index < 0 or hand_index >= hand.size():
 		return false
 	var card := hand[hand_index] as Dictionary
 	if bool(card.get("negative", false)):
 		return false
 	hand.remove_at(hand_index)
-	discard_pile.append(card)
-	if draw_pile.is_empty():
-		discard_pile.erase(card)
-		hand.insert(hand_index, card)
-		reroute_mode = false
-		_render_state()
-		return false
 	var before_draw := hand.size()
 	_draw_cards(1)
 	if hand.size() == before_draw:
-		discard_pile.erase(card)
 		hand.insert(hand_index, card)
 		reroute_mode = false
 		_render_state()
 		return false
+	discard_pile.append(card)
 	reroute_available = false
 	reroute_mode = false
 	_render_state()
 	return true
+
+
+func _reroute_action_allowed() -> bool:
+	return (
+		state == RunState.COMBAT
+		and !tutorial_active
+		and pending_card_selection.is_empty()
+		and reroute_available
+		and cards_played_this_turn == 0
+		and reroute_mode
+	)
 
 
 func _consume_card_discounts(card: Dictionary) -> void:
@@ -2960,12 +3050,48 @@ func _apply_chain_threshold_rewards() -> void:
 func _chain_preview_for_stage(stage: String) -> Dictionary:
 	var stage_index := STAGE_ORDER.find(stage)
 	var current_index := STAGE_ORDER.find(last_stage)
+	var decision := "preserves"
+	if stage_index >= 0:
+		if current_index < 0:
+			decision = "advances" if stage_index == 0 else "breaks"
+		elif stage == last_stage:
+			decision = "preserves"
+		elif stage_index == current_index + 1:
+			decision = "advances"
+		else:
+			decision = "breaks"
+	var predicted_chain := chain_count
+	if decision == "advances":
+		predicted_chain = 0 if stage_index == 0 else mini(chain_count + 1, 3)
+	elif decision == "breaks":
+		predicted_chain = 0
 	return {
 		"stage": stage,
 		"current": stage == last_stage,
 		"completed": stage_index >= 0 and current_index >= stage_index and chain_count == current_index,
-		"next": stage_index >= 0 and stage_index == current_index + 1
+		"next": stage_index >= 0 and stage_index == current_index + 1,
+		"decision": decision,
+		"pendingReward": _pending_chain_reward(predicted_chain, decision)
 	}
+
+
+func _next_chain_stage() -> String:
+	var current_index := STAGE_ORDER.find(last_stage)
+	if current_index < 0 or current_index >= STAGE_ORDER.size() - 1:
+		return STAGE_ORDER[0]
+	return STAGE_ORDER[current_index + 1]
+
+
+func _pending_chain_reward(predicted_chain: int, decision: String) -> String:
+	if decision != "advances":
+		return "none"
+	if predicted_chain >= 1 and !bool(chain_rewards_claimed.get("two", false)):
+		return "+3 block"
+	if predicted_chain >= 2 and !bool(chain_rewards_claimed.get("three", false)):
+		return "+1 processing point"
+	if predicted_chain >= 3 and !bool(chain_rewards_claimed.get("four", false)):
+		return "+8 repair +1 diagnosis"
+	return "none"
 
 
 func _apply_card_effects(effects: Array, card: Dictionary, trusted_spent: int = 0) -> int:
@@ -3314,7 +3440,26 @@ func _add_repair(amount: int, card: Dictionary) -> void:
 		adjusted += 2
 	if str(current_encounter.get("tier", "")) == "boss":
 		adjusted = adjusted * 2 if boss_phase < 2 else adjusted + int(ceil(adjusted * 0.5))
+		if boss_phase == 2 and _boss_card_repeats_output(card):
+			adjusted = floori(float(adjusted) * 0.6)
 	repair_progress = mini(repair_target, repair_progress + adjusted)
+
+
+func _boss_card_repeats_output(card: Dictionary) -> bool:
+	for raw_tag in card.get("tags", []) as Array:
+		var tag := str(raw_tag)
+		if BOSS_OUTPUT_TAGS.has(tag) and int(phase_output_uses.get(tag, 0)) > 0:
+			return true
+	return false
+
+
+func _record_boss_output_use(card: Dictionary) -> void:
+	if str(current_encounter.get("tier", "")) != "boss" or boss_phase != 2:
+		return
+	for raw_tag in card.get("tags", []) as Array:
+		var tag := str(raw_tag)
+		if BOSS_OUTPUT_TAGS.has(tag):
+			phase_output_uses[tag] = int(phase_output_uses.get(tag, 0)) + 1
 
 
 func _arrays_intersect(left: Array, right: Array) -> bool:
@@ -3510,14 +3655,7 @@ func _finish_encounter() -> void:
 			_apply_boss_phase()
 			repair_progress = 0
 			intent_index = 0
-			block = 0
-			processing_points = mini(processing_points + 1, 3)
-			chain_count = 0
-			last_stage = ""
-			for raw_card in hand:
-				discard_pile.append(raw_card)
-			hand.clear()
-			_draw_cards(5)
+			_reset_boss_phase_turn_state()
 			_log("验收进入阶段 %d。" % (boss_phase + 1))
 			return
 		_finish_run(true)
@@ -3535,18 +3673,44 @@ func _finish_encounter() -> void:
 	_open_reward()
 
 
+func _reset_boss_phase_turn_state() -> void:
+	for raw_card in hand:
+		discard_pile.append(raw_card)
+	hand.clear()
+	for raw_card in retained_cards:
+		discard_pile.append(raw_card)
+	retained_cards.clear()
+	retain_data = false
+	next_turn_energy = 0
+	repair_penalty = 0
+	i2c_cost_penalty = 0
+	pending_i2c_count = 0
+	for temporary_power in ["i2c_discount", "process_discount", "interface_discount"]:
+		powers.erase(temporary_power)
+	fault_rule_state["nextEnergyPenalty"] = 0
+	_reset_turn_state(true)
+	processing_points = 3
+	_draw_cards(5)
+
+
 func _boss_phase_requirements_met() -> bool:
 	match boss_phase:
 		0:
 			return phase_source_coverage.size() >= 2
 		1:
-			return phase_trusted_sources.size() >= 2 and phase_filters_played > 0
+			return phase_trusted_sources.size() >= 2 and (phase_filters_played > 0 or phase_calibrations_played > 0)
 		2:
-			var has_report := bool(phase_output_types.get("display", false)) or bool(phase_output_types.get("uart", false)) or bool(persistent_output_types.get("display", false)) or bool(persistent_output_types.get("uart", false))
-			var has_control := bool(phase_output_types.get("alarm", false)) or bool(phase_output_types.get("scheduler", false)) or bool(persistent_output_types.get("alarm", false)) or bool(persistent_output_types.get("scheduler", false))
-			return has_report and has_control
+			return _boss_distinct_output_count() >= 2
 	return false
 	_log("故障修复完成。")
+
+
+func _boss_distinct_output_count() -> int:
+	var distinct_outputs := {}
+	for output_tag in BOSS_OUTPUT_TAGS:
+		if bool(phase_output_types.get(output_tag, false)) or bool(persistent_output_types.get(output_tag, false)):
+			distinct_outputs[output_tag] = true
+	return distinct_outputs.size()
 
 
 func _finish_checkpoint(repaired: bool) -> void:
@@ -3644,10 +3808,10 @@ func _pick_reward_card(candidates: Array, full_pool: Array, used: Dictionary, re
 
 
 func _card_has_draw_effect(card: Dictionary) -> bool:
-	for effects in [card.get("effects", []), card.get("upgradeEffects", [])]:
-		for raw_effect in effects:
-			if ["draw", "draw_discard", "select_draw", "draw_if_removed"].has(str((raw_effect as Dictionary).get("op", ""))):
-				return true
+	var effects: Array = card.get("upgradeEffects", []) if bool(card.get("upgraded", false)) else card.get("effects", [])
+	for raw_effect in effects:
+		if ["draw", "draw_discard", "select_draw", "draw_if_removed"].has(str((raw_effect as Dictionary).get("op", ""))):
+			return true
 	return false
 
 
@@ -3776,15 +3940,25 @@ func submit_event_answer(answer: Variant) -> bool:
 		return false
 	var correct := _event_answer_matches(answer, current_event.get("correctAnswer"))
 	var recorded_answer = answer.duplicate(true) if answer is Array or answer is Dictionary else answer
+	var reward_choices: Array = (current_event.get("rewardChoices", []) as Array).duplicate(true)
+	var available_reward_indices: Array[int] = []
+	if correct:
+		for index in range(reward_choices.size()):
+			var reward := reward_choices[index] as Dictionary
+			if _event_consequence_available(reward.get("effect", {}) as Dictionary):
+				available_reward_indices.append(index)
+	var reward_fallback := correct and available_reward_indices.is_empty()
 	event_answer_locked = true
 	event_result = {
 		"answer": recorded_answer,
 		"correctAnswer": current_event.get("correctAnswer"),
 		"correct": correct,
 		"explanation": str(current_event.get("explanation", "")),
-		"rewardChoices": (current_event.get("rewardChoices", []) as Array).duplicate(true),
-		"rewardPending": correct,
-		"resolved": false
+		"rewardChoices": reward_choices,
+		"availableRewardIndices": available_reward_indices,
+		"rewardPending": correct and !reward_fallback,
+		"rewardFallback": reward_fallback,
+		"resolved": reward_fallback
 	}
 	if !correct:
 		event_result["consequenceApplied"] = _apply_event_consequence(current_event.get("penalty", {}) as Dictionary)
@@ -3802,6 +3976,8 @@ func choose_event_reward(index: int) -> bool:
 		return false
 	var reward := rewards[index] as Dictionary
 	var effect := reward.get("effect", {}) as Dictionary
+	if !_event_consequence_available(effect):
+		return false
 	var applied := _apply_event_consequence(effect)
 	if !applied and pending_card_selection.is_empty():
 		return false
@@ -3942,7 +4118,36 @@ func _apply_event_consequence(effect: Dictionary) -> bool:
 	return true
 
 
+func _event_consequence_available(effect: Dictionary) -> bool:
+	match str(effect.get("op", "")):
+		"budget", "heal":
+			return true
+		"add_negative":
+			return negative_defs.has(str(effect.get("cardId", "")))
+		"reveal_nodes":
+			return !(effect.get("nodes", []) as Array).is_empty()
+		"choose_card":
+			return !_question_card_options(effect).is_empty()
+		"add_upgraded_card":
+			return card_defs.has(str(effect.get("cardId", "")))
+		"upgrade_card":
+			return !_question_deck_options(effect, "upgrade_card").is_empty()
+		"remove_card":
+			return !_question_deck_options(effect, "remove_card").is_empty()
+		"choose_component":
+			return !_question_component_options(effect).is_empty()
+	return false
+
+
 func _open_question_card_selection(effect: Dictionary, action: String) -> bool:
+	var options := _question_card_options(effect)
+	if options.is_empty():
+		return false
+	_open_card_selection("event_card", options, [], "event", {"action": action, "eventFlow": "question_reward"})
+	return !pending_card_selection.is_empty()
+
+
+func _question_card_options(effect: Dictionary) -> Array:
 	var card_ids: Array[String] = []
 	for raw_id in effect.get("cardIds", []) as Array:
 		card_ids.append(str(raw_id))
@@ -3967,13 +4172,18 @@ func _open_question_card_selection(effect: Dictionary, action: String) -> bool:
 		if !expected_tag.is_empty() and !(card.get("tags", []) as Array).has(expected_tag):
 			continue
 		options.append(_card_copy(card_id))
+	return options
+
+
+func _open_question_deck_selection(effect: Dictionary, action: String) -> bool:
+	var options := _question_deck_options(effect, action)
 	if options.is_empty():
 		return false
 	_open_card_selection("event_card", options, [], "event", {"action": action, "eventFlow": "question_reward"})
 	return !pending_card_selection.is_empty()
 
 
-func _open_question_deck_selection(effect: Dictionary, action: String) -> bool:
+func _question_deck_options(effect: Dictionary, action: String) -> Array:
 	var expected_rarity := str(effect.get("rarity", ""))
 	var expected_type := str(effect.get("type", ""))
 	var options: Array = []
@@ -3990,13 +4200,18 @@ func _open_question_deck_selection(effect: Dictionary, action: String) -> bool:
 		var option := deck_card.duplicate(true)
 		option["_deckIndex"] = index
 		options.append(option)
-	if options.is_empty():
-		return false
-	_open_card_selection("event_card", options, [], "event", {"action": action, "eventFlow": "question_reward"})
-	return !pending_card_selection.is_empty()
+	return options
 
 
 func _open_question_component_selection(effect: Dictionary) -> bool:
+	var options := _question_component_options(effect)
+	if options.is_empty():
+		return false
+	_open_card_selection("event_component", options, [], "event", {"action": "add_component", "eventFlow": "question_reward"})
+	return !pending_card_selection.is_empty()
+
+
+func _question_component_options(effect: Dictionary) -> Array:
 	var component_ids: Array[String] = []
 	for raw_id in effect.get("componentIds", []) as Array:
 		component_ids.append(str(raw_id))
@@ -4010,10 +4225,7 @@ func _open_question_component_selection(effect: Dictionary) -> bool:
 	for component_id in component_ids:
 		if relic_defs.has(component_id) and !relics.has(component_id):
 			options.append((relic_defs[component_id] as Dictionary).duplicate(true))
-	if options.is_empty():
-		return false
-	_open_card_selection("event_component", options, [], "event", {"action": "add_component", "eventFlow": "question_reward"})
-	return !pending_card_selection.is_empty()
+	return options
 
 
 func _apply_run_effect(effect: Dictionary) -> void:
@@ -4120,12 +4332,19 @@ func _open_shop() -> void:
 
 
 func _boss_gap_card_id() -> String:
-	var has_report := _deck_has_any_tag(["display", "uart"])
-	var has_control := _deck_has_any_tag(["alarm", "scheduler"])
-	if !has_report:
-		return "lcd_display"
-	if !has_control:
-		return "time_slice"
+	var existing_outputs := _deck_output_types()
+	if existing_outputs.size() >= 2:
+		return ""
+	for output_tag in BOSS_OUTPUT_TAGS:
+		if existing_outputs.has(output_tag):
+			continue
+		for raw_id in card_defs.keys():
+			var card := card_defs[str(raw_id)] as Dictionary
+			if (
+				["common", "uncommon"].has(str(card.get("rarity", "")))
+				and (card.get("tags", []) as Array).has(output_tag)
+			):
+				return str(raw_id)
 	return ""
 
 
@@ -4135,6 +4354,8 @@ func _missing_boss_stage_tags() -> Array[String]:
 		var requirement := raw_requirement as Dictionary
 		if !_deck_has_any_tag(requirement.get("tags", []) as Array):
 			missing.append(str(requirement.get("id", "")))
+	if _deck_output_types().size() < 2:
+		missing.append("output")
 	return missing
 
 
@@ -4148,6 +4369,11 @@ func _guaranteed_boss_shop_card_id() -> String:
 		if str(requirement.get("id", "")) == missing[0]:
 			required_tags = requirement.get("tags", []) as Array
 			break
+	if missing[0] == "output":
+		var existing_outputs := _deck_output_types()
+		for output_tag in BOSS_OUTPUT_TAGS:
+			if !existing_outputs.has(output_tag):
+				required_tags.append(output_tag)
 
 	var best_id := ""
 	var best_price := 0
@@ -4169,6 +4395,16 @@ func _guaranteed_boss_shop_card_id() -> String:
 			best_id = card_id
 			best_price = price
 	return best_id
+
+
+func _deck_output_types() -> Dictionary:
+	var result := {}
+	for raw_card in deck:
+		var tags: Array = (raw_card as Dictionary).get("tags", [])
+		for output_tag in BOSS_OUTPUT_TAGS:
+			if tags.has(output_tag):
+				result[output_tag] = true
+	return result
 
 
 func _deck_has_any_tag(required_tags: Array) -> bool:

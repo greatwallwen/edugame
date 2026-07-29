@@ -20,6 +20,11 @@ func _run() -> void:
 
 	_assert(game.deck.size() == 12, "starter deck should contain twelve cards")
 	var starter_ids: Array = game.get_script().get_script_constant_map().get("STARTER_CARD_IDS", [])
+	_assert(starter_ids == [
+		"mq2_sample", "mq2_sample", "bh1750_read", "hdc1080_read",
+		"adc_convert", "adc_convert", "i2c_transaction", "i2c_transaction",
+		"unit_convert", "sliding_average", "sliding_average", "uart_log"
+	], "starter counterplay should preserve the approved twelve-card composition and counts")
 	_assert(starter_ids.count("unit_convert") == 1, "starter deck should keep one unit conversion")
 	_assert(starter_ids.count("sliding_average") == 2, "starter deck should contain two filters")
 	_assert(game.hand.size() == 5, "reset should draw five cards")
@@ -179,6 +184,7 @@ func _run() -> void:
 	_assert(!game.reroute_card(0), "reroute should fail when no replacement can be drawn")
 	_assert(game.hand.size() == 1 and str((game.hand[0] as Dictionary).get("id", "")) == "mq2_sample", "empty-pile reroute should return the selected card to hand")
 	_assert(game.reroute_available, "empty-pile reroute should remain available")
+	_assert_reroute_public_api_contract(game)
 
 	game._start_encounter("warehouse_acceptance", "boss")
 	game.boss_phase = 2
@@ -226,10 +232,72 @@ func _run() -> void:
 	_assert_card_resolution_effects(game)
 	_assert_chain_draw_state_template(game)
 	_assert_reward_composition(game)
+	_assert_lethal_deferred_effect_arbitration(game)
 
 	game.queue_free()
 	await process_frame
 	_finish()
+
+
+func _assert_reroute_public_api_contract(game) -> void:
+	game._start_encounter("mq2_warmup", "ordinary")
+	game._reset_turn_state(true)
+	game.hand = [game._card_copy("mq2_sample")]
+	game.draw_pile = [game._card_copy("bh1750_read")]
+	game.discard_pile.clear()
+	game.processing_points = 3
+	_assert(game.begin_reroute(), "reroute mode should open for the play-card guard")
+	_assert(!game.play_card(0), "play_card should reject direct calls while reroute mode is active")
+	_assert(game.hand.size() == 1 and game.processing_points == 3, "rejected reroute-mode play should not mutate the hand or points")
+
+	var invalid_cases := [
+		{"name": "non-combat state", "state": game.RunState.MAP},
+		{"name": "tutorial combat", "tutorial": true},
+		{"name": "pending selection", "pending": {"kind": "retain_one"}},
+		{"name": "spent availability", "available": false},
+		{"name": "after a card play", "cards_played": 1},
+		{"name": "closed reroute mode", "mode": false},
+	]
+	for raw_case in invalid_cases:
+		var invalid_case := raw_case as Dictionary
+		game.state = game.RunState.COMBAT
+		game.tutorial_active = false
+		game.pending_card_selection.clear()
+		game.reroute_available = true
+		game.cards_played_this_turn = 0
+		game.reroute_mode = true
+		game.hand = [game._card_copy("mq2_sample")]
+		game.draw_pile = [game._card_copy("bh1750_read")]
+		game.discard_pile.clear()
+		if invalid_case.has("state"):
+			game.state = int(invalid_case.get("state"))
+		if invalid_case.has("tutorial"):
+			game.tutorial_active = bool(invalid_case.get("tutorial"))
+		if invalid_case.has("pending"):
+			game.pending_card_selection = (invalid_case.get("pending") as Dictionary).duplicate(true)
+		if invalid_case.has("available"):
+			game.reroute_available = bool(invalid_case.get("available"))
+		if invalid_case.has("cards_played"):
+			game.cards_played_this_turn = int(invalid_case.get("cards_played"))
+		if invalid_case.has("mode"):
+			game.reroute_mode = bool(invalid_case.get("mode"))
+		_assert(!game.reroute_card(0), "reroute_card should reject %s" % str(invalid_case.get("name", "invalid state")))
+		_assert(game.hand.size() == 1 and str((game.hand[0] as Dictionary).get("id", "")) == "mq2_sample", "rejected %s reroute should preserve the selected card" % str(invalid_case.get("name", "invalid state")))
+		_assert(game.draw_pile.size() == 1 and str((game.draw_pile[0] as Dictionary).get("id", "")) == "bh1750_read", "rejected %s reroute should preserve draw state" % str(invalid_case.get("name", "invalid state")))
+
+	game.state = game.RunState.COMBAT
+	game.tutorial_active = false
+	game.pending_card_selection.clear()
+	game.reroute_available = true
+	game.cards_played_this_turn = 0
+	game.reroute_mode = true
+	game.hand = [game._card_copy("mq2_sample")]
+	game.draw_pile.clear()
+	game.discard_pile = [game._card_copy("bh1750_read")]
+	_assert(game.reroute_card(0), "reroute should refill an empty draw pile from discard")
+	_assert(game.hand.size() == 1 and str((game.hand[0] as Dictionary).get("id", "")) == "bh1750_read", "discard refill should draw a distinct replacement")
+	_assert(game.discard_pile.size() == 1 and str((game.discard_pile[0] as Dictionary).get("id", "")) == "mq2_sample", "selected reroute card should enter discard only after replacement selection")
+	_assert(!game.reroute_available and !game.reroute_mode, "successful discard refill should consume reroute")
 
 
 func _assert_card_selection_effects(game) -> void:
@@ -513,6 +581,16 @@ func _assert_chain_draw_state_template(game) -> void:
 
 
 func _assert_reward_composition(game) -> void:
+	var future_draw_card := {
+		"id": "future_draw_fixture",
+		"upgraded": false,
+		"effects": [{"op": "repair", "amount": 1}],
+		"upgradeEffects": [{"op": "draw", "amount": 1}]
+	}
+	_assert(!game._card_has_draw_effect(future_draw_card), "reward classification should ignore inactive upgrade effects on an unupgraded copy")
+	future_draw_card["upgraded"] = true
+	_assert(game._card_has_draw_effect(future_draw_card), "reward classification should inspect upgrade effects on an upgraded copy")
+
 	game._reset_run()
 	game._start_encounter("mq2_warmup", "ordinary")
 	game.rng.seed = 12345
@@ -527,6 +605,45 @@ func _assert_reward_composition(game) -> void:
 	_assert(reasons.has("协同"), "reward should include current-deck synergy")
 	_assert(reasons.has("补链"), "reward should include a missing-chain card")
 	_assert(reasons.has("反制"), "reward should include defense, draw, or fault counterplay")
+
+
+func _assert_lethal_deferred_effect_arbitration(game) -> void:
+	game._reset_run()
+	game.reward_choices.clear()
+	game._start_encounter("i2c_congestion", "elite")
+	game.stability = 6
+	game.block = 0
+	game.repair_target = 0
+	game.hand = [game._card_copy("i2c_transaction"), game._card_copy("i2c_register_read")]
+	game.raw_data["light"] = 1
+	game.processing_points = 3
+	_assert(game.play_card(0), "lethal elite setup should play the first I2C card")
+	_assert(game.play_card(0), "lethal elite setup should play the triggering I2C card")
+	_assert(game.state == game.RunState.RESULT and game.completed and !game.victory, "lethal elite fault should enter defeat before opening its reward")
+	_assert(game.reward_choices.is_empty(), "lethal elite fault should not create reward choices")
+
+	game._reset_run()
+	game.current_node = {"type": "boss", "contentId": "warehouse_acceptance"}
+	game.pre_boss_stability = 48
+	game._start_encounter("warehouse_acceptance", "boss")
+	game.boss_phase = 0
+	game._apply_boss_phase()
+	game.phase_source_coverage = {"smoke": true, "light": true}
+	game.repair_target = 8
+	game.repair_progress = 0
+	game.stability = 3
+	game.block = 0
+	game.chain_count = 2
+	game.last_stage = "process"
+	game.chain_rewards_claimed = {"two": true, "three": true}
+	game.powers["chain_draw"] = 1
+	game.draw_pile = [game._negative_card("abnormal_reading")]
+	game.discard_pile.clear()
+	game.hand = [game._card_copy("uart_log")]
+	game.processing_points = 1
+	_assert(game.play_card(0), "lethal chain-draw setup should play a real output card")
+	_assert(game.state == game.RunState.REST and game.boss_review_used, "lethal chain draw should enter Boss defeat review before phase transition")
+	_assert(game.boss_phase == 0, "lethal chain draw should not advance the Boss phase")
 
 
 func _pending_selection(game) -> Dictionary:

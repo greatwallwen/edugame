@@ -20,6 +20,8 @@ func _run() -> void:
 	game._reset_run()
 	_assert_question_event_resolution(game)
 	game._reset_run()
+	_assert_boss_phase_contracts(game)
+	game._reset_run()
 
 	_assert(game.current_layer == 0 and game.state == game.RunState.MAP, "new run should begin before layer one")
 	var script_constants: Dictionary = game.get_script().get_script_constant_map()
@@ -255,8 +257,8 @@ func _assert_boss_shop_guarantee(game) -> void:
 		return
 
 	game._reset_run()
-	_assert(game._missing_boss_stage_tags() == ["control"], "starter deck should expose only the Boss control-output gap")
-	_assert(game._guaranteed_boss_shop_card_id() == "time_slice", "equal-price control cards should preserve the first exact catalog candidate")
+	_assert(game._missing_boss_stage_tags() == ["output"], "starter deck should expose only the Boss output-diversity gap")
+	_assert(game._guaranteed_boss_shop_card_id() == "time_slice", "equal-price output cards should preserve the first exact catalog candidate")
 
 	game._reset_run()
 	game.deck = [game._card_copy("mq2_sample")]
@@ -290,9 +292,19 @@ func _assert_boss_shop_guarantee(game) -> void:
 			_assert(int(shop_card.get("price", 999)) <= game.budget, "service-shop guarantee should also be affordable")
 
 	game._reset_run()
+	game.deck = [
+		game._card_copy("uart_log"),
+		game._card_copy("lcd_display")
+	]
+	_assert(
+		game._boss_gap_card_id().is_empty(),
+		"early shops should not invent a report/control gap after two distinct output types"
+	)
+
+	game._reset_run()
 	game.deck = [game._card_copy("mq2_sample")]
 	var early_gap_id: String = game._boss_gap_card_id()
-	_assert(early_gap_id == "lcd_display", "one-source deck should retain the legacy report-output gap candidate")
+	_assert(early_gap_id == "lcd_display", "a deck without outputs should receive the first missing output type")
 	game.budget = 35
 	game.current_layer = 3
 	game.state = game.RunState.MAP
@@ -307,7 +319,161 @@ func _assert_boss_shop_guarantee(game) -> void:
 	for raw_card in game.shop_cards:
 		var shop_card := raw_card as Dictionary
 		_assert(int(shop_card.get("price", -1)) == game._card_price(shop_card), "early service shop should preserve ordinary pricing")
+
 	game._reset_run()
+	game.deck = [
+		game._card_copy("mq2_sample"),
+		game._card_copy("bh1750_read"),
+		game._card_copy("adc_convert"),
+		game._card_copy("i2c_transaction"),
+		game._card_copy("calibration_curve"),
+		game._card_copy("uart_log"),
+		game._card_copy("lcd_display")
+	]
+	_assert(
+		game._missing_boss_stage_tags().is_empty(),
+		"Boss shop coverage should accept calibration and any two distinct output types"
+	)
+	game._reset_run()
+
+
+func _assert_boss_phase_contracts(game) -> void:
+	_start_boss_phase(game, 1)
+	game.raw_data = {"smoke": 1, "light": 1, "temp": 0, "humidity": 0}
+	game.hand = [
+		game._card_copy("adc_convert"),
+		game._card_copy("i2c_transaction"),
+		game._card_copy("calibration_curve")
+	]
+	game.processing_points = 3
+	_assert(game.play_card(0), "phase-two calibration path should play ADC conversion")
+	_assert(game.play_card(0), "phase-two calibration path should play I2C conversion")
+	_assert(game.play_card(0), "phase-two calibration path should play calibration")
+	_assert(game._boss_phase_requirements_met(), "phase two should accept trusted data plus calibration")
+
+	_start_boss_phase(game, 1)
+	game.raw_data = {"smoke": 1, "light": 1, "temp": 0, "humidity": 0}
+	game.hand = [
+		game._card_copy("adc_convert"),
+		game._card_copy("i2c_transaction"),
+		game._card_copy("sliding_average")
+	]
+	game.processing_points = 3
+	_assert(game.play_card(0), "phase-two filter path should play ADC conversion")
+	_assert(game.play_card(0), "phase-two filter path should play I2C conversion")
+	_assert(game.play_card(0), "phase-two filter path should play filtering")
+	_assert(game._boss_phase_requirements_met(), "phase two should continue accepting trusted data plus filtering")
+
+	_start_boss_phase(game, 2)
+	game.trusted_data["smoke"] = 1
+	game.draw_pile.clear()
+	game.discard_pile.clear()
+	game.hand = [game._card_copy("lcd_display"), game._card_copy("uart_log")]
+	game.processing_points = 2
+	_assert(game.play_card(0), "phase-three distinct-output path should play display")
+	_assert(game.play_card(0), "phase-three distinct-output path should play UART")
+	_assert(game._boss_phase_requirements_met(), "phase three should accept display plus UART as two distinct output types")
+
+	_start_boss_phase(game, 2)
+	game.draw_pile.clear()
+	game.discard_pile.clear()
+	game.hand = [game._card_copy("uart_log"), game._card_copy("uart_log")]
+	game.processing_points = 2
+	var repair_before_first_output: int = game.repair_progress
+	_assert(game.play_card(0), "phase-three repeat path should play its first UART")
+	var first_output_repair: int = game.repair_progress - repair_before_first_output
+	var repair_before_second_output: int = game.repair_progress
+	_assert(game.play_card(0), "phase-three repeat path should play its second UART")
+	var second_output_repair: int = game.repair_progress - repair_before_second_output
+	_assert(first_output_repair == 5, "the first UART use should retain full phase-three repair")
+	_assert(second_output_repair == 3, "the second UART use should receive the 40 percent repeat reduction")
+	_assert(!game._boss_phase_requirements_met(), "repeating one output type should not satisfy the phase-three gate")
+
+	game._reset_run()
+	game.current_node = {"type": "boss", "contentId": "warehouse_acceptance"}
+	game._start_encounter("warehouse_acceptance", "boss")
+	game.phase_source_coverage = {"smoke": true, "light": true}
+	game.repair_progress = game.repair_target
+	game.block = 9
+	game.chain_count = 1
+	game.last_stage = "interface"
+	game.chain_rewards_claimed = {"two": true}
+	game.turn_effect_uses = {"already_used": 1}
+	game.turn_card_types = {"collect": true}
+	game.turn_sources = {"smoke": true}
+	game.retained_cards = [game._card_copy("bh1750_read")]
+	game.retain_data = true
+	game.next_turn_energy = 2
+	game.repair_penalty = 4
+	game.i2c_cost_penalty = 2
+	game.pending_i2c_count = 2
+	game.powers["i2c_discount"] = 1
+	game.powers["process_discount"] = 1
+	game.powers["interface_discount"] = 1
+	game.phase_output_uses = {"uart": 2}
+	game.fault_rule_state = {
+		"cardTagCounts": {"i2c": 2},
+		"stageCounts": {"interface": 2},
+		"triggerMatches": 2,
+		"suppressed": true,
+		"triggered": true,
+		"nextEnergyPenalty": -2
+	}
+	var upgraded_cache: Dictionary = game._card_copy("data_cache")
+	upgraded_cache["upgraded"] = true
+	game.hand = [upgraded_cache, game._card_copy("mq2_sample")]
+	game.draw_pile = [
+		game._card_copy("uart_log"),
+		game._card_copy("sliding_average"),
+		game._card_copy("i2c_transaction"),
+		game._card_copy("adc_convert"),
+		game._card_copy("bh1750_read")
+	]
+	game.discard_pile.clear()
+	game.processing_points = 3
+	_assert(game.play_card(0), "real Boss transition should begin the retained-card selection")
+	_assert(str(game.pending_card_selection.get("kind", "")) == "retain_one", "Boss transition fixture should pause on a real card selection")
+	game.cards_played_this_turn = 4
+	game.reroute_available = false
+	game.reroute_mode = true
+	_assert(game.choose_pending_card(0), "real Boss transition should resolve its retained-card selection")
+	_assert(game.boss_phase == 1 and game.state == game.RunState.COMBAT, "real card completion should enter Boss phase two")
+	_assert(game.cards_played_this_turn == 0, "Boss phase transition should reset played-card count")
+	_assert(game.reroute_available and !game.reroute_mode, "Boss phase transition should restore idle reroute")
+	_assert(game.chain_count == 0 and game.last_stage.is_empty(), "Boss phase transition should clear chain position")
+	_assert(game.chain_rewards_claimed.is_empty(), "Boss phase transition should clear threshold claims")
+	_assert(game.turn_effect_uses.is_empty(), "Boss phase transition should clear per-turn effect limits")
+	_assert(game.turn_card_types.is_empty() and game.turn_sources.is_empty(), "Boss phase transition should clear ordinary turn tracking")
+	_assert(game.retained_cards.is_empty() and game.pending_card_selection.is_empty() and !game.retain_data, "Boss phase transition should clear retained and pending temporary state")
+	_assert(game.block == 0 and game.repair_penalty == 0 and game.i2c_cost_penalty == 0, "Boss phase transition should clear block and temporary penalties")
+	_assert(game.pending_i2c_count == 0 and game.next_turn_energy == 0, "Boss phase transition should clear queued temporary costs")
+	_assert((game.fault_rule_state.get("cardTagCounts", {}) as Dictionary).is_empty(), "Boss phase transition should clear fault tag counts")
+	_assert((game.fault_rule_state.get("stageCounts", {}) as Dictionary).is_empty(), "Boss phase transition should clear fault stage counts")
+	_assert(int(game.fault_rule_state.get("triggerMatches", -1)) == 0, "Boss phase transition should clear conjunctive fault matches")
+	_assert(!bool(game.fault_rule_state.get("suppressed", false)) and !bool(game.fault_rule_state.get("triggered", false)), "Boss phase transition should clear fault outcomes")
+	_assert(int(game.fault_rule_state.get("nextEnergyPenalty", 0)) == 0, "Boss phase transition should clear queued fault penalties")
+	_assert(
+		!game.powers.has("i2c_discount")
+			and !game.powers.has("process_discount")
+			and !game.powers.has("interface_discount"),
+		"Boss phase transition should clear temporary card discounts"
+	)
+	_assert(game.processing_points == 3, "Boss phase transition should restore exactly three processing points")
+	_assert(game.hand.size() == 5, "Boss phase transition should draw exactly five cards")
+	var has_output_uses := _object_has_property(game, "phase_output_uses")
+	_assert(has_output_uses, "Boss phase transition should expose prior output-use tracking")
+	if has_output_uses:
+		_assert((game.phase_output_uses as Dictionary).is_empty(), "Boss phase transition should clear prior output uses")
+
+
+func _start_boss_phase(game, phase: int) -> void:
+	game._reset_run()
+	game.current_node = {"type": "boss", "contentId": "warehouse_acceptance"}
+	game._start_encounter("warehouse_acceptance", "boss")
+	game.boss_phase = phase
+	game._apply_boss_phase()
+	game.repair_target = 999
+	game.repair_progress = 0
 
 
 func _assert_question_event_resolution(game) -> void:
@@ -485,6 +651,20 @@ func _assert_failed_question_rewards_preserve_choices(game) -> void:
 
 	game._reset_run()
 	game.deck.clear()
+	game.relics = ["window_n8"]
+	_force_event(game, "advanced_moving_average")
+	_assert(game.submit_event_answer("reduce_spike_add_delay"), "no-reward setup should accept the correct answer")
+	_assert(
+		!bool(game.event_result.get("rewardPending", true))
+		and bool(game.event_result.get("resolved", false))
+		and bool(game.event_result.get("rewardFallback", false)),
+		"two unavailable event rewards should resolve to an explicit continuation fallback"
+	)
+	_assert(!game.choose_event_reward(0) and !game.choose_event_reward(1), "unavailable event rewards should remain unselectable")
+	_assert(game.continue_event() and game.state == game.RunState.MAP, "no-reward fallback should leave the event without deadlock")
+
+	game._reset_run()
+	game.deck.clear()
 	_force_event(game, "advanced_address_shift")
 	_assert(game.submit_event_answer("write_byte_0x46"), "empty-remove setup should accept the correct answer")
 	var remove_rewards: Array = (game.event_result.get("rewardChoices", []) as Array).duplicate(true)
@@ -516,6 +696,30 @@ func _assert_fault_rule_counterplay(game) -> void:
 		return
 
 	game._start_encounter("mq2_warmup", "ordinary")
+	var mq2_rule := game._fault_rule_definition() as Dictionary
+	_assert(str(mq2_rule.get("triggerTag", "")) == "smoke" and str(mq2_rule.get("triggerStage", "")) == "collect", "MQ-2 should declare a conjunctive smoke-collection trigger")
+	mq2_rule["counterTags"] = []
+	mq2_rule["behaviorCounter"] = false
+	game.current_encounter["faultRule"] = mq2_rule
+	game.repair_target = 999
+	game.hand = [
+		game._card_copy("mq2_sample"),
+		game._card_copy("calibration_curve"),
+		game._card_copy("led_alarm"),
+		game._card_copy("mq2_sample")
+	]
+	game.alarm_markers = 1
+	game.processing_points = 6
+	_assert(game.play_card(0), "first smoke collection should play")
+	_assert(int(game.fault_rule_state.get("triggerMatches", 0)) == 1 and !bool(game.fault_rule_state.get("triggered", false)), "first smoke collection should count once without triggering")
+	_assert(game.play_card(0), "smoke calibration should play")
+	_assert(int(game.fault_rule_state.get("triggerMatches", 0)) == 1 and !bool(game.fault_rule_state.get("triggered", false)), "smoke calibration should neither count nor self-trigger")
+	_assert(game.play_card(0), "smoke-tagged LED output should play")
+	_assert(int(game.fault_rule_state.get("triggerMatches", 0)) == 1 and !bool(game.fault_rule_state.get("triggered", false)), "smoke LED output should neither count nor self-trigger")
+	_assert(game.play_card(0), "second genuine smoke collection should play")
+	_assert(int(game.fault_rule_state.get("triggerMatches", 0)) == 2 and bool(game.fault_rule_state.get("triggered", false)), "second genuine smoke collection should trigger MQ-2")
+
+	game._start_encounter("mq2_warmup", "ordinary")
 	game.hand = [game._card_copy("mq2_sample"), game._card_copy("adc_continuous_sample")]
 	game.processing_points = 3
 	_assert(game.play_card(0) and game.play_card(0), "two smoke samples should resolve the MQ-2 fault rule")
@@ -540,6 +744,24 @@ func _assert_fault_rule_counterplay(game) -> void:
 	game.processing_points = 3
 	_assert(game.play_card(0) and game.play_card(0) and game.play_card(0), "filter should prepare the ADC counter before collection")
 	_assert(bool(game.fault_rule_state.get("suppressed", false)) and !bool(game.fault_rule_state.get("triggered", false)), "filter should suppress ADC spike")
+
+	for preparation_id in ["sliding_average", "adc_convert"]:
+		game._start_encounter("lcd_blocking", "ordinary")
+		game.repair_target = 999
+		game.hand = [game._card_copy(preparation_id), game._card_copy("uart_log")]
+		game.draw_pile.clear()
+		game.discard_pile.clear()
+		if preparation_id == "adc_convert":
+			game.raw_data["smoke"] = 1
+		game.processing_points = 3
+		_assert(game.play_card(0), "%s should be a real starter preparation play" % preparation_id)
+		_assert(game.play_card(0), "UART log should follow the %s preparation" % preparation_id)
+		_assert(
+			bool(game.fault_rule_state.get("suppressed", false))
+			and !bool(game.fault_rule_state.get("triggered", false))
+			and int(game.fault_rule_state.get("nextEnergyPenalty", 0)) == 0,
+			"%s should provide a genuine starter-only LCD counterplay path" % preparation_id
+		)
 
 	game._start_encounter("lcd_blocking", "ordinary")
 	game.trusted_data.smoke = 1
@@ -628,6 +850,28 @@ func _assert_fault_rule_counterplay(game) -> void:
 	_assert(game.play_card(0), "cache retention should prepare BH1750 end turn")
 	_assert(bool(game.fault_rule_state.get("suppressed", false)), "cache retention should suppress stale BH1750 data")
 	_assert(game.end_turn(), "cache retention should resolve BH1750 end turn")
+
+	game._start_encounter("lcd_blocking", "ordinary")
+	game.hand.clear()
+	game.draw_pile.clear()
+	game.discard_pile.clear()
+	game.current_intents.clear()
+	game.fault_rule_state = {
+		"cardTagCounts": {"display": 2},
+		"stageCounts": {"output": 2},
+		"triggerMatches": 2,
+		"suppressed": true,
+		"triggered": true,
+		"nextEnergyPenalty": -1
+	}
+	_assert(game.end_turn(), "ordinary turn boundary should resolve with queued fault state")
+	_assert((game.fault_rule_state.get("cardTagCounts", {}) as Dictionary).is_empty(), "ordinary turn should clear fault tag counts")
+	_assert((game.fault_rule_state.get("stageCounts", {}) as Dictionary).is_empty(), "ordinary turn should clear fault stage counts")
+	_assert(int(game.fault_rule_state.get("triggerMatches", -1)) == 0, "ordinary turn should clear conjunctive trigger matches")
+	_assert(!bool(game.fault_rule_state.get("suppressed", false)) and !bool(game.fault_rule_state.get("triggered", false)), "ordinary turn should clear fault outcomes")
+	_assert(int(game.fault_rule_state.get("nextEnergyPenalty", 99)) == 0 and game.processing_points == 2, "ordinary turn should consume its queued energy penalty exactly once")
+	game._reset_turn_state(true)
+	_assert(game.processing_points == 3, "the consumed ordinary-turn fault penalty should not repeat")
 
 
 func _object_has_property(object: Object, property_name: String) -> bool:

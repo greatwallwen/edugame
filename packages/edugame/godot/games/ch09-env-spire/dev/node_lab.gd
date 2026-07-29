@@ -1,5 +1,8 @@
 extends CanvasLayer
 
+const TOOLBAR_SINGLE_HEIGHT := 60.0
+const TOOLBAR_DOUBLE_HEIGHT := 108.0
+
 var game: Control
 var entries: Array = []
 var current_entry := {}
@@ -8,7 +11,13 @@ var lab_root: Control
 var catalog: PanelContainer
 var catalog_content: VBoxContainer
 var toolbar: PanelContainer
+var toolbar_margin: MarginContainer
+var toolbar_layout: VBoxContainer
+var toolbar_primary_row: HBoxContainer
+var toolbar_secondary_row: HBoxContainer
 var toolbar_title: Label
+var fixture_spacer: Control
+var toolbar_spacer: Control
 var starter_button: Button
 var coverage_button: Button
 var force_correct_button: Button
@@ -169,58 +178,67 @@ func _build_ui() -> void:
 	toolbar = PanelContainer.new()
 	toolbar.name = "NodeLabToolbar"
 	toolbar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	toolbar.offset_bottom = 58
+	toolbar.offset_bottom = TOOLBAR_SINGLE_HEIGHT
 	toolbar.mouse_filter = Control.MOUSE_FILTER_STOP
 	toolbar.add_theme_stylebox_override("panel", game._panel_style(Color("#17262b"), Color("#2f7f8d")))
 	lab_root.add_child(toolbar)
-	var toolbar_margin := MarginContainer.new()
+	toolbar_margin = MarginContainer.new()
 	toolbar_margin.add_theme_constant_override("margin_left", 12)
 	toolbar_margin.add_theme_constant_override("margin_right", 12)
 	toolbar_margin.add_theme_constant_override("margin_top", 7)
 	toolbar_margin.add_theme_constant_override("margin_bottom", 7)
 	toolbar.add_child(toolbar_margin)
-	var toolbar_row := HBoxContainer.new()
-	toolbar_row.add_theme_constant_override("separation", 8)
-	toolbar_margin.add_child(toolbar_row)
+	toolbar_layout = VBoxContainer.new()
+	toolbar_layout.name = "NodeLabToolbarLayout"
+	toolbar_layout.add_theme_constant_override("separation", 4)
+	toolbar_margin.add_child(toolbar_layout)
+	toolbar_primary_row = HBoxContainer.new()
+	toolbar_primary_row.name = "NodeLabToolbarPrimary"
+	toolbar_primary_row.add_theme_constant_override("separation", 8)
+	toolbar_layout.add_child(toolbar_primary_row)
+	toolbar_secondary_row = HBoxContainer.new()
+	toolbar_secondary_row.name = "NodeLabToolbarSecondary"
+	toolbar_secondary_row.add_theme_constant_override("separation", 8)
+	toolbar_layout.add_child(toolbar_secondary_row)
 
 	toolbar_title = Label.new()
 	toolbar_title.text = "节点实验室"
 	toolbar_title.add_theme_color_override("font_color", Color("#ecf3f4"))
 	toolbar_title.add_theme_font_size_override("font_size", 18)
-	toolbar_row.add_child(toolbar_title)
+	toolbar_primary_row.add_child(toolbar_title)
 
-	var fixture_spacer := Control.new()
+	fixture_spacer = Control.new()
 	fixture_spacer.custom_minimum_size.x = 8
-	toolbar_row.add_child(fixture_spacer)
+	toolbar_primary_row.add_child(fixture_spacer)
 	starter_button = _toolbar_button("NodeLabFixtureStarter", "基础牌组")
 	starter_button.toggle_mode = true
 	starter_button.pressed.connect(func() -> void: _set_fixture("starter"))
-	toolbar_row.add_child(starter_button)
+	toolbar_primary_row.add_child(starter_button)
 	coverage_button = _toolbar_button("NodeLabFixtureCoverage", "全标签")
 	coverage_button.toggle_mode = true
 	coverage_button.pressed.connect(func() -> void: _set_fixture("coverage"))
-	toolbar_row.add_child(coverage_button)
+	toolbar_primary_row.add_child(coverage_button)
 	force_correct_button = _toolbar_button("NodeLabForceCorrect", "判为正确")
 	force_correct_button.pressed.connect(func() -> void: game.force_lab_question_result(true))
-	toolbar_row.add_child(force_correct_button)
+	toolbar_primary_row.add_child(force_correct_button)
 	force_wrong_button = _toolbar_button("NodeLabForceWrong", "判为错误")
 	force_wrong_button.pressed.connect(func() -> void: game.force_lab_question_result(false))
-	toolbar_row.add_child(force_wrong_button)
+	toolbar_primary_row.add_child(force_wrong_button)
 
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	toolbar_row.add_child(spacer)
+	toolbar_spacer = Control.new()
+	toolbar_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	toolbar_primary_row.add_child(toolbar_spacer)
 	return_button = _toolbar_button("NodeLabReturn", "返回目录")
 	return_button.pressed.connect(func() -> void: game.return_to_node_lab())
-	toolbar_row.add_child(return_button)
+	toolbar_primary_row.add_child(return_button)
 	restart_button = _toolbar_button("NodeLabRestart", "重开节点")
 	restart_button.pressed.connect(func() -> void: game.restart_lab_scenario())
-	toolbar_row.add_child(restart_button)
+	toolbar_primary_row.add_child(restart_button)
 
 	catalog = PanelContainer.new()
 	catalog.name = "NodeLabCatalog"
 	catalog.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	catalog.offset_top = 58
+	catalog.offset_top = TOOLBAR_SINGLE_HEIGHT
 	catalog.mouse_filter = Control.MOUSE_FILTER_STOP
 	catalog.add_theme_stylebox_override("panel", game._panel_style(Color("#edf3f4"), Color("#52717a")))
 	lab_root.add_child(catalog)
@@ -355,7 +373,6 @@ func show_scenario_controls() -> void:
 	var game_shell: VBoxContainer = game.shell
 	header.visible = false
 	game_shell.visible = true
-	game_shell.offset_top = 58
 	_apply_responsive_layout()
 
 
@@ -363,7 +380,21 @@ func _apply_responsive_layout() -> void:
 	if game == null:
 		return
 	var compact := game.size.x < 720.0
+	var compact_scenario := compact and catalog != null and !catalog.visible
+	_configure_toolbar_rows(compact, compact_scenario)
+	var toolbar_height := TOOLBAR_DOUBLE_HEIGHT if compact_scenario else TOOLBAR_SINGLE_HEIGHT
+	toolbar.offset_bottom = toolbar_height
+	catalog.offset_top = toolbar_height
+	if catalog.visible:
+		game.shell.offset_top = 0.0
+	elif game.shell.visible:
+		game.shell.offset_top = toolbar_height
 	toolbar_title.visible = !compact
+	fixture_spacer.visible = !compact
+	toolbar_spacer.visible = !compact
+	toolbar_primary_row.alignment = BoxContainer.ALIGNMENT_CENTER if compact else BoxContainer.ALIGNMENT_BEGIN
+	toolbar_secondary_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	toolbar_secondary_row.visible = compact_scenario
 	starter_button.text = "基础" if compact else "基础牌组"
 	coverage_button.text = "全标签"
 	force_correct_button.text = "判对" if compact else "判为正确"
@@ -375,3 +406,37 @@ func _apply_responsive_layout() -> void:
 		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	for grid in group_grids:
 		grid.columns = 1 if compact else 2
+	toolbar_primary_row.queue_sort()
+	toolbar_secondary_row.queue_sort()
+
+
+func _configure_toolbar_rows(compact: bool, compact_scenario: bool) -> void:
+	var action_parent: HBoxContainer = toolbar_secondary_row if compact_scenario else toolbar_primary_row
+	for control in [force_correct_button, force_wrong_button, return_button, restart_button]:
+		if control.get_parent() != action_parent:
+			control.reparent(action_parent)
+	var primary_order: Array[Control] = [
+		toolbar_title,
+		fixture_spacer,
+		starter_button,
+		coverage_button,
+		toolbar_spacer
+	]
+	if !compact_scenario:
+		primary_order = [
+			toolbar_title,
+			fixture_spacer,
+			starter_button,
+			coverage_button,
+			force_correct_button,
+			force_wrong_button,
+			toolbar_spacer,
+			return_button,
+			restart_button
+		]
+	for index in range(primary_order.size()):
+		toolbar_primary_row.move_child(primary_order[index], index)
+	if compact_scenario:
+		var secondary_order: Array[Control] = [force_correct_button, force_wrong_button, return_button, restart_button]
+		for index in range(secondary_order.size()):
+			toolbar_secondary_row.move_child(secondary_order[index], index)

@@ -112,6 +112,9 @@ func _verify_viewport(size: Vector2i) -> void:
 	var chain_interface = game.find_child("ChainInterface", true, false) as Control
 	var chain_process = game.find_child("ChainProcess", true, false) as Control
 	var chain_output = game.find_child("ChainOutput", true, false) as Control
+	var chain_current_status = game.find_child("ChainCurrentStatus", true, false) as Label
+	var chain_next_status = game.find_child("ChainNextStatus", true, false) as Label
+	var chain_reward_status = game.find_child("ChainRewardStatus", true, false) as Label
 	var reroute_button = game.find_child("RerouteButton", true, false) as Button
 	var reroute_cancel_button = game.find_child("RerouteCancelButton", true, false) as Button
 	var reward_cards = game.find_child("RewardCards", true, false)
@@ -180,6 +183,8 @@ func _verify_viewport(size: Vector2i) -> void:
 
 	game._start_tutorial_encounter()
 	await process_frame
+	for fault_row in [fault_intent_row, fault_rule_row, fault_counter_row, fault_rule_state]:
+		_assert(fault_row != null and !fault_row.is_visible_in_tree(), "%s should stay hidden during tutorial combat at %s" % [fault_row.name if fault_row != null else "fault row", size])
 	if reroute_button != null:
 		_assert(!reroute_button.visible and reroute_button.disabled, "tutorial practice should hide and disable reroute")
 	if reroute_cancel_button != null:
@@ -297,6 +302,25 @@ func _verify_viewport(size: Vector2i) -> void:
 			var fault_panel_rect := (fault_unit as Control).get_global_rect().grow(0.5)
 			for row in [fault_intent_row, fault_rule_row, fault_counter_row]:
 				_assert(fault_panel_rect.encloses(row.get_global_rect()), "%s should fit inside the fault panel at %s" % [row.name, size])
+	game.chain_count = 0
+	game.last_stage = "collect"
+	game.chain_rewards_claimed.clear()
+	game.hand = [
+		game._card_copy("adc_convert"),
+		{
+			"id": "neutral_preview",
+			"name": "Neutral preview",
+			"type": "utility",
+			"cost": 0,
+			"stage": "",
+			"tags": [],
+			"effectText": "Preview only",
+			"effects": []
+		},
+		game._card_copy("uart_log")
+	]
+	game._render_state()
+	await process_frame
 	if point_counter != null:
 		_assert(point_counter.text.contains(str(game.processing_points)), "processing point counter should render the live point total")
 	if arena != null and hand_dock != null:
@@ -325,6 +349,26 @@ func _verify_viewport(size: Vector2i) -> void:
 	if chain_strip != null and chain_collect != null and chain_interface != null and chain_process != null and chain_output != null:
 		_assert(chain_strip.is_visible_in_tree(), "engineering-chain strip should stay visible at %s" % size)
 		_assert(chain_collect.is_visible_in_tree() and chain_interface.is_visible_in_tree() and chain_process.is_visible_in_tree() and chain_output.is_visible_in_tree(), "engineering-chain stages should stay visible at %s" % size)
+		_assert(chain_current_status != null and chain_current_status.text.contains("collect"), "chain strip should show the current stage at %s" % size)
+		_assert(chain_next_status != null and chain_next_status.text.contains("interface"), "chain strip should show the next stage at %s" % size)
+		_assert(chain_reward_status != null and chain_reward_status.text.contains("+3 block"), "chain strip should show the pending threshold reward at %s" % size)
+		var minimum_status_widths := [52.0, 64.0, 88.0] if size.x < 720 else [64.0, 72.0, 100.0]
+		var status_nodes := [chain_current_status, chain_next_status, chain_reward_status]
+		for status_index in range(status_nodes.size()):
+			var status_node := status_nodes[status_index] as Label
+			_assert(
+				status_node != null
+				and status_node.is_visible_in_tree()
+				and status_node.get_global_rect().size.x >= minimum_status_widths[status_index],
+				"%s should reserve visible text width at %s" % [status_node.name if status_node != null else "chain status", size]
+			)
+			_assert(status_node != null and viewport_rect.encloses(status_node.get_global_rect()), "%s should remain viewport-contained at %s" % [status_node.name if status_node != null else "chain status", size])
+		var advancing_card = game.find_child("HandCard_adc_convert_0", true, false) as Button
+		var preserving_card = game.find_child("HandCard_neutral_preview_1", true, false) as Button
+		var breaking_card = game.find_child("HandCard_uart_log_2", true, false) as Button
+		_assert(advancing_card != null and advancing_card.text.contains("advances") and advancing_card.text.contains("+3 block"), "interface card should explicitly preview advancement and its reward at %s" % size)
+		_assert(preserving_card != null and preserving_card.text.contains("preserves"), "neutral card should explicitly preview chain preservation at %s" % size)
+		_assert(breaking_card != null and breaking_card.text.contains("breaks"), "out-of-order output card should explicitly preview a chain break at %s" % size)
 		if hand_scroll != null:
 			_assert(chain_strip.get_global_rect().end.y <= hand_scroll.get_global_rect().position.y, "engineering-chain strip should sit above the horizontal hand dock at %s" % size)
 	if size.x < 720 and combat_actions != null and hand_scroll != null:
@@ -387,12 +431,20 @@ func _verify_viewport(size: Vector2i) -> void:
 
 	game.current_node = {"type": "boss", "contentId": "warehouse_acceptance"}
 	game._start_encounter("warehouse_acceptance", "boss")
-	game.boss_phase = 2
+	game.boss_phase = 1
 	game._apply_boss_phase()
 	game._render_state()
 	await process_frame
 	if gate_label != null:
-		_assert(gate_label.text.contains("显示/上报") and gate_label.text.contains("报警/调度"), "boss phase three should expose both output gates")
+		_assert(gate_label.text.contains("filter/calibration"), "boss phase two should expose its filter-or-calibration gate")
+	game.boss_phase = 2
+	game._apply_boss_phase()
+	game._render_state()
+	await process_frame
+	for fault_row in [fault_intent_row, fault_rule_row, fault_counter_row, fault_rule_state]:
+		_assert(fault_row != null and !fault_row.is_visible_in_tree(), "%s should stay hidden during Boss combat at %s" % [fault_row.name if fault_row != null else "fault row", size])
+	if gate_label != null:
+		_assert(gate_label.text.contains("distinct outputs") and gate_label.text.contains("0 / 2"), "boss phase three should expose its two-distinct-output gate")
 	_assert(viewport_rect.encloses(end_turn.get_global_rect()), "boss phase three actions should stay inside viewport at %s" % size)
 	if footer != null:
 		_assert(end_turn.get_global_rect().end.y <= footer.get_global_rect().position.y, "boss phase three action should not be covered by the footer at %s" % size)
@@ -431,6 +483,23 @@ func _verify_viewport(size: Vector2i) -> void:
 		question_consequence
 	)
 	_assert_visible_primary_command_heights(game)
+
+	var reward_fallback_deck: Array = game.deck.duplicate(true)
+	var reward_fallback_relics: Array = game.relics.duplicate(true)
+	game.deck.clear()
+	game.relics = ["window_n8"]
+	game._begin_question_event((game.event_defs.get("advanced_moving_average", {}) as Dictionary).duplicate(true))
+	_assert(game.submit_event_answer("reduce_spike_add_delay"), "unavailable-reward UI fixture should accept the correct answer")
+	game._render_state()
+	await process_frame
+	var reward_fallback = game.find_child("QuestionRewardFallback", true, false) as Label
+	_assert(reward_fallback != null and reward_fallback.is_visible_in_tree() and reward_fallback.text.contains("继续"), "unavailable event rewards should expose a visible continuation fallback at %s" % size)
+	_assert(question_continue != null and question_continue.is_visible_in_tree() and question_continue.text.contains("继续"), "unavailable event rewards should expose a visible continue command at %s" % size)
+	if question_continue != null:
+		_assert(viewport_rect.encloses(question_continue.get_global_rect()), "unavailable-reward continue command should fit the viewport at %s" % size)
+	_assert(game.continue_event(), "unavailable-reward UI fixture should continue")
+	game.deck = reward_fallback_deck
+	game.relics = reward_fallback_relics
 
 	var missing_waveform := (game.event_defs.get("basic_adc_spike", {}) as Dictionary).duplicate(true)
 	missing_waveform.erase("waveform")
@@ -564,6 +633,11 @@ func _verify_viewport(size: Vector2i) -> void:
 		_assert(lab_return != null and lab_restart != null, "node lab should expose stable scenario controls")
 		_assert(lab_toolbar != null and lab_toolbar.is_visible_in_tree(), "node lab should expose a stable toolbar")
 		_assert(lab_scenario != null, "node lab should render generated scenario buttons")
+		if lab_toolbar != null:
+			for toolbar_control in lab_toolbar.find_children("*", "Button", true, false):
+				if (toolbar_control as Control).is_visible_in_tree():
+					_assert(viewport_rect.encloses((toolbar_control as Control).get_global_rect()), "%s should fit the Node Lab catalog toolbar at %s" % [toolbar_control.name, size])
+			_assert(lab_catalog.get_global_rect().position.y >= lab_toolbar.get_global_rect().end.y, "Node Lab catalog offset should follow the responsive toolbar at %s" % size)
 		if lab_scenario != null:
 			_assert((lab_scenario as Control).custom_minimum_size.y >= 44.0, "lab scenario touch target should be at least 44 px")
 			_assert(viewport_rect.intersects((lab_scenario as Control).get_global_rect()), "first lab scenario should be visible at %s" % size)
@@ -571,16 +645,21 @@ func _verify_viewport(size: Vector2i) -> void:
 				_assert(lab_toolbar.get_global_rect().end.y <= (lab_scenario as Control).get_global_rect().position.y, "Node Lab toolbar should sit above catalog scenario content at %s" % size)
 		game.start_lab_scenario({
 			"id": "basic_mq2_warmup",
-			"kind": "event",
+			"kind": "question_event",
 			"contentId": "basic_mq2_warmup",
 			"seedId": 777
 		})
 		await process_frame
 		_assert(!lab_catalog.visible, "starting a lab scenario should hide the catalog")
 		_assert(game.state == game.RunState.EVENT and game.run_seed == 777, "Node Lab should launch the requested question event with an overridable seed")
-		_assert(!run_hud.visible and game.shell.visible and game.shell.offset_top == 58.0, "scenario toolbar should replace RunHud")
+		_assert(!run_hud.visible and game.shell.visible and game.shell.offset_top == lab_toolbar.size.y, "scenario shell offset should follow the responsive Node Lab toolbar")
 		_assert(lab_return.visible and lab_restart.visible, "scenario controls should remain visible during lab play")
 		if lab_toolbar != null:
+			if size.x < 720:
+				_assert(lab_toolbar.size.y > 58.0, "compact question toolbar should use a second row at %s" % size)
+			for toolbar_control in lab_toolbar.find_children("*", "Button", true, false):
+				if (toolbar_control as Control).is_visible_in_tree():
+					_assert(viewport_rect.encloses((toolbar_control as Control).get_global_rect()), "%s should fit the Node Lab question toolbar at %s" % [toolbar_control.name, size])
 			_assert(lab_toolbar.get_global_rect().end.y <= question_frame.get_global_rect().position.y, "Node Lab toolbar should not overlap the question event at %s" % size)
 		_assert(viewport_rect.encloses(lab_return.get_global_rect()), "lab return control should stay inside viewport at %s" % size)
 		_assert(viewport_rect.encloses(lab_restart.get_global_rect()), "lab restart control should stay inside viewport at %s" % size)
@@ -596,6 +675,10 @@ func _verify_viewport(size: Vector2i) -> void:
 		await process_frame
 		_assert(!header.visible, "lab toolbar should replace the normal game header during scenarios")
 		if lab_toolbar != null:
+			_assert(game.shell.offset_top == lab_toolbar.size.y, "combat shell offset should follow the responsive Node Lab toolbar at %s" % size)
+			for toolbar_control in lab_toolbar.find_children("*", "Button", true, false):
+				if (toolbar_control as Control).is_visible_in_tree():
+					_assert(viewport_rect.encloses((toolbar_control as Control).get_global_rect()), "%s should fit the Node Lab combat toolbar at %s" % [toolbar_control.name, size])
 			_assert(lab_toolbar.get_global_rect().end.y <= arena.get_global_rect().position.y, "Node Lab toolbar should not overlap combat scenario content at %s" % size)
 		_assert(end_turn.get_global_rect().end.y <= footer.get_global_rect().position.y, "lab combat action should stay above the footer at %s" % size)
 		_assert(arena.is_visible_in_tree() and hand_dock.is_visible_in_tree(), "lab combat should expose the redesigned arena and hand dock")
@@ -779,7 +862,15 @@ func _expected_tutorial_card_text(game, expected_card_id: String) -> String:
 		if str(card.get("id", "")) != expected_card_id:
 			continue
 		var effect_text := str(card.get("upgradedEffectText", "") if bool(card.get("upgraded", false)) else card.get("effectText", ""))
-		return "[%d]\n%s\n%s\n\n%s" % [game._card_cost_preview(card), card.get("name", ""), card.get("type", ""), effect_text]
+		var chain_preview := game._chain_preview_for_stage(str(card.get("stage", ""))) as Dictionary
+		return "[%d] %s · %s\n%s\nChain %s · pending %s" % [
+			game._card_cost_preview(card),
+			card.get("name", ""),
+			card.get("type", ""),
+			effect_text,
+			chain_preview.get("decision", "preserves"),
+			chain_preview.get("pendingReward", "none")
+		]
 	return ""
 
 

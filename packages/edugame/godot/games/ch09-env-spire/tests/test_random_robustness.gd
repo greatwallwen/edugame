@@ -19,7 +19,10 @@ func _run() -> void:
 		game.rng.seed = seed
 		game._open_shop()
 		_assert(game.shop_cards.size() == 5, "shop seed %d should offer five cards" % seed)
-		_assert(_shop_has_control_closer(game.shop_cards), "shop seed %d should offer an alarm or scheduler gap card" % seed)
+		_assert(
+			_shop_has_missing_output(game, game.shop_cards),
+			"shop seed %d should offer a genuinely missing output type" % seed
+		)
 
 	var original_defs: Dictionary = game.card_defs.duplicate(true)
 	game.card_defs = original_defs
@@ -58,11 +61,13 @@ func _run() -> void:
 	_finish()
 
 
-func _shop_has_control_closer(cards: Array) -> bool:
+func _shop_has_missing_output(game, cards: Array) -> bool:
+	var existing_outputs: Dictionary = game._deck_output_types()
 	for raw_card in cards:
 		var tags: Array = (raw_card as Dictionary).get("tags", [])
-		if tags.has("alarm") or tags.has("scheduler"):
-			return true
+		for output_tag in game.BOSS_OUTPUT_TAGS:
+			if tags.has(output_tag) and !existing_outputs.has(output_tag):
+				return true
 	return false
 
 

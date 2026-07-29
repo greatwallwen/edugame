@@ -17,6 +17,7 @@
         "id": "mq2_uncalibrated",
         "timing": "after_card",
         "triggerTag": "smoke",
+        "triggerStage": "collect",
         "triggerCount": 2,
         "counterTags": ["diagnosis", "calibration"],
         "behaviorCounter": true,

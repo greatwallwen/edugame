@@ -48,6 +48,7 @@ func _run() -> void:
 	var restart_button = game.find_child("NodeLabRestart", true, false)
 	var force_correct_button = game.find_child("NodeLabForceCorrect", true, false)
 	var force_wrong_button = game.find_child("NodeLabForceWrong", true, false)
+	var lab_toolbar = game.find_child("NodeLabToolbar", true, false) as Control
 	var arena = game.find_child("EncounterArena", true, false)
 	var hand_dock = game.find_child("HandDock", true, false)
 	_assert(lab_root != null and lab_root.theme == game.ui_theme, "lab root should use the game UI theme")
@@ -112,8 +113,13 @@ func _run() -> void:
 		_assert(!game._fault_rule_preview().is_empty(), "fault-rule fixture should expose its preview")
 		_assert(_fault_hand_supports_rule(game), "fault-rule fixture should include trigger and counter paths")
 		var first_hand := _hand_ids(game.hand)
+		var rule_id := str(game._fault_rule_definition().get("id", ""))
+		_assert(_execute_fault_path(game, rule_id, false), "%s trigger fixture should execute" % rule_id)
+		_assert(_fault_trigger_observed(game, rule_id), "%s trigger fixture should report triggered" % rule_id)
 		_assert(bool(game.restart_lab_scenario()), "fault-rule fixture should restart")
 		_assert(_hand_ids(game.hand) == first_hand, "fault-rule fixture hand should be deterministic")
+		_assert(_execute_fault_path(game, rule_id, true), "%s counter fixture should execute" % rule_id)
+		_assert(_fault_suppression_observed(game, rule_id), "%s counter fixture should report suppressed" % rule_id)
 
 	var coverage_entry := _entry(entries, "mq2_warmup")
 	_assert(bool(game.start_lab_scenario(coverage_entry, "coverage")), "coverage fixture should launch")
@@ -122,7 +128,7 @@ func _run() -> void:
 		_assert(game._deck_has_any_tag([tag]), "coverage fixture should contain tag %s" % tag)
 	_assert(catalog != null and !catalog.visible, "scenario should hide the catalog")
 	_assert(return_button != null and return_button.visible and restart_button != null and restart_button.visible, "scenario should expose the lab toolbar controls")
-	_assert(run_hud != null and !run_hud.visible and game.shell.visible and game.shell.offset_top == 58.0, "scenario toolbar should replace RunHud")
+	_assert(run_hud != null and !run_hud.visible and game.shell.visible and game.shell.offset_top == lab_toolbar.size.y, "scenario toolbar should replace RunHud using its resolved height")
 	_assert(arena != null and arena.is_visible_in_tree() and hand_dock != null and hand_dock.is_visible_in_tree(), "lab combat should expose the redesigned arena and hand dock")
 
 	game.stability = 3
@@ -203,9 +209,13 @@ func _fault_hand_supports_rule(game) -> bool:
 	for raw_card in game.hand:
 		var card := raw_card as Dictionary
 		var tags: Array = card.get("tags", [])
-		if !trigger_tag.is_empty() and tags.has(trigger_tag):
-			trigger_count += 1
-		elif !trigger_stage.is_empty() and str(card.get("stage", "")) == trigger_stage:
+		var matches_trigger := true
+		var has_card_trigger := !trigger_tag.is_empty() or !trigger_stage.is_empty()
+		if !trigger_tag.is_empty() and !tags.has(trigger_tag):
+			matches_trigger = false
+		if !trigger_stage.is_empty() and str(card.get("stage", "")) != trigger_stage:
+			matches_trigger = false
+		if has_card_trigger and matches_trigger:
 			trigger_count += 1
 		elif !trigger_source.is_empty() and tags.has(trigger_source):
 			trigger_count += 1
@@ -213,6 +223,63 @@ func _fault_hand_supports_rule(game) -> bool:
 			if tags.has(str(raw_tag)):
 				has_counter = true
 	return trigger_count >= required_count and has_counter
+
+
+func _execute_fault_path(game, rule_id: String, use_counter: bool) -> bool:
+	match rule_id:
+		"mq2_uncalibrated":
+			if use_counter and !_play_card_id(game, "environment_baseline"):
+				return false
+			return _play_card_id(game, "mq2_sample") and _play_card_id(game, "mq2_sample")
+		"bh1750_stale_raw":
+			if use_counter and !_play_card_id(game, "data_cache"):
+				return false
+			if !_play_card_id(game, "bh1750_read"):
+				return false
+			return game.end_turn()
+		"adc_second_collect":
+			if use_counter and !_play_card_id(game, "outlier_reject"):
+				return false
+			return _play_card_id(game, "mq2_sample") and _play_card_id(game, "bh1750_read")
+		"lcd_unprepared_output":
+			if use_counter and !_play_card_id(game, "data_cache"):
+				return false
+			return _play_card_id(game, "lcd_display")
+		"alarm_without_trust":
+			if use_counter and !_play_card_id(game, "sliding_average"):
+				return false
+			return _play_card_id(game, "led_alarm")
+		"i2c_second_transaction":
+			if use_counter and !_play_card_id(game, "environment_baseline"):
+				return false
+			return _play_card_id(game, "i2c_transaction") and _play_card_id(game, "i2c_transaction")
+	return false
+
+
+func _play_card_id(game, card_id: String) -> bool:
+	for index in range(game.hand.size()):
+		if str((game.hand[index] as Dictionary).get("id", "")) == card_id:
+			return game.play_card(index)
+	return false
+
+
+func _fault_trigger_observed(game, rule_id: String) -> bool:
+	if rule_id == "bh1750_stale_raw":
+		return _log_contains(game.message_log, "Fault rule %s triggered" % rule_id)
+	return bool(game.fault_rule_state.get("triggered", false)) and !bool(game.fault_rule_state.get("suppressed", false))
+
+
+func _fault_suppression_observed(game, rule_id: String) -> bool:
+	if rule_id == "bh1750_stale_raw":
+		return _log_contains(game.message_log, "Fault rule %s suppressed" % rule_id)
+	return bool(game.fault_rule_state.get("suppressed", false)) and !bool(game.fault_rule_state.get("triggered", false))
+
+
+func _log_contains(entries: Array, expected: String) -> bool:
+	for entry in entries:
+		if str(entry).contains(expected):
+			return true
+	return false
 
 
 func _hand_ids(cards: Array) -> Array[String]:
