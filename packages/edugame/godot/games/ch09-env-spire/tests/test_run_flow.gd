@@ -279,18 +279,32 @@ func _assert_question_event_resolution(game) -> void:
 
 	_force_event(game, "advanced_alarm_hysteresis")
 	_assert(game.submit_event_answer("on70_off60"), "hysteresis answer ID should resolve")
-	_assert(game.choose_event_reward(0), "alarm-card reward should offer a tagged fallback when exact rarity is unavailable")
+	_assert(game.choose_event_reward(0), "alarm-card reward should offer the exact uncommon alarm pool")
 	var alarm_options: Array = game.pending_card_selection.get("options", []) as Array
-	_assert(!alarm_options.is_empty() and ((alarm_options[0] as Dictionary).get("tags", []) as Array).has("alarm"), "alarm reward fallback should preserve its engineering tag")
-	_assert(game.choose_pending_card(0), "alarm reward fallback should resolve through the event owner")
+	_assert(!alarm_options.is_empty(), "alarm reward should expose at least one exact catalog match")
+	for raw_option in alarm_options:
+		var alarm_card := raw_option as Dictionary
+		_assert(
+			str(alarm_card.get("rarity", "")) == "uncommon"
+			and (alarm_card.get("tags", []) as Array).has("alarm"),
+			"every alarm reward option should be both uncommon and alarm-tagged"
+		)
+	_assert(game.choose_pending_card(0), "alarm reward should resolve through the event owner")
 	_assert(game.continue_event(), "alarm reward event should continue explicitly")
 
 	_force_event(game, "advanced_polling_order")
 	_assert(game.submit_event_answer(["schedule", "sample", "convert", "validate", "publish"]), "advanced ordering should accept an array of IDs")
-	_assert(game.choose_event_reward(1), "chain-card reward should offer a tagged fallback when exact rarity is unavailable")
+	_assert(game.choose_event_reward(1), "chain-card reward should offer the exact uncommon chain pool")
 	var chain_options: Array = game.pending_card_selection.get("options", []) as Array
-	_assert(!chain_options.is_empty() and ((chain_options[0] as Dictionary).get("tags", []) as Array).has("chain"), "chain reward fallback should preserve its engineering tag")
-	_assert(game.choose_pending_card(0), "chain reward fallback should resolve through the event owner")
+	_assert(!chain_options.is_empty(), "chain reward should expose at least one exact catalog match")
+	for raw_option in chain_options:
+		var chain_card := raw_option as Dictionary
+		_assert(
+			str(chain_card.get("rarity", "")) == "uncommon"
+			and (chain_card.get("tags", []) as Array).has("chain"),
+			"every chain reward option should be both uncommon and chain-tagged"
+		)
+	_assert(game.choose_pending_card(0), "chain reward should resolve through the event owner")
 	_assert(game.continue_event(), "chain reward event should continue explicitly")
 
 	_force_event(game, "basic_i2c_pullup")
@@ -320,6 +334,8 @@ func _assert_question_event_resolution(game) -> void:
 	_assert(str(gained_address_shift.get("id", "")) == "address_shift" and bool(gained_address_shift.get("upgraded", false)), "address reward should add the specified upgraded card")
 	_assert(game.continue_event(), "upgraded-card reward should allow continuation")
 
+	_assert_failed_question_rewards_preserve_choices(game)
+
 	var malformed_stability: int = game.stability
 	var malformed_budget: int = game.budget
 	var malformed_deck_size: int = game.deck.size()
@@ -340,6 +356,55 @@ func _assert_question_event_resolution(game) -> void:
 	_assert(str(game.event_result.get("explanation", "")).contains("事件数据无效"), "malformed event should expose a visible data error")
 	_assert(game.stability == malformed_stability and game.budget == malformed_budget and game.deck.size() == malformed_deck_size, "malformed event should apply no consequence")
 	_assert(game.continue_event() and game.state == game.RunState.MAP, "malformed event should safely continue to map")
+
+
+func _assert_failed_question_rewards_preserve_choices(game) -> void:
+	game._reset_run()
+	_force_event(game, "advanced_moving_average")
+	game.relics.append("window_n8")
+	_assert(game.submit_event_answer("reduce_spike_add_delay"), "owned-component setup should accept the correct answer")
+	var owned_rewards: Array = (game.event_result.get("rewardChoices", []) as Array).duplicate(true)
+	_assert(!game.choose_event_reward(1), "an already-owned component reward should fail without consumption")
+	_assert(
+		bool(game.event_result.get("rewardPending", false))
+		and !game.event_result.has("chosenRewardId")
+		and game.event_result.get("rewardChoices", []) == owned_rewards,
+		"an already-owned component should leave both reward choices available and unconsumed"
+	)
+	_assert(game.choose_event_reward(0), "the other reward should remain selectable after an owned-component failure")
+	_assert(game.choose_pending_card(0), "the retry reward should resolve its shared upgrade selection")
+	_assert(game.continue_event(), "owned-component retry should still complete the event")
+
+	game._reset_run()
+	game.deck.clear()
+	_force_event(game, "advanced_moving_average")
+	_assert(game.submit_event_answer("reduce_spike_add_delay"), "empty-upgrade setup should accept the correct answer")
+	var upgrade_rewards: Array = (game.event_result.get("rewardChoices", []) as Array).duplicate(true)
+	_assert(!game.choose_event_reward(0), "an empty upgrade pool should fail without consumption")
+	_assert(
+		bool(game.event_result.get("rewardPending", false))
+		and !game.event_result.has("chosenRewardId")
+		and game.event_result.get("rewardChoices", []) == upgrade_rewards,
+		"an empty upgrade pool should leave both reward choices available and unconsumed"
+	)
+	_assert(game.choose_event_reward(1), "the component reward should remain selectable after an empty-upgrade failure")
+	_assert(game.choose_pending_card(0), "the component retry should resolve through shared selection")
+	_assert(game.continue_event(), "empty-upgrade retry should still complete the event")
+
+	game._reset_run()
+	game.deck.clear()
+	_force_event(game, "advanced_address_shift")
+	_assert(game.submit_event_answer("write_byte_0x46"), "empty-remove setup should accept the correct answer")
+	var remove_rewards: Array = (game.event_result.get("rewardChoices", []) as Array).duplicate(true)
+	_assert(!game.choose_event_reward(1), "an empty remove pool should fail without consumption")
+	_assert(
+		bool(game.event_result.get("rewardPending", false))
+		and !game.event_result.has("chosenRewardId")
+		and game.event_result.get("rewardChoices", []) == remove_rewards,
+		"an empty remove pool should leave both reward choices available and unconsumed"
+	)
+	_assert(game.choose_event_reward(0), "the direct card reward should remain selectable after an empty-remove failure")
+	_assert(game.continue_event(), "empty-remove retry should still complete the event")
 
 
 func _force_event(game, event_id: String) -> void:

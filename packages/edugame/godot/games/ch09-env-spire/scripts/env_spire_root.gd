@@ -1422,8 +1422,10 @@ func _render_map_route(layers: Array) -> void:
 		var marker := Button.new()
 		var layer_data := (layers[layer_number - 1] as Dictionary) if layer_number - 1 < layers.size() else {}
 		var layer_choices: Array = layer_data.get("choices", [])
-		var marker_type := str((layer_choices[0] as Dictionary).get("type", "")) if !layer_choices.is_empty() else ""
+		var marker_node := layer_choices[0] as Dictionary if !layer_choices.is_empty() else {}
+		var marker_type := str(marker_node.get("type", ""))
 		var node_state := _map_node_state(layer_number)
+		var details_revealed := node_state != "future" or revealed_nodes.has(layer_number)
 		var background := Color("#dfe7e8")
 		var accent := Color("#8ca0a5")
 		var text_color := Color("#50656b")
@@ -1431,7 +1433,7 @@ func _render_map_route(layers: Array) -> void:
 			background = Color("#2f7f8d")
 			accent = Color("#2f7f8d")
 			text_color = Color.WHITE
-		elif marker_type == "boss":
+		elif details_revealed and marker_type == "boss":
 			background = Color("#e6e0ed")
 			accent = Color("#725c91")
 			text_color = Color("#4f4066")
@@ -1439,7 +1441,10 @@ func _render_map_route(layers: Array) -> void:
 			background = Color("#f2d5cc")
 			accent = Color("#b75a3a")
 			text_color = Color("#7b3324")
-		marker.text = "%02d  %s\n%s" % [layer_number, _node_type_short(marker_type), _node_type_name(marker_type)]
+		if details_revealed:
+			marker.text = "%02d  %s\n%s" % [layer_number, str(marker_node.get("label", "调试节点")), _node_type_name(marker_type)]
+		else:
+			marker.text = "%02d  未揭示\n内容待侦察" % layer_number
 		marker.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_skin_button(marker, accent)
 		marker.custom_minimum_size = Vector2(0, 48)
@@ -3757,14 +3762,16 @@ func choose_event_reward(index: int) -> bool:
 		return false
 	var reward := rewards[index] as Dictionary
 	var effect := reward.get("effect", {}) as Dictionary
+	var applied := _apply_event_consequence(effect)
+	if !applied and pending_card_selection.is_empty():
+		return false
 	event_result["rewardPending"] = false
 	event_result["chosenRewardId"] = str(reward.get("id", ""))
 	event_result["resolved"] = false
-	var applied := _apply_event_consequence(effect)
 	event_result["consequenceApplied"] = applied
 	if pending_card_selection.is_empty():
 		event_result["resolved"] = true
-	return applied
+	return true
 
 
 func continue_event() -> bool:
@@ -3888,18 +3895,6 @@ func _open_question_card_selection(effect: Dictionary, action: String) -> bool:
 		if !expected_tag.is_empty() and !(card.get("tags", []) as Array).has(expected_tag):
 			continue
 		options.append(_card_copy(card_id))
-	if options.is_empty() and !expected_rarity.is_empty() and (!expected_type.is_empty() or !expected_tag.is_empty()):
-		for card_id in card_ids:
-			if !card_defs.has(card_id):
-				continue
-			var card := card_defs[card_id] as Dictionary
-			if !expected_type.is_empty() and str(card.get("type", "")) != expected_type:
-				continue
-			if !expected_tag.is_empty() and !(card.get("tags", []) as Array).has(expected_tag):
-				continue
-			options.append(_card_copy(card_id))
-		if !options.is_empty():
-			_log("事件卡牌稀有度约束已放宽")
 	if options.is_empty():
 		return false
 	_open_card_selection("event_card", options, [], "event", {"action": action, "eventFlow": "question_reward"})

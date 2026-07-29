@@ -228,6 +228,30 @@ func _verify_viewport(size: Vector2i) -> void:
 		_assert(game.ui_font.has_char("选".unicode_at(0)), "UI font should contain Chinese glyphs")
 	_assert(map_view != null and map_view.visible, "map view should be visible after reset")
 	_assert(combat_view != null and !combat_view.visible, "combat view should be hidden on map")
+	if map_route != null and map_route.get_child_count() == 12:
+		var next_marker := map_route.get_child(0) as Button
+		var hidden_third_marker := map_route.get_child(2) as Button
+		var hidden_fourth_marker := map_route.get_child(3) as Button
+		_assert(!next_marker.disabled and next_marker.text.contains("MQ-2 预热不足"), "the accessible next node should retain its map label")
+		_assert(hidden_third_marker.visible and hidden_fourth_marker.visible, "future route nodes should remain visibly present")
+		_assert(
+			hidden_third_marker.text.contains("未揭示")
+			and !hidden_third_marker.text.contains("BH1750 读数停留")
+			and hidden_fourth_marker.text.contains("未揭示")
+			and !hidden_fourth_marker.text.contains("阶段维护"),
+			"future route nodes should conceal their labels and details by default"
+		)
+		game._begin_question_event((game.event_defs.get("basic_adc_spike", {}) as Dictionary).duplicate(true))
+		_assert(game.submit_event_answer("spike_noise"), "map reveal UI setup should accept the answer ID")
+		_assert(game.choose_event_reward(1), "map reveal UI setup should apply the node reward")
+		_assert(game.continue_event(), "map reveal UI setup should return to the route")
+		game._render_state()
+		await process_frame
+		_assert(map_route.get_child_count() == 12, "revealing content should preserve the single twelve-node route")
+		hidden_third_marker = map_route.get_child(2) as Button
+		hidden_fourth_marker = map_route.get_child(3) as Button
+		_assert(hidden_third_marker.text.contains("BH1750 读数停留") and hidden_third_marker.text.contains("普通故障"), "revealed node 3 should show its label and type details")
+		_assert(hidden_fourth_marker.text.contains("阶段维护") and hidden_fourth_marker.text.contains("整备"), "revealed node 4 should show its label and type details")
 	game.current_layer = 10
 	game._render_state()
 	await process_frame
