@@ -36,6 +36,12 @@ func _run() -> void:
 			_assert(evidence_groups.size() >= 2, "%s should require at least two engineering evidence groups" % enemy.get("id", "enemy"))
 			for raw_group in evidence_groups:
 				_assert(raw_group is Array and !(raw_group as Array).is_empty(), "enemy evidence groups should contain one or more tags")
+			var rule := enemy.get("faultRule", {}) as Dictionary
+			_assert(!rule.is_empty(), "%s should declare faultRule" % enemy.get("id", "enemy"))
+			_assert(!str(rule.get("id", "")).is_empty(), "fault rule should have an id")
+			_assert(!str(rule.get("description", "")).is_empty(), "fault rule should explain its trigger")
+			_assert(!str(rule.get("counterText", "")).is_empty(), "fault rule should explain its counter")
+			_assert((rule.get("counterTags", []) as Array).size() >= 2 or bool(rule.get("behaviorCounter", false)), "fault rule should have broad counterplay")
 	_assert(events.size() == 4, "MVP should define four events")
 	_assert(relics.size() == 5, "MVP should define five engineering components")
 	_assert(maps.size() == 3, "MVP should define three fixed map seeds")

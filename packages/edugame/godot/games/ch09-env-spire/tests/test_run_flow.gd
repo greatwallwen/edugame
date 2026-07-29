@@ -104,6 +104,7 @@ func _run() -> void:
 	_assert(game._checkpoint_requirements_met(), "a discarded abnormal reading should not fail the hand-only trust check")
 	game.hand = [{"id": "abnormal_reading", "negative": true, "group": "noise"}]
 	_assert(!game._checkpoint_requirements_met(), "an abnormal reading still in hand should fail the trust check")
+	_assert_fault_rule_counterplay(game)
 
 	var run_states: Dictionary = game.get_script().get_script_constant_map().get("RunState", {})
 	if !run_states.has("COMPONENT"):
@@ -203,6 +204,99 @@ func _log_contains(entries: Array, expected: String) -> bool:
 		if str(entry).contains(expected):
 			return true
 	return false
+
+
+func _assert_fault_rule_counterplay(game) -> void:
+	if !game.has_method("_fault_rule_definition") or !game.has_method("_fault_rule_preview"):
+		_assert(false, "combat should expose data-driven fault-rule helpers")
+		return
+	if !_object_has_property(game, "fault_rule_state"):
+		_assert(false, "combat should expose fault-rule state")
+		return
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.hand = [game._card_copy("mq2_sample"), game._card_copy("adc_continuous_sample")]
+	game.processing_points = 3
+	_assert(game.play_card(0) and game.play_card(0), "two smoke samples should resolve the MQ-2 fault rule")
+	_assert(bool(game.fault_rule_state.get("triggered", false)), "second smoke sample should trigger the MQ-2 rule")
+	_assert(game._pile_has_card("uncalibrated_reading"), "uncalibrated MQ-2 sampling should add its negative card")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.hand = [game._card_copy("environment_baseline"), game._card_copy("mq2_sample"), game._card_copy("adc_continuous_sample")]
+	game.processing_points = 3
+	_assert(game.play_card(0) and game.play_card(0) and game.play_card(0), "diagnosis should prepare the MQ-2 counter before sampling")
+	_assert(bool(game.fault_rule_state.get("suppressed", false)) and !bool(game.fault_rule_state.get("triggered", false)), "diagnosis should suppress the MQ-2 rule")
+
+	game._start_encounter("adc_spike", "ordinary")
+	game.hand = [game._card_copy("mq2_sample"), game._card_copy("bh1750_read")]
+	game.processing_points = 3
+	_assert(game.play_card(0) and game.play_card(0), "two collection cards should resolve the ADC fault rule")
+	_assert(bool(game.fault_rule_state.get("triggered", false)), "second collection stage should trigger ADC spike")
+	_assert(game._pile_has_card("abnormal_reading"), "uncountered ADC spike should add abnormal reading")
+
+	game._start_encounter("adc_spike", "ordinary")
+	game.hand = [game._card_copy("sliding_average"), game._card_copy("mq2_sample"), game._card_copy("bh1750_read")]
+	game.processing_points = 3
+	_assert(game.play_card(0) and game.play_card(0) and game.play_card(0), "filter should prepare the ADC counter before collection")
+	_assert(bool(game.fault_rule_state.get("suppressed", false)) and !bool(game.fault_rule_state.get("triggered", false)), "filter should suppress ADC spike")
+
+	game._start_encounter("lcd_blocking", "ordinary")
+	game.trusted_data.smoke = 1
+	game.hand = [game._card_copy("lcd_display")]
+	game.processing_points = 2
+	_assert(game.play_card(0), "unbuffered LCD output should be playable")
+	_assert(int(game.fault_rule_state.get("nextEnergyPenalty", 0)) == -1, "unprepared LCD output should queue one less next-turn energy")
+
+	game._start_encounter("lcd_blocking", "ordinary")
+	game.trusted_data.smoke = 1
+	game.hand = [game._card_copy("data_cache"), game._card_copy("lcd_display")]
+	game.processing_points = 2
+	_assert(game.play_card(0) and game.play_card(0), "buffer should prepare the LCD counter before output")
+	_assert(bool(game.fault_rule_state.get("suppressed", false)) and int(game.fault_rule_state.get("nextEnergyPenalty", 0)) == 0, "buffer should suppress LCD energy loss")
+
+	game._start_encounter("alarm_jitter", "ordinary")
+	game.alarm_markers = 1
+	game.hand = [game._card_copy("led_alarm")]
+	game.processing_points = 2
+	_assert(game.play_card(0), "unfiltered alarm output should be playable")
+	_assert(bool(game.fault_rule_state.get("triggered", false)) and game._pile_has_card("false_alarm"), "unfiltered alarm should add false alarm")
+
+	game._start_encounter("alarm_jitter", "ordinary")
+	game.alarm_markers = 1
+	game.hand = [game._card_copy("sliding_average"), game._card_copy("led_alarm")]
+	game.processing_points = 2
+	_assert(game.play_card(0) and game.play_card(0), "filter should prepare the alarm counter before output")
+	_assert(bool(game.fault_rule_state.get("suppressed", false)) and !bool(game.fault_rule_state.get("triggered", false)), "filter should suppress false alarm")
+
+	game._start_encounter("i2c_congestion", "elite")
+	game.hand = [game._card_copy("i2c_transaction"), game._card_copy("i2c_register_read")]
+	game.processing_points = 3
+	var stability_before_rule: int = game.stability
+	_assert(game.play_card(0), "first I2C card should be safe")
+	_assert(game.play_card(0), "second I2C card should resolve")
+	_assert(game.stability == stability_before_rule - 6, "uncountered congestion should deal 6")
+	_assert(game._pile_has_card("blocking_delay"), "uncountered congestion should add blocking delay")
+
+	game._start_encounter("i2c_congestion", "elite")
+	game.hand = [game._card_copy("uart_log"), game._card_copy("i2c_transaction"), game._card_copy("i2c_register_read")]
+	game.processing_points = 4
+	var protected_stability: int = game.stability
+	_assert(game.play_card(0), "diagnosis card should prepare the counter")
+	_assert(game.play_card(0) and game.play_card(0), "two I2C cards should play")
+	_assert(game.stability == protected_stability, "diagnosis should suppress congestion once")
+
+	game._start_encounter("bh1750_stale", "ordinary")
+	game.raw_data.light = 1
+	_assert(game.end_turn(), "light raw data should resolve BH1750 end-turn rule")
+	_assert(_log_contains(game.message_log, "Fault rule bh1750_stale_raw triggered"), "unretained light raw data should trigger BH1750 stale rule")
+
+	game._start_encounter("bh1750_stale", "ordinary")
+	game.raw_data.light = 1
+	game.hand = [game._card_copy("data_cache")]
+	game.processing_points = 1
+	_assert(game.play_card(0), "cache retention should prepare BH1750 end turn")
+	_assert(bool(game.fault_rule_state.get("suppressed", false)), "cache retention should suppress stale BH1750 data")
+	_assert(game.end_turn(), "cache retention should resolve BH1750 end turn")
 
 
 func _object_has_property(object: Object, property_name: String) -> bool:

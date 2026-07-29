@@ -98,6 +98,10 @@ func _verify_viewport(size: Vector2i) -> void:
 	var evidence_bridge = game.find_child("EvidenceBridge", true, false)
 	var fault_unit = game.find_child("FaultUnit", true, false)
 	var enemy_intent = game.find_child("EnemyIntent", true, false)
+	var fault_intent_row = game.find_child("FaultIntentRow", true, false) as Label
+	var fault_rule_row = game.find_child("FaultRuleRow", true, false) as Label
+	var fault_counter_row = game.find_child("FaultCounterRow", true, false) as Label
+	var fault_rule_state = game.find_child("FaultRuleState", true, false) as Label
 	var hand_dock = game.find_child("HandDock", true, false)
 	var point_counter = game.find_child("ProcessingPointCounter", true, false)
 	var chain_strip = game.find_child("EngineeringChainStrip", true, false) as Control
@@ -240,6 +244,14 @@ func _verify_viewport(size: Vector2i) -> void:
 	await process_frame
 	_assert(combat_view.visible and !map_view.visible, "combat state should show only combat view")
 	_assert(hand_row.get_child_count() == game.hand.size(), "hand row should render one button per card")
+	_assert(fault_intent_row != null and fault_rule_row != null and fault_counter_row != null and fault_rule_state != null, "combat should expose stable fault-rule labels")
+	if fault_intent_row != null and fault_rule_row != null and fault_counter_row != null and fault_rule_state != null:
+		var fault_rows := [fault_intent_row, fault_rule_row, fault_counter_row, fault_rule_state]
+		for row in fault_rows:
+			_assert(row.is_visible_in_tree() and !row.text.is_empty(), "%s should have readable non-empty fault text at %s" % [row.name, size])
+		for index in range(fault_rows.size()):
+			for other_index in range(index + 1, fault_rows.size()):
+				_assert(!(fault_rows[index] as Control).get_global_rect().intersects((fault_rows[other_index] as Control).get_global_rect()), "%s and %s should not overlap at %s" % [fault_rows[index].name, fault_rows[other_index].name, size])
 	if point_counter != null:
 		_assert(point_counter.text.contains(str(game.processing_points)), "processing point counter should render the live point total")
 	if arena != null and hand_dock != null:

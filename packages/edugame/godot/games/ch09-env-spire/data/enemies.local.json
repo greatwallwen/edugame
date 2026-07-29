@@ -1,0 +1,203 @@
+{
+  "enemies": [
+    {
+      "id": "mq2_warmup",
+      "name": "MQ-2 预热不足",
+      "tier": "ordinary",
+      "region": 1,
+      "repairTarget": 24,
+      "weaknessTags": ["smoke", "calibration", "adc"],
+      "evidenceGroups": [["smoke"], ["calibration", "adc"]],
+      "knowledgePoint": "MQ-2 需要预热和基准校准。",
+      "intentPattern": [
+        {"type": "negative", "card": "uncalibrated", "text": "加入未校准读数"},
+        {"type": "damage", "amount": 6, "text": "预热漂移：稳定度 -6"}
+      ],
+      "faultRule": {
+        "id": "mq2_uncalibrated",
+        "timing": "after_card",
+        "triggerTag": "smoke",
+        "triggerCount": 2,
+        "counterTags": ["diagnosis", "calibration"],
+        "behaviorCounter": true,
+        "negativeCard": "uncalibrated_reading",
+        "description": "本回合第 2 次烟雾采集会加入未校准读数。",
+        "counterText": "先诊断/校准，或本回合只采集一次。"
+      }
+    },
+    {
+      "id": "bh1750_stale",
+      "name": "BH1750 读数停留",
+      "tier": "ordinary",
+      "region": 1,
+      "repairTarget": 22,
+      "weaknessTags": ["light", "i2c", "scheduler"],
+      "evidenceGroups": [["light"], ["i2c"]],
+      "knowledgePoint": "读取前要等待测量转换完成。",
+      "intentPattern": [
+        {"type": "negative", "card": "stale_data", "text": "加入旧数据"},
+        {"type": "damage", "amount": 6, "text": "旧值误判：稳定度 -6"}
+      ],
+      "faultRule": {
+        "id": "bh1750_stale_raw",
+        "timing": "end_turn",
+        "source": "light",
+        "counterTags": ["buffer", "scheduler"],
+        "behaviorCounter": true,
+        "negativeCard": "stale_data",
+        "description": "回合结束时保留光照原始数据会加入旧数据。",
+        "counterText": "使用缓存保留，或先完成光照数据处理。"
+      }
+    },
+    {
+      "id": "adc_spike",
+      "name": "ADC 尖峰噪声",
+      "tier": "ordinary",
+      "region": 2,
+      "repairTarget": 32,
+      "weaknessTags": ["adc", "filter", "diagnosis"],
+      "evidenceGroups": [["adc"], ["filter", "diagnosis"]],
+      "knowledgePoint": "尖峰读数需要滤波和异常剔除。",
+      "intentPattern": [
+        {"type": "negative", "card": "abnormal_reading", "text": "加入异常读数"},
+        {"type": "damage", "amount": 8, "text": "噪声冲击：稳定度 -8"}
+      ],
+      "faultRule": {
+        "id": "adc_second_collect",
+        "timing": "after_card",
+        "triggerStage": "collect",
+        "triggerCount": 2,
+        "counterTags": ["filter", "diagnosis"],
+        "negativeCard": "abnormal_reading",
+        "description": "本回合第 2 次采集会放大 ADC 尖峰噪声。",
+        "counterText": "先滤波或诊断，再进行连续采集。"
+      }
+    },
+    {
+      "id": "lcd_blocking",
+      "name": "LCD 刷新阻塞",
+      "tier": "ordinary",
+      "region": 3,
+      "repairTarget": 42,
+      "weaknessTags": ["display", "buffer", "scheduler"],
+      "evidenceGroups": [["display", "uart"], ["buffer", "scheduler", "diagnosis"]],
+      "knowledgePoint": "显示刷新应节流或使用缓冲。",
+      "intentPattern": [
+        {"type": "negative", "card": "blocking_delay", "text": "加入阻塞延时"},
+        {"type": "damage", "amount": 10, "text": "刷新占用：稳定度 -10"}
+      ],
+      "faultRule": {
+        "id": "lcd_unprepared_output",
+        "timing": "after_card",
+        "triggerStage": "output",
+        "triggerCount": 1,
+        "counterTags": ["buffer", "scheduler", "diagnosis"],
+        "nextEnergy": -1,
+        "description": "未准备的显示输出会占用下一回合处理点。",
+        "counterText": "先准备缓冲、调度或诊断，再执行输出。"
+      }
+    },
+    {
+      "id": "alarm_jitter",
+      "name": "报警阈值抖动",
+      "tier": "ordinary",
+      "region": 3,
+      "repairTarget": 44,
+      "weaknessTags": ["alarm", "filter", "smoke"],
+      "evidenceGroups": [["smoke"], ["alarm", "filter"]],
+      "knowledgePoint": "报警逻辑需要滤波和迟滞区间。",
+      "intentPattern": [
+        {"type": "negative", "card": "false_alarm", "text": "加入误报警"},
+        {"type": "damage", "amount": 11, "text": "频繁误报：稳定度 -11"}
+      ],
+      "faultRule": {
+        "id": "alarm_without_trust",
+        "timing": "after_card",
+        "triggerTag": "alarm",
+        "triggerCount": 1,
+        "counterTags": ["filter", "trusted_data"],
+        "negativeCard": "false_alarm",
+        "description": "缺少可信数据时触发报警会加入误报警。",
+        "counterText": "先滤波，或使用可信数据触发报警。"
+      }
+    },
+    {
+      "id": "i2c_congestion",
+      "name": "I2C 总线拥塞",
+      "tier": "elite",
+      "region": 2,
+      "repairTarget": 60,
+      "weaknessTags": ["i2c", "scheduler", "diagnosis"],
+      "evidenceGroups": [["i2c"], ["scheduler", "diagnosis"]],
+      "knowledgePoint": "总线拥塞需要超时、分时和恢复策略。",
+      "intentPattern": [
+        {"type": "negative", "card": "i2c_nack", "text": "加入 I2C NACK"},
+        {"type": "damage", "amount": 10, "text": "总线阻塞：稳定度 -10"},
+        {"type": "negative", "card": "address_conflict", "text": "加入地址冲突"},
+        {"type": "damage", "amount": 12, "text": "事务超时：稳定度 -12"}
+      ],
+      "rule": "second_i2c_penalty",
+      "faultRule": {
+        "id": "i2c_second_transaction",
+        "timing": "after_card",
+        "triggerTag": "i2c",
+        "triggerCount": 2,
+        "counterTags": ["diagnosis", "scheduler", "chain3"],
+        "damage": 6,
+        "negativeCard": "blocking_delay",
+        "description": "本回合第 2 次 I2C 事务会造成总线阻塞。",
+        "counterText": "先诊断、调度，或完成三段连携后再执行事务。"
+      }
+    },
+    {
+      "id": "warehouse_acceptance",
+      "name": "智能仓储综合验收",
+      "tier": "boss",
+      "region": 4,
+      "weaknessTags": ["smoke", "light", "temp", "humidity", "filter", "acceptance"],
+      "knowledgePoint": "完整系统必须覆盖采集、可信处理和输出闭环。",
+      "phases": [
+        {
+          "name": "采集接入",
+          "repairTarget": 28,
+          "gate": "two_sources",
+          "intentPattern": [
+            {"type": "damage", "amount": 8, "text": "传感器离线：稳定度 -8"},
+            {"type": "negative", "card": "uncalibrated", "text": "加入未校准读数"}
+          ]
+        },
+        {
+          "name": "数据可信",
+          "repairTarget": 36,
+          "gate": "trusted_and_filter",
+          "intentPattern": [
+            {"type": "negative", "card": "abnormal_reading", "text": "加入异常读数"},
+            {"type": "negative", "card": "stale_data", "text": "加入旧数据"},
+            {"type": "damage", "amount": 11, "text": "可信度审查：稳定度 -11"}
+          ]
+        },
+        {
+          "name": "系统闭环",
+          "repairTarget": 44,
+          "gate": "two_output_types",
+          "intentPattern": [
+            {"type": "negative", "card": "blocking_delay", "text": "加入阻塞延时"},
+            {"type": "negative", "card": "false_alarm", "text": "加入误报警"},
+            {"type": "damage", "amount": 14, "text": "综合压力：稳定度 -14"}
+          ]
+        }
+      ]
+    }
+  ],
+  "negativeCards": [
+    {"id": "abnormal_reading", "name": "异常读数", "group": "noise", "drawEffect": {"type": "damage", "amount": 3}},
+    {"id": "stale_data", "name": "旧数据", "group": "noise", "drawEffect": {"type": "repair_penalty", "amount": 3}},
+    {"id": "blocking_delay", "name": "阻塞延时", "group": "blocking", "drawEffect": {"type": "energy", "amount": -1}},
+    {"id": "i2c_nack", "name": "I2C NACK", "group": "i2c", "drawEffect": {"type": "damage", "amount": 2}},
+    {"id": "address_conflict", "name": "地址冲突", "group": "i2c", "drawEffect": {"type": "i2c_cost", "amount": 1}},
+    {"id": "uncalibrated", "name": "未校准读数", "group": "noise", "drawEffect": {"type": "raw_loss", "amount": 1}},
+    {"id": "uncalibrated_reading", "name": "未校准读数", "group": "noise", "drawEffect": {"type": "raw_loss", "amount": 1}},
+    {"id": "false_alarm", "name": "误报警", "group": "alarm", "drawEffect": {"type": "damage", "amount": 5}},
+    {"id": "unverified_config", "name": "未验证配置", "group": "boss", "drawEffect": {"type": "damage", "amount": 4}}
+  ]
+}

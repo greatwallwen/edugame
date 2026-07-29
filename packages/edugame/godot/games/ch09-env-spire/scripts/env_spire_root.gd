@@ -109,6 +109,7 @@ var persistent_output_types := {}
 var repair_penalty := 0
 var i2c_cost_penalty := 0
 var pending_i2c_count := 0
+var fault_rule_state: Dictionary = {}
 
 var current_node := {}
 var current_encounter := {}
@@ -175,6 +176,10 @@ var processing_point_counter: Label
 var encounter_name_label: Label
 var encounter_meta_label: Label
 var intent_label: Label
+var fault_intent_row: Label
+var fault_rule_row: Label
+var fault_counter_row: Label
+var fault_rule_state_label: Label
 var repair_label: Label
 var repair_bar: ProgressBar
 var gate_label: Label
@@ -839,6 +844,29 @@ func _build_combat_view() -> void:
 	intent_label.add_theme_stylebox_override("normal", _button_style(Color("#fff0df"), Color("#b16a2c")))
 	intent_label.add_theme_color_override("font_color", Color("#693914"))
 	fault_content.add_child(intent_label)
+	fault_intent_row = Label.new()
+	fault_intent_row.name = "FaultIntentRow"
+	fault_intent_row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	fault_intent_row.add_theme_font_size_override("font_size", 13)
+	fault_intent_row.add_theme_color_override("font_color", Color("#693914"))
+	fault_content.add_child(fault_intent_row)
+	fault_rule_row = Label.new()
+	fault_rule_row.name = "FaultRuleRow"
+	fault_rule_row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	fault_rule_row.add_theme_font_size_override("font_size", 13)
+	fault_rule_row.add_theme_color_override("font_color", Color("#3e565d"))
+	fault_content.add_child(fault_rule_row)
+	fault_counter_row = Label.new()
+	fault_counter_row.name = "FaultCounterRow"
+	fault_counter_row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	fault_counter_row.add_theme_font_size_override("font_size", 13)
+	fault_counter_row.add_theme_color_override("font_color", Color("#226c59"))
+	fault_content.add_child(fault_counter_row)
+	fault_rule_state_label = Label.new()
+	fault_rule_state_label.name = "FaultRuleState"
+	fault_rule_state_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	fault_rule_state_label.add_theme_font_size_override("font_size", 13)
+	fault_content.add_child(fault_rule_state_label)
 	encounter_name_label = Label.new()
 	encounter_name_label.add_theme_font_size_override("font_size", 24)
 	encounter_name_label.add_theme_color_override("font_color", Color("#8d2f2a"))
@@ -1363,6 +1391,23 @@ func _render_combat() -> void:
 	var phase_text := " · 阶段 %d/3" % (boss_phase + 1) if tier == "boss" else ""
 	encounter_meta_label.text = "%s%s\n弱点：%s" % [_node_type_name(tier), phase_text, " / ".join(current_encounter.get("weaknessTags", []))]
 	intent_label.text = _current_intent_text()
+	var fault_preview := _fault_rule_preview()
+	var fault_rows_visible := !fault_preview.is_empty()
+	fault_intent_row.visible = fault_rows_visible
+	fault_rule_row.visible = fault_rows_visible
+	fault_counter_row.visible = fault_rows_visible
+	fault_rule_state_label.visible = fault_rows_visible
+	if fault_preview.is_empty():
+		fault_intent_row.text = "故障规则：无"
+		fault_rule_row.text = "触发：无"
+		fault_counter_row.text = "应对：无"
+		fault_rule_state_label.text = "待触发"
+	else:
+		fault_intent_row.text = "意图：%s" % _current_intent_text()
+		fault_rule_row.text = "规则：%s" % fault_preview.get("description", "")
+		fault_counter_row.text = "应对：%s" % fault_preview.get("counterText", "")
+		fault_rule_state_label.text = "已触发" if bool(fault_preview.get("triggered", false)) else ("本回合已抑制" if bool(fault_preview.get("suppressed", false)) else "待触发")
+	fault_rule_state_label.add_theme_color_override("font_color", Color("#9b4f2f") if bool(fault_preview.get("triggered", false)) else (Color("#226c59") if bool(fault_preview.get("suppressed", false)) else Color("#725c91")))
 	repair_label.text = "修复进度 %d / %d" % [repair_progress, repair_target]
 	repair_bar.max_value = maxi(repair_target, 1)
 	repair_bar.value = repair_progress
@@ -1941,6 +1986,134 @@ func _negative_card(card_id: String) -> Dictionary:
 	return result
 
 
+func _fault_rule_definition() -> Dictionary:
+	if tutorial_active or str(current_encounter.get("tier", "")) == "boss":
+		return {}
+	return (current_encounter.get("faultRule", {}) as Dictionary).duplicate(true)
+
+
+func _fault_rule_preview() -> Dictionary:
+	var rule := _fault_rule_definition()
+	if rule.is_empty():
+		return {}
+	return {
+		"id": str(rule.get("id", "")),
+		"description": str(rule.get("description", "")),
+		"counterText": str(rule.get("counterText", "")),
+		"suppressed": bool(fault_rule_state.get("suppressed", false)),
+		"triggered": bool(fault_rule_state.get("triggered", false))
+	}
+
+
+func _prepare_fault_rule_for_card(card: Dictionary) -> void:
+	var rule := _fault_rule_definition()
+	if rule.is_empty():
+		return
+	if bool(fault_rule_state.get("suppressed", false)) or bool(fault_rule_state.get("triggered", false)):
+		return
+	var counter := _fault_rule_counter_for_card(rule, card)
+	if counter.is_empty():
+		return
+	fault_rule_state["suppressed"] = true
+	_log("Fault rule %s suppressed by %s" % [rule.get("id", ""), counter])
+
+
+func _resolve_fault_rule_after_card(card: Dictionary) -> void:
+	var rule := _fault_rule_definition()
+	if rule.is_empty() or str(rule.get("timing", "")) != "after_card":
+		return
+	var tag_counts := fault_rule_state.get("cardTagCounts", {}) as Dictionary
+	for raw_tag in card.get("tags", []) as Array:
+		var tag := str(raw_tag)
+		tag_counts[tag] = int(tag_counts.get(tag, 0)) + 1
+	fault_rule_state["cardTagCounts"] = tag_counts
+	var stage_counts := fault_rule_state.get("stageCounts", {}) as Dictionary
+	var stage := str(card.get("stage", ""))
+	if !stage.is_empty():
+		stage_counts[stage] = int(stage_counts.get(stage, 0)) + 1
+	fault_rule_state["stageCounts"] = stage_counts
+	if bool(fault_rule_state.get("suppressed", false)) or bool(fault_rule_state.get("triggered", false)):
+		return
+	var threshold := int(rule.get("triggerCount", 1))
+	var trigger_tag := str(rule.get("triggerTag", ""))
+	var trigger_stage := str(rule.get("triggerStage", ""))
+	var trigger_count := int(tag_counts.get(trigger_tag, 0)) if !trigger_tag.is_empty() else int(stage_counts.get(trigger_stage, 0))
+	if trigger_count < threshold:
+		return
+	_resolve_fault_rule(rule)
+
+
+func _resolve_fault_rule_end_turn() -> void:
+	var rule := _fault_rule_definition()
+	if rule.is_empty() or str(rule.get("timing", "")) != "end_turn":
+		return
+	if bool(fault_rule_state.get("suppressed", false)) or bool(fault_rule_state.get("triggered", false)):
+		return
+	var counter := _fault_rule_behavior_counter(rule)
+	if !counter.is_empty():
+		fault_rule_state["suppressed"] = true
+		_log("Fault rule %s suppressed by %s" % [rule.get("id", ""), counter])
+		return
+	var source := str(rule.get("source", ""))
+	if source.is_empty() or int(raw_data.get(source, 0)) <= 0:
+		return
+	_resolve_fault_rule(rule)
+
+
+func _fault_rule_counter_for_card(rule: Dictionary, card: Dictionary) -> String:
+	if _fault_rule_will_trigger(rule, card):
+		return ""
+	var counter_tags: Array = rule.get("counterTags", []) as Array
+	for raw_tag in card.get("tags", []) as Array:
+		var tag := str(raw_tag)
+		if counter_tags.has(tag):
+			return tag
+	return _fault_rule_behavior_counter(rule)
+
+
+func _fault_rule_will_trigger(rule: Dictionary, card: Dictionary) -> bool:
+	if str(rule.get("timing", "")) != "after_card":
+		return false
+	var threshold := int(rule.get("triggerCount", 1))
+	var trigger_tag := str(rule.get("triggerTag", ""))
+	if !trigger_tag.is_empty() and (card.get("tags", []) as Array).has(trigger_tag):
+		var tag_counts := fault_rule_state.get("cardTagCounts", {}) as Dictionary
+		return int(tag_counts.get(trigger_tag, 0)) + 1 >= threshold
+	var trigger_stage := str(rule.get("triggerStage", ""))
+	if !trigger_stage.is_empty() and str(card.get("stage", "")) == trigger_stage:
+		var stage_counts := fault_rule_state.get("stageCounts", {}) as Dictionary
+		return int(stage_counts.get(trigger_stage, 0)) + 1 >= threshold
+	return false
+
+
+func _fault_rule_behavior_counter(rule: Dictionary) -> String:
+	var rule_id := str(rule.get("id", ""))
+	match rule_id:
+		"bh1750_stale_raw":
+			return "cache_retention" if retain_data else ""
+		"alarm_without_trust":
+			return "trusted_data" if _trusted_total() > 0 else ""
+		"i2c_second_transaction":
+			return "chain3" if chain_count >= 2 else ""
+	return ""
+
+
+func _resolve_fault_rule(rule: Dictionary) -> void:
+	var rule_id := str(rule.get("id", ""))
+	fault_rule_state["triggered"] = true
+	match rule_id:
+		"mq2_uncalibrated", "adc_second_collect", "alarm_without_trust":
+			discard_pile.append(_negative_card(str(rule.get("negativeCard", ""))))
+		"lcd_unprepared_output":
+			fault_rule_state["nextEnergyPenalty"] = int(rule.get("nextEnergy", 0))
+		"i2c_second_transaction":
+			_take_damage(int(rule.get("damage", 0)))
+			discard_pile.append(_negative_card(str(rule.get("negativeCard", ""))))
+		"bh1750_stale_raw":
+			discard_pile.append(_negative_card(str(rule.get("negativeCard", ""))))
+	_log("Fault rule %s triggered" % rule_id)
+
+
 func _shuffle(items: Array) -> void:
 	for index in range(items.size() - 1, 0, -1):
 		var swap_index := rng.randi_range(0, index)
@@ -1990,6 +2163,13 @@ func _start_encounter(enemy_id: String, tier: String = "ordinary") -> void:
 	repair_progress = 0
 	intent_index = 0
 	state = RunState.COMBAT
+	fault_rule_state = {
+		"cardTagCounts": {},
+		"stageCounts": {},
+		"suppressed": false,
+		"triggered": false,
+		"nextEnergyPenalty": 0
+	}
 	_reset_turn_state(true)
 	_draw_cards(5)
 	_log("进入故障：%s" % current_encounter.get("name", enemy_id))
@@ -2090,6 +2270,8 @@ func _reset_boss_phase_metrics() -> void:
 
 func _reset_turn_state(first_turn: bool = false) -> void:
 	turn_number += 1
+	next_turn_energy += int(fault_rule_state.get("nextEnergyPenalty", 0))
+	fault_rule_state["nextEnergyPenalty"] = 0
 	processing_points = 3 + next_turn_energy
 	next_turn_energy = 0
 	block = 0
@@ -2102,6 +2284,10 @@ func _reset_turn_state(first_turn: bool = false) -> void:
 	turn_card_types.clear()
 	turn_sources.clear()
 	pending_i2c_count = 0
+	fault_rule_state["cardTagCounts"] = {}
+	fault_rule_state["stageCounts"] = {}
+	fault_rule_state["suppressed"] = false
+	fault_rule_state["triggered"] = false
 	if !first_turn:
 		hand.clear()
 		_draw_cards(5)
@@ -2125,6 +2311,7 @@ func play_card(hand_index: int) -> bool:
 	_consume_card_discounts(card)
 	processing_points -= cost
 	hand.remove_at(hand_index)
+	_prepare_fault_rule_for_card(card)
 	_advance_chain(str(card.get("stage", "")))
 	var tags: Array = card.get("tags", [])
 	for raw_tag in tags:
@@ -2148,6 +2335,7 @@ func play_card(hand_index: int) -> bool:
 	var trusted_spent := 0
 	for raw_effect in effects:
 		trusted_spent += _apply_card_effect(raw_effect as Dictionary, card, trusted_spent)
+	_resolve_fault_rule_after_card(card)
 	var matched_weaknesses := _matched_weakness_tags(card)
 	if !matched_weaknesses.is_empty():
 		var bonus_text := "  ·  诊断修复 +2" if diagnosis > 0 and repair_progress > repair_before else ""
@@ -2553,6 +2741,7 @@ func end_turn() -> bool:
 		tutorial_step = TutorialStep.PLAY_SAMPLE
 		_render_state()
 		return true
+	_resolve_fault_rule_end_turn()
 	_resolve_intent()
 	if stability <= 0:
 		_handle_defeat()
