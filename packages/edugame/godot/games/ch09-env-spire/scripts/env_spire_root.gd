@@ -89,6 +89,10 @@ var diagnosis := 0
 var alarm_markers := 0
 var chain_count := 0
 var last_stage := ""
+var chain_rewards_claimed := {}
+var cards_played_this_turn := 0
+var reroute_available := false
+var reroute_mode := false
 var turn_number := 0
 var turn_card_types := {}
 var turn_sources := {}
@@ -164,6 +168,8 @@ var hand_dock: VBoxContainer
 var tutorial_combat_spacer: Control
 var dock_header: HBoxContainer
 var hand_title: Label
+var engineering_chain_strip: HBoxContainer
+var chain_stage_labels := {}
 var combat_actions: HBoxContainer
 var processing_point_counter: Label
 var encounter_name_label: Label
@@ -178,6 +184,9 @@ var status_label: Label
 var hand_scroll: ScrollContainer
 var hand_row: HBoxContainer
 var end_turn_button: Button
+var reroute_button: Button
+var reroute_cancel_button: Button
+var action_trailing_spacer: Control
 var choice_view: PanelContainer
 var choice_title: Label
 var choice_description: Label
@@ -856,6 +865,20 @@ func _build_combat_view() -> void:
 	hand_title.text = "手牌 / 点击执行工程动作"
 	hand_title.add_theme_color_override("font_color", Color("#294b54"))
 	dock_header.add_child(hand_title)
+	engineering_chain_strip = HBoxContainer.new()
+	engineering_chain_strip.name = "EngineeringChainStrip"
+	engineering_chain_strip.add_theme_constant_override("separation", 4)
+	dock_header.add_child(engineering_chain_strip)
+	for stage in STAGE_ORDER:
+		var stage_label := Label.new()
+		stage_label.name = "Chain%s" % stage.capitalize()
+		stage_label.text = {"collect": "采", "interface": "接", "process": "理", "output": "出"}.get(stage, stage)
+		stage_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		stage_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		stage_label.custom_minimum_size = Vector2(24, 28)
+		stage_label.add_theme_color_override("font_color", Color("#52666b"))
+		engineering_chain_strip.add_child(stage_label)
+		chain_stage_labels[stage] = stage_label
 	var dock_spacer := Control.new()
 	dock_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dock_header.add_child(dock_spacer)
@@ -880,15 +903,37 @@ func _build_combat_view() -> void:
 	combat_actions.alignment = BoxContainer.ALIGNMENT_END
 	combat_actions.add_theme_constant_override("separation", 10)
 	hand_dock.add_child(combat_actions)
+	reroute_button = Button.new()
+	reroute_button.name = "RerouteButton"
+	reroute_button.text = "换牌"
+	reroute_button.custom_minimum_size = Vector2(74, 44)
+	_skin_button(reroute_button, Color("#2f7f8d"))
+	reroute_button.pressed.connect(func() -> void:
+		begin_reroute()
+	)
+	combat_actions.add_child(reroute_button)
+	reroute_cancel_button = Button.new()
+	reroute_cancel_button.name = "RerouteCancelButton"
+	reroute_cancel_button.text = "取消"
+	reroute_cancel_button.custom_minimum_size = Vector2(74, 44)
+	_skin_button(reroute_cancel_button, Color("#697b80"))
+	reroute_cancel_button.pressed.connect(func() -> void:
+		cancel_reroute()
+	)
+	combat_actions.add_child(reroute_cancel_button)
 	end_turn_button = Button.new()
 	end_turn_button.name = "EndTurnButton"
 	end_turn_button.text = "结束回合"
 	_skin_button(end_turn_button, Color("#b16a2c"))
+	end_turn_button.custom_minimum_size = Vector2(104, 44)
 	end_turn_button.pressed.connect(func() -> void:
 		end_turn()
 		_render_state()
 	)
 	combat_actions.add_child(end_turn_button)
+	action_trailing_spacer = Control.new()
+	action_trailing_spacer.custom_minimum_size = Vector2(1, 0)
+	combat_actions.add_child(action_trailing_spacer)
 
 
 func _build_choice_view() -> void:
@@ -1082,9 +1127,12 @@ func _apply_responsive_layout() -> void:
 		tutorial_combat_spacer.visible = tutorial_active and state == RunState.COMBAT
 		tutorial_combat_spacer.custom_minimum_size.y = tutorial_coach_height
 	if end_turn_button != null and dock_header != null and combat_actions != null:
-		var end_turn_parent := combat_actions if compact and !tutorial_active else dock_header
-		if end_turn_button.get_parent() != end_turn_parent:
-			end_turn_button.reparent(end_turn_parent)
+		var action_parent := combat_actions if compact and !tutorial_active else dock_header
+		for action in [reroute_button, reroute_cancel_button, end_turn_button, action_trailing_spacer]:
+			if action != null and action.get_parent() != action_parent:
+				action.reparent(action_parent)
+		if action_trailing_spacer != null:
+			action_parent.move_child(action_trailing_spacer, -1)
 		combat_actions.visible = compact
 	if map_composition != null:
 		map_composition.vertical = compact
@@ -1326,6 +1374,25 @@ func _render_combat() -> void:
 	]
 	status_label.text = "处理点 %d  ·  防护 %d  ·  连携 %d  ·  诊断 %d  ·  报警 %d" % [processing_points, block, chain_count, diagnosis, alarm_markers]
 	processing_point_counter.text = "处理点 %d" % processing_points
+	for stage in STAGE_ORDER:
+		var stage_label := chain_stage_labels.get(stage, null) as Label
+		if stage_label == null:
+			continue
+		var preview := _chain_preview_for_stage(stage)
+		var stage_color := Color("#52666b")
+		if bool(preview.get("current", false)):
+			stage_color = Color("#226c59")
+		elif bool(preview.get("completed", false)):
+			stage_color = Color("#2f7f8d")
+		elif bool(preview.get("next", false)):
+			stage_color = Color("#b16a2c")
+		stage_label.add_theme_color_override("font_color", stage_color)
+	if reroute_button != null:
+		reroute_button.visible = !tutorial_active
+		reroute_button.disabled = tutorial_active or reroute_mode or !reroute_available or cards_played_this_turn > 0
+	if reroute_cancel_button != null:
+		reroute_cancel_button.visible = !tutorial_active and reroute_mode
+		reroute_cancel_button.disabled = tutorial_active or !reroute_mode
 	_clear_children(hand_row)
 	for index in range(hand.size()):
 		var card := hand[index] as Dictionary
@@ -1339,10 +1406,13 @@ func _render_combat() -> void:
 			var cost := _card_cost_preview(card)
 			button.text = "[%d]\n%s\n%s\n\n%s" % [cost, card.get("name", "卡牌"), card.get("type", ""), card.get("upgradedEffectText", "") if bool(card.get("upgraded", false)) else card.get("effectText", "")]
 			button.tooltip_text = str(card.get("knowledgePoint", ""))
-			button.disabled = processing_points < cost or !_card_requirements_met(card) or (tutorial_active and !_tutorial_card_allowed(str(card.get("id", ""))))
+			button.disabled = !reroute_mode and (processing_points < cost or !_card_requirements_met(card) or (tutorial_active and !_tutorial_card_allowed(str(card.get("id", "")))))
 			_skin_button(button, _card_accent(card))
 			button.pressed.connect(func() -> void:
-				play_card(index)
+				if reroute_mode:
+					reroute_card(index)
+				else:
+					play_card(index)
 				_render_state()
 			)
 		button.custom_minimum_size = Vector2(154 if size.x < 720.0 else 176, 188 if size.x < 720.0 else 120)
@@ -1753,6 +1823,10 @@ func _reset_combat_resources() -> void:
 	alarm_markers = 0
 	chain_count = 0
 	last_stage = ""
+	chain_rewards_claimed.clear()
+	cards_played_this_turn = 0
+	reroute_available = false
+	reroute_mode = false
 	turn_number = 0
 	turn_card_types.clear()
 	turn_sources.clear()
@@ -2021,6 +2095,10 @@ func _reset_turn_state(first_turn: bool = false) -> void:
 	block = 0
 	chain_count = 0
 	last_stage = ""
+	chain_rewards_claimed.clear()
+	cards_played_this_turn = 0
+	reroute_available = !tutorial_active
+	reroute_mode = false
 	turn_card_types.clear()
 	turn_sources.clear()
 	pending_i2c_count = 0
@@ -2078,6 +2156,7 @@ func play_card(hand_index: int) -> bool:
 		exhaust_pile.append(card)
 	else:
 		discard_pile.append(card)
+	cards_played_this_turn += 1
 	if repair_progress >= repair_target:
 		if tutorial_active:
 			pass
@@ -2085,6 +2164,50 @@ func play_card(hand_index: int) -> bool:
 			_finish_encounter()
 	if tutorial_active:
 		_advance_tutorial_after_card(card_id)
+	return true
+
+
+func begin_reroute() -> bool:
+	if state != RunState.COMBAT or tutorial_active or !reroute_available or cards_played_this_turn > 0:
+		return false
+	reroute_mode = true
+	_render_state()
+	return true
+
+
+func cancel_reroute() -> bool:
+	if !reroute_mode:
+		return false
+	reroute_mode = false
+	_render_state()
+	return true
+
+
+func reroute_card(hand_index: int) -> bool:
+	if !reroute_mode or hand_index < 0 or hand_index >= hand.size():
+		return false
+	var card := hand[hand_index] as Dictionary
+	if bool(card.get("negative", false)):
+		return false
+	hand.remove_at(hand_index)
+	discard_pile.append(card)
+	if draw_pile.is_empty():
+		discard_pile.erase(card)
+		hand.insert(hand_index, card)
+		reroute_mode = false
+		_render_state()
+		return false
+	var before_draw := hand.size()
+	_draw_cards(1)
+	if hand.size() == before_draw:
+		discard_pile.erase(card)
+		hand.insert(hand_index, card)
+		reroute_mode = false
+		_render_state()
+		return false
+	reroute_available = false
+	reroute_mode = false
+	_render_state()
 	return true
 
 
@@ -2111,17 +2234,44 @@ func _card_requirements_met(card: Dictionary) -> bool:
 
 func _advance_chain(stage: String) -> void:
 	var stage_index := STAGE_ORDER.find(stage)
+	if stage_index < 0:
+		return
 	var last_index := STAGE_ORDER.find(last_stage)
 	if stage_index == 0:
 		chain_count = 0
 	elif last_index >= 0 and stage_index == last_index + 1:
 		chain_count = mini(chain_count + 1, 3)
+		_apply_chain_threshold_rewards()
 	elif stage != last_stage:
 		chain_count = 0
 	last_stage = stage
 	if chain_count >= 3 and int(powers.get("chain_energy", 0)) > 0 and !bool(powers.get("chain_energy_used", false)):
 		processing_points += int(powers.get("chain_energy", 0))
 		powers["chain_energy_used"] = true
+
+
+func _apply_chain_threshold_rewards() -> void:
+	if chain_count >= 1 and !bool(chain_rewards_claimed.get("two", false)):
+		block += 3
+		chain_rewards_claimed["two"] = true
+	if chain_count >= 2 and !bool(chain_rewards_claimed.get("three", false)):
+		processing_points += 1
+		chain_rewards_claimed["three"] = true
+	if chain_count >= 3 and !bool(chain_rewards_claimed.get("four", false)):
+		repair_progress = mini(repair_target, repair_progress + 8)
+		diagnosis = mini(diagnosis + 1, 3)
+		chain_rewards_claimed["four"] = true
+
+
+func _chain_preview_for_stage(stage: String) -> Dictionary:
+	var stage_index := STAGE_ORDER.find(stage)
+	var current_index := STAGE_ORDER.find(last_stage)
+	return {
+		"stage": stage,
+		"current": stage == last_stage,
+		"completed": stage_index >= 0 and current_index >= stage_index and chain_count == current_index,
+		"next": stage_index >= 0 and stage_index == current_index + 1
+	}
 
 
 func _apply_card_effect(effect: Dictionary, card: Dictionary, trusted_spent: int) -> int:

@@ -100,6 +100,13 @@ func _verify_viewport(size: Vector2i) -> void:
 	var enemy_intent = game.find_child("EnemyIntent", true, false)
 	var hand_dock = game.find_child("HandDock", true, false)
 	var point_counter = game.find_child("ProcessingPointCounter", true, false)
+	var chain_strip = game.find_child("EngineeringChainStrip", true, false) as Control
+	var chain_collect = game.find_child("ChainCollect", true, false) as Control
+	var chain_interface = game.find_child("ChainInterface", true, false) as Control
+	var chain_process = game.find_child("ChainProcess", true, false) as Control
+	var chain_output = game.find_child("ChainOutput", true, false) as Control
+	var reroute_button = game.find_child("RerouteButton", true, false) as Button
+	var reroute_cancel_button = game.find_child("RerouteCancelButton", true, false) as Button
 	var reward_cards = game.find_child("RewardCards", true, false)
 	var reward_skip = game.find_child("RewardSkipButton", true, false)
 	var tutorial_view = game.find_child("TutorialView", true, false)
@@ -126,6 +133,8 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(device_unit != null and evidence_bridge != null and fault_unit != null, "combat should render device, evidence, and fault zones")
 	_assert(enemy_intent != null, "fault intent should have a stable visual anchor")
 	_assert(hand_dock != null and point_counter != null, "combat should expose a fixed action dock")
+	_assert(chain_strip != null and chain_collect != null and chain_interface != null and chain_process != null and chain_output != null, "combat should expose stable engineering-chain anchors")
+	_assert(reroute_button != null and reroute_cancel_button != null, "combat should expose stable reroute controls")
 	_assert(map_route != null and map_route.get_child_count() == 12, "map climb should render twelve route nodes")
 	_assert(map_enter != null and map_enter.custom_minimum_size.y >= 44.0, "map enter should be a full touch target")
 	_assert(mission_summary != null and next_detail != null, "map should expose mission and next-node context")
@@ -150,6 +159,10 @@ func _verify_viewport(size: Vector2i) -> void:
 
 	game._start_tutorial_encounter()
 	await process_frame
+	if reroute_button != null:
+		_assert(!reroute_button.visible and reroute_button.disabled, "tutorial practice should hide and disable reroute")
+	if reroute_cancel_button != null:
+		_assert(!reroute_cancel_button.visible and reroute_cancel_button.disabled, "tutorial practice should hide and disable reroute cancellation")
 	_assert_tutorial_bounds(game, viewport_rect, footer, "", "intent")
 	_assert_tutorial_focus(enemy_intent as Control, "intent step should strongly focus the actual fault intent")
 	_assert(game.confirm_tutorial_intent(), "tutorial intent should advance to guided defense")
@@ -252,6 +265,17 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(viewport_rect.encloses(end_turn.get_global_rect()), "end turn button should stay inside viewport at %s" % size)
 	_assert(end_turn.custom_minimum_size.y >= 44.0, "primary touch target should be at least 44 px high")
 	_assert(end_turn.get_global_rect().end.y <= run_footer.get_global_rect().position.y, "End turn should stay above the footer")
+	if chain_strip != null and chain_collect != null and chain_interface != null and chain_process != null and chain_output != null:
+		_assert(chain_strip.is_visible_in_tree(), "engineering-chain strip should stay visible at %s" % size)
+		_assert(chain_collect.is_visible_in_tree() and chain_interface.is_visible_in_tree() and chain_process.is_visible_in_tree() and chain_output.is_visible_in_tree(), "engineering-chain stages should stay visible at %s" % size)
+	if reroute_button != null and reroute_cancel_button != null:
+		_assert(reroute_button.is_visible_in_tree() and !reroute_button.disabled, "reroute should be available before the first card at %s" % size)
+		_assert(game.begin_reroute(), "reroute should enter selection mode for UI verification")
+		await process_frame
+		_assert(reroute_cancel_button.is_visible_in_tree() and !reroute_cancel_button.disabled, "reroute cancellation should be visible during selection at %s" % size)
+		_assert(reroute_button.custom_minimum_size.y >= 44.0 and reroute_cancel_button.custom_minimum_size.y >= 44.0, "reroute controls should use 44 px touch targets at %s" % size)
+		_assert(!reroute_button.get_global_rect().intersects(end_turn.get_global_rect()) and !reroute_cancel_button.get_global_rect().intersects(end_turn.get_global_rect()), "reroute controls should not overlap end turn at %s" % size)
+		_assert(game.cancel_reroute(), "reroute should cancel after UI verification")
 	_assert_visible_primary_command_heights(game)
 	var resolved_fault_name := str(game.current_encounter.get("name", ""))
 	var resolved_stability: int = game.stability
