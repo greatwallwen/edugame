@@ -495,6 +495,8 @@ func _capture_question_events(game, mobile: bool) -> bool:
 func _capture_node_lab(game, mobile: bool) -> bool:
 	game._enter_node_lab()
 	await _settle()
+	var legacy_catalog_filename := "32-mobile-node-lab.png" if mobile else "12-desktop-node-lab.png"
+	var event_catalog_filename := "58-mobile-node-lab-event-catalog.png" if mobile else "38-desktop-node-lab-event-catalog.png"
 	var required_catalog_ids := [
 		"basic_mq2_warmup",
 		"basic_signal_order",
@@ -508,17 +510,41 @@ func _capture_node_lab(game, mobile: bool) -> bool:
 			return false
 	if !(await _capture_checked(
 		game,
-		"32-mobile-node-lab.png" if mobile else "12-desktop-node-lab.png",
+		legacy_catalog_filename,
 		game.RunState.WAITING,
 		["NodeLabRoot", "NodeLabToolbar", "NodeLabCatalog"]
 	)):
 		return false
+	var event_button := game.find_child("NodeLabScenario_basic_mq2_warmup", true, false) as Control
+	if !_expect(event_button != null, "Node Lab event catalog capture should find basic_mq2_warmup"):
+		return false
+	var catalog_scroll: ScrollContainer = null
+	var ancestor := event_button.get_parent()
+	while ancestor != null:
+		if ancestor is ScrollContainer:
+			catalog_scroll = ancestor as ScrollContainer
+			break
+		ancestor = ancestor.get_parent()
+	if !_expect(catalog_scroll != null, "Node Lab event catalog capture should find the catalog viewport"):
+		return false
+	catalog_scroll.ensure_control_visible(event_button)
+	await _settle()
+	var event_rect := event_button.get_global_rect()
+	var catalog_viewport_rect := catalog_scroll.get_global_rect()
+	if !_expect(event_rect.intersects(catalog_viewport_rect), "Node Lab basic_mq2_warmup should intersect the catalog viewport"):
+		return false
+	var event_visible_rect := event_rect.intersection(catalog_viewport_rect)
+	var toolbar := game.find_child("NodeLabToolbar", true, false) as Control
+	if !_expect(toolbar != null and event_visible_rect.position.y >= toolbar.get_global_rect().end.y, "Node Lab basic_mq2_warmup visible rect should stay below the toolbar"):
+		return false
 	if !(await _capture_checked(
 		game,
-		"58-mobile-node-lab-event-catalog.png" if mobile else "38-desktop-node-lab-event-catalog.png",
+		event_catalog_filename,
 		game.RunState.WAITING,
 		["NodeLabRoot", "NodeLabToolbar", "NodeLabCatalog"]
 	)):
+		return false
+	if !_expect_capture_files_differ(event_catalog_filename, legacy_catalog_filename):
 		return false
 
 	if !_expect(game.start_lab_scenario({
@@ -598,6 +624,18 @@ func _capture_image(filename: String) -> bool:
 		return false
 	var result := image.save_png(OUT_DIR.path_join(filename))
 	return _expect(result == OK, "could not save capture: %s" % filename)
+
+
+func _expect_capture_files_differ(filename: String, reference_filename: String) -> bool:
+	var capture_path := OUT_DIR.path_join(filename)
+	var reference_path := OUT_DIR.path_join(reference_filename)
+	if !_expect(FileAccess.file_exists(capture_path), "capture comparison is missing %s" % filename):
+		return false
+	if !_expect(FileAccess.file_exists(reference_path), "capture comparison is missing %s" % reference_filename):
+		return false
+	var capture_bytes := FileAccess.get_file_as_bytes(capture_path)
+	var reference_bytes := FileAccess.get_file_as_bytes(reference_path)
+	return _expect(capture_bytes != reference_bytes, "%s should differ from %s" % [filename, reference_filename])
 
 
 func _image_has_variation(image: Image) -> bool:
