@@ -246,7 +246,11 @@ func _assert_route_order(game) -> void:
 
 
 func _assert_boss_shop_guarantee(game) -> void:
-	if !game.has_method("_missing_boss_stage_tags") or !game.has_method("_guaranteed_boss_shop_card_id"):
+	if (
+		!game.has_method("_boss_gap_card_id")
+		or !game.has_method("_missing_boss_stage_tags")
+		or !game.has_method("_guaranteed_boss_shop_card_id")
+	):
 		_assert(false, "late shops should expose Boss missing-link helpers")
 		return
 
@@ -259,7 +263,9 @@ func _assert_boss_shop_guarantee(game) -> void:
 	_assert(!game._missing_boss_stage_tags().is_empty(), "one-source deck should expose Boss gaps")
 	game.budget = 35
 	game.current_layer = 8
-	game._open_shop()
+	game.state = game.RunState.MAP
+	_assert(game.choose_node(0), "node nine shop should be selectable")
+	_assert(game.current_layer == 9 and game.state == game.RunState.SHOP, "node nine should open its shop")
 	var guaranteed_id: String = game._guaranteed_boss_shop_card_id()
 	_assert(!guaranteed_id.is_empty(), "one-source deck should identify an exact Boss preparation card")
 	_assert(_array_has_id(game.shop_cards, guaranteed_id), "node nine shop should inject a missing-link card")
@@ -285,9 +291,19 @@ func _assert_boss_shop_guarantee(game) -> void:
 
 	game._reset_run()
 	game.deck = [game._card_copy("mq2_sample")]
+	var early_gap_id: String = game._boss_gap_card_id()
+	_assert(early_gap_id == "lcd_display", "one-source deck should retain the legacy report-output gap candidate")
 	game.budget = 35
-	game.current_layer = 4
-	game._open_shop()
+	game.current_layer = 3
+	game.state = game.RunState.MAP
+	_assert(game.choose_node(0), "node four service should be selectable")
+	_assert(game.current_layer == 4 and game.state == game.RunState.REST, "node four should open service choices")
+	_assert(game.choose_service("shop"), "node four service should open its ordinary shop")
+	_assert(game.shop_cards.size() == 5, "early service shop should retain a five-card inventory")
+	var early_gap_card := game.shop_cards[0] as Dictionary
+	_assert(str(early_gap_card.get("id", "")) == early_gap_id, "early service shop should prepend the legacy gap candidate")
+	_assert(int(early_gap_card.get("price", -1)) == game._card_price(early_gap_card), "early gap candidate should retain its normal price")
+	_assert(int(early_gap_card.get("price", -1)) > game.budget, "early gap candidate should not receive the Boss preparation price cap")
 	for raw_card in game.shop_cards:
 		var shop_card := raw_card as Dictionary
 		_assert(int(shop_card.get("price", -1)) == game._card_price(shop_card), "early service shop should preserve ordinary pricing")

@@ -4070,13 +4070,17 @@ func _open_shop() -> void:
 	var ids: Array = card_defs.keys()
 	ids.sort()
 	_shuffle(ids)
-	if current_layer >= 8:
-		var guaranteed_id := _guaranteed_boss_shop_card_id()
-		if !guaranteed_id.is_empty() and ids.has(guaranteed_id):
-			var guaranteed_card := _card_copy(guaranteed_id)
-			guaranteed_card["price"] = mini(_card_price(guaranteed_card), budget)
-			shop_cards.append(guaranteed_card)
-			ids.erase(guaranteed_id)
+	var boss_preparation_shop := current_layer == 9 or current_layer == 11
+	var guaranteed_id := _guaranteed_boss_shop_card_id() if boss_preparation_shop else _boss_gap_card_id()
+	if !guaranteed_id.is_empty() and ids.has(guaranteed_id):
+		var guaranteed_card := _card_copy(guaranteed_id)
+		guaranteed_card["price"] = (
+			mini(_card_price(guaranteed_card), budget)
+			if boss_preparation_shop
+			else _card_price(guaranteed_card)
+		)
+		shop_cards.append(guaranteed_card)
+		ids.erase(guaranteed_id)
 	for card_id in ids:
 		var card := _card_copy(str(card_id))
 		if str(card.get("rarity", "")) == "starter":
@@ -4086,6 +4090,16 @@ func _open_shop() -> void:
 		if shop_cards.size() >= 5:
 			break
 	state = RunState.SHOP
+
+
+func _boss_gap_card_id() -> String:
+	var has_report := _deck_has_any_tag(["display", "uart"])
+	var has_control := _deck_has_any_tag(["alarm", "scheduler"])
+	if !has_report:
+		return "lcd_display"
+	if !has_control:
+		return "time_slice"
+	return ""
 
 
 func _missing_boss_stage_tags() -> Array[String]:
