@@ -121,6 +121,14 @@ func _verify_viewport(size: Vector2i) -> void:
 	var tutorial_skip = game.find_child("TutorialSkipButton", true, false)
 	var tutorial_intent = game.find_child("TutorialIntentButton", true, false)
 	var tutorial_data_values = game.find_child("TutorialDataValues", true, false)
+	var question_frame = game.find_child("QuestionEventFrame", true, false) as Control
+	var question_tag = game.find_child("QuestionKnowledgeTag", true, false) as Label
+	var question_prompt = game.find_child("QuestionPrompt", true, false) as Label
+	var question_interaction = game.find_child("QuestionInteraction", true, false) as Control
+	var question_submit = game.find_child("QuestionSubmit", true, false) as Button
+	var question_explanation = game.find_child("QuestionExplanation", true, false) as Label
+	var question_consequence = game.find_child("QuestionConsequence", true, false) as Control
+	var question_continue = game.find_child("QuestionContinue", true, false) as Button
 	game._start_clean_formal_run()
 	await process_frame
 
@@ -151,6 +159,11 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(tutorial_skip != null, "tutorial skip should remain available")
 	_assert(tutorial_intent != null, "tutorial intent should be an actionable target")
 	_assert(tutorial_data_values != null, "tutorial should expose the data values that receive guided focus")
+	_assert(
+		question_frame != null and question_tag != null and question_prompt != null and question_interaction != null
+		and question_submit != null and question_explanation != null and question_consequence != null and question_continue != null,
+		"question events should expose all stable UI anchors"
+	)
 
 	game._start_tutorial_briefing()
 	game._render_state()
@@ -348,12 +361,64 @@ func _verify_viewport(size: Vector2i) -> void:
 	_assert(reward_skip != null and reward_skip.visible, "empty reward fallback should retain the skip command")
 	_assert_visible_primary_command_heights(game)
 
-	game.current_event = (game.event_defs.get("sensor_replacement", {}) as Dictionary).duplicate(true)
-	game.state = game.RunState.EVENT
+	game._begin_question_event((game.event_defs.get("basic_adc_spike", {}) as Dictionary).duplicate(true))
 	game._render_state()
 	await process_frame
-	_assert(choice_list != null and choice_list.get_child_count() > 0, "normal event should render its commands")
+	_assert(question_frame != null and question_frame.is_visible_in_tree(), "question event should render its dedicated frame")
+	_assert(question_tag != null and question_tag.text.contains("adc"), "question event should render knowledge tags")
+	_assert(question_prompt != null and !question_prompt.text.is_empty(), "question event should render its prompt")
+	if question_interaction != null:
+		var waveform_lines := question_interaction.find_children("*", "Line2D", true, false)
+		_assert(!waveform_lines.is_empty(), "structured waveform samples should render with Line2D")
+		if !waveform_lines.is_empty():
+			_assert((waveform_lines[0] as Line2D).points.size() == 6, "waveform line should preserve all structured samples")
+	var wrong_option = game.find_child("QuestionOption_steady_drift", true, false) as Button
+	_assert(wrong_option != null, "question options should expose stable ID-based controls")
+	if wrong_option != null and question_submit != null:
+		wrong_option.emit_signal("pressed")
+		question_submit.emit_signal("pressed")
+		await process_frame
+		_assert(question_explanation.visible and !question_explanation.text.is_empty(), "answered event should show its explanation")
+		_assert(question_consequence.visible, "answered event should show its consequence")
+		_assert(question_continue.visible and question_continue.custom_minimum_size.y >= 44.0, "resolved event should expose a touch-sized continue command")
 	_assert_visible_primary_command_heights(game)
+
+	var missing_waveform := (game.event_defs.get("basic_adc_spike", {}) as Dictionary).duplicate(true)
+	missing_waveform.erase("waveform")
+	game._begin_question_event(missing_waveform)
+	game._render_state()
+	await process_frame
+	var waveform_fallback = game.find_child("QuestionWaveformFallback", true, false) as Label
+	_assert(waveform_fallback != null and waveform_fallback.is_visible_in_tree() and !waveform_fallback.text.strip_edges().is_empty(), "missing waveform payload should render a nonblank reading table")
+
+	game.current_event = {
+		"id": "ui_malformed_event",
+		"tier": "basic",
+		"questionType": "diagnosis",
+		"options": [],
+		"correctAnswer": "missing",
+		"rewardChoices": [],
+		"penalty": {"op": "budget", "amount": -99, "minimum": 0}
+	}
+	game.state = game.RunState.EVENT
+	game.event_answer_locked = false
+	game.event_result.clear()
+	game._render_state()
+	await process_frame
+	_assert(question_explanation != null and question_explanation.visible and question_explanation.text.contains("事件数据无效"), "malformed event should display its safe data-error explanation immediately")
+	_assert(question_continue != null and question_continue.visible, "malformed event should expose a safe continue command")
+
+	game._begin_question_event((game.event_defs.get("basic_signal_order", {}) as Dictionary).duplicate(true))
+	game._render_state()
+	await process_frame
+	var order_up = game.find_child("QuestionOrderUp_0", true, false) as Button
+	var order_down = game.find_child("QuestionOrderDown_0", true, false) as Button
+	_assert(order_up != null and order_down != null, "ordering question should render move controls")
+	if order_up != null and order_down != null:
+		_assert(order_up.custom_minimum_size.x >= 44.0 and order_up.custom_minimum_size.y >= 44.0, "ordering move-up icon should use a 44 px target")
+		_assert(order_down.custom_minimum_size.x >= 44.0 and order_down.custom_minimum_size.y >= 44.0, "ordering move-down icon should use a 44 px target")
+	_assert_visible_primary_command_heights(game)
+
 	var event_selection_budget: int = game.budget
 	game.current_event = {
 		"id": "event_selection_overlay",
@@ -365,6 +430,9 @@ func _verify_viewport(size: Vector2i) -> void:
 		}]
 	}
 	game.state = game.RunState.EVENT
+	game._render_state()
+	await process_frame
+	_assert(choice_list != null and choice_list.is_visible_in_tree() and choice_list.get_child_count() == 1, "legacy simple event should retain its backward-compatible option UI")
 	_assert(game.choose_event_option(0), "event selection setup should open an event-owned card choice")
 	game._render_state()
 	await process_frame
@@ -463,12 +531,14 @@ func _verify_viewport(size: Vector2i) -> void:
 			_assert((lab_scenario as Control).custom_minimum_size.y >= 44.0, "lab scenario touch target should be at least 44 px")
 			_assert(viewport_rect.intersects((lab_scenario as Control).get_global_rect()), "first lab scenario should be visible at %s" % size)
 		game.start_lab_scenario({
-			"id": "sensor_replacement",
+			"id": "basic_mq2_warmup",
 			"kind": "event",
-			"contentId": "sensor_replacement"
+			"contentId": "basic_mq2_warmup",
+			"seedId": 777
 		})
 		await process_frame
 		_assert(!lab_catalog.visible, "starting a lab scenario should hide the catalog")
+		_assert(game.state == game.RunState.EVENT and game.run_seed == 777, "Node Lab should launch the requested question event with an overridable seed")
 		_assert(!run_hud.visible and game.shell.visible and game.shell.offset_top == 58.0, "scenario toolbar should replace RunHud")
 		_assert(lab_return.visible and lab_restart.visible, "scenario controls should remain visible during lab play")
 		_assert(viewport_rect.encloses(lab_return.get_global_rect()), "lab return control should stay inside viewport at %s" % size)

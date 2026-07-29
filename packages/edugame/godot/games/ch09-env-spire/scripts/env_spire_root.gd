@@ -55,6 +55,8 @@ var map_defs := {}
 
 var run_map_id := "mvp_a"
 var run_map := {}
+var run_seed := 901
+var event_history: Array[Dictionary] = []
 var rng := RandomNumberGenerator.new()
 var max_stability := 70
 var stability := 70
@@ -121,6 +123,11 @@ var intent_index := 0
 var repair_target := 0
 var repair_progress := 0
 var current_event := {}
+var event_answer_locked := false
+var event_result: Dictionary = {}
+var revealed_nodes: Array[int] = []
+var event_selected_answer: Variant = null
+var event_ordering_answer: Array[String] = []
 var reward_choices: Array = []
 var component_choices: Array = []
 var shop_cards: Array = []
@@ -208,6 +215,14 @@ var resolved_evidence_context: Label
 var resolved_fault_context: Label
 var reward_cards: GridContainer
 var reward_skip_button: Button
+var question_event_frame: PanelContainer
+var question_knowledge_tag: Label
+var question_prompt: Label
+var question_interaction: VBoxContainer
+var question_submit: Button
+var question_explanation: Label
+var question_consequence: VBoxContainer
+var question_continue: Button
 var service_bench: PanelContainer
 var result_view: PanelContainer
 var result_title: Label
@@ -1109,6 +1124,66 @@ func _build_choice_view() -> void:
 		_render_state()
 	)
 	scroll_content.add_child(reward_skip_button)
+	question_event_frame = PanelContainer.new()
+	question_event_frame.name = "QuestionEventFrame"
+	question_event_frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	question_event_frame.add_theme_stylebox_override("panel", _panel_style(Color("#edf4f1"), Color("#2f7f8d")))
+	var question_margin := MarginContainer.new()
+	question_margin.add_theme_constant_override("margin_left", 16)
+	question_margin.add_theme_constant_override("margin_top", 14)
+	question_margin.add_theme_constant_override("margin_right", 16)
+	question_margin.add_theme_constant_override("margin_bottom", 14)
+	question_event_frame.add_child(question_margin)
+	var question_content := VBoxContainer.new()
+	question_content.add_theme_constant_override("separation", 10)
+	question_margin.add_child(question_content)
+	question_knowledge_tag = Label.new()
+	question_knowledge_tag.name = "QuestionKnowledgeTag"
+	question_knowledge_tag.add_theme_color_override("font_color", Color("#226c59"))
+	question_content.add_child(question_knowledge_tag)
+	question_prompt = Label.new()
+	question_prompt.name = "QuestionPrompt"
+	question_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	question_prompt.add_theme_font_size_override("font_size", 18)
+	question_prompt.add_theme_color_override("font_color", Color("#17343c"))
+	question_content.add_child(question_prompt)
+	question_interaction = VBoxContainer.new()
+	question_interaction.name = "QuestionInteraction"
+	question_interaction.add_theme_constant_override("separation", 8)
+	question_content.add_child(question_interaction)
+	question_submit = Button.new()
+	question_submit.name = "QuestionSubmit"
+	question_submit.text = "提交答案"
+	question_submit.custom_minimum_size = Vector2(180, 44)
+	question_submit.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_skin_button(question_submit, Color("#2f7f8d"))
+	question_submit.pressed.connect(func() -> void:
+		var answer: Variant = event_ordering_answer.duplicate() if str(current_event.get("questionType", "")) == "ordering" else event_selected_answer
+		submit_event_answer(answer)
+		_render_state()
+	)
+	question_content.add_child(question_submit)
+	question_explanation = Label.new()
+	question_explanation.name = "QuestionExplanation"
+	question_explanation.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	question_explanation.add_theme_color_override("font_color", Color("#355158"))
+	question_content.add_child(question_explanation)
+	question_consequence = VBoxContainer.new()
+	question_consequence.name = "QuestionConsequence"
+	question_consequence.add_theme_constant_override("separation", 8)
+	question_content.add_child(question_consequence)
+	question_continue = Button.new()
+	question_continue.name = "QuestionContinue"
+	question_continue.text = "继续路线"
+	question_continue.custom_minimum_size = Vector2(180, 44)
+	question_continue.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_skin_button(question_continue, Color("#517943"))
+	question_continue.pressed.connect(func() -> void:
+		continue_event()
+		_render_state()
+	)
+	question_content.add_child(question_continue)
+	scroll_content.add_child(question_event_frame)
 	service_bench = PanelContainer.new()
 	service_bench.name = "ServiceBench"
 	service_bench.custom_minimum_size = Vector2(0, 58)
@@ -1696,11 +1771,13 @@ func _render_choices() -> void:
 	_clear_children(choice_list)
 	_clear_children(reward_cards)
 	var scene_kind := _choice_scene_kind()
+	var question_event_active := scene_kind == "event" and current_event.has("questionType")
 	reward_encounter_backdrop.visible = scene_kind == "reward"
 	reward_cards.visible = scene_kind == "reward"
 	reward_skip_button.visible = scene_kind == "reward"
+	question_event_frame.visible = question_event_active
 	service_bench.visible = scene_kind == "service"
-	choice_list.visible = scene_kind != "reward"
+	choice_list.visible = scene_kind != "reward" and !question_event_active
 	match state:
 		RunState.REWARD:
 			var evidence_tags: Array[String] = []
@@ -1730,20 +1807,24 @@ func _render_choices() -> void:
 				reward_cards.add_child(button)
 		RunState.EVENT:
 			choice_title.text = str(current_event.get("name", "调试事件"))
-			choice_description.text = str(current_event.get("description", ""))
-			var options: Array = current_event.get("options", [])
-			for index in range(options.size()):
-				var option := options[index] as Dictionary
-				var button := Button.new()
-				button.text = str(option.get("label", "选择"))
-				button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-				_skin_button(button, Color("#725c91"))
-				_size_choice_button(button, 88)
-				button.pressed.connect(func() -> void:
-					choose_event_option(index)
-					_render_state()
-				)
-				choice_list.add_child(button)
+			if question_event_active:
+				choice_description.text = ""
+				_render_question_event()
+			else:
+				choice_description.text = str(current_event.get("description", ""))
+				var options: Array = current_event.get("options", []) as Array
+				for index in range(options.size()):
+					var option := options[index] as Dictionary
+					var button := Button.new()
+					button.text = str(option.get("label", "选择"))
+					button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+					_skin_button(button, Color("#725c91"))
+					_size_choice_button(button, 88)
+					button.pressed.connect(func() -> void:
+						choose_event_option(index)
+						_render_state()
+					)
+					choice_list.add_child(button)
 		RunState.SHOP:
 			choice_title.text = "器材商店 · 预算 %d" % budget
 			choice_description.text = "购买卡牌，或离开继续调试。"
@@ -1791,6 +1872,221 @@ func _render_choices() -> void:
 					_render_state()
 				)
 				choice_list.add_child(button)
+
+
+func _render_question_event() -> void:
+	if question_event_frame == null:
+		return
+	if !event_answer_locked and !_event_data_valid(current_event):
+		_resolve_malformed_event()
+	_clear_children(question_interaction)
+	_clear_children(question_consequence)
+	var tags: Array = current_event.get("knowledgeTags", []) as Array
+	question_knowledge_tag.text = "知识点  %s" % " / ".join(tags)
+	question_prompt.text = str(current_event.get("prompt", ""))
+	var code_snippet := str(current_event.get("codeSnippet", ""))
+	if !code_snippet.is_empty():
+		question_prompt.text += "\n\n" + code_snippet
+	var question_type := str(current_event.get("questionType", ""))
+	if question_type == "waveform":
+		_render_question_waveform()
+	if question_type == "ordering":
+		_render_question_ordering()
+	else:
+		_render_question_options()
+
+	var answer_missing := event_ordering_answer.is_empty() if question_type == "ordering" else event_selected_answer == null
+	question_submit.visible = !event_answer_locked
+	question_submit.disabled = event_answer_locked or answer_missing or !pending_card_selection.is_empty()
+	question_explanation.visible = event_answer_locked
+	question_explanation.text = "解析\n%s" % str(event_result.get("explanation", ""))
+	question_consequence.visible = event_answer_locked
+	if event_answer_locked:
+		_render_question_consequence()
+	var can_continue := event_answer_locked and bool(event_result.get("resolved", false)) and !bool(event_result.get("rewardPending", false)) and pending_card_selection.is_empty()
+	question_continue.visible = can_continue
+	question_continue.disabled = !can_continue
+
+
+func _render_question_options() -> void:
+	for raw_option in current_event.get("options", []) as Array:
+		var option := raw_option as Dictionary
+		var option_id := str(option.get("id", ""))
+		var button := Button.new()
+		button.name = "QuestionOption_%s" % option_id
+		button.text = str(option.get("label", option_id))
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.toggle_mode = true
+		button.button_pressed = str(event_selected_answer) == option_id
+		button.disabled = event_answer_locked or !pending_card_selection.is_empty()
+		_skin_button(button, Color("#725c91") if button.button_pressed else Color("#2f7f8d"))
+		_size_choice_button(button, 52)
+		button.pressed.connect(func() -> void:
+			event_selected_answer = option_id
+			_render_state()
+		)
+		question_interaction.add_child(button)
+
+
+func _render_question_ordering() -> void:
+	if event_ordering_answer.is_empty():
+		for raw_option in current_event.get("options", []) as Array:
+			event_ordering_answer.append(str((raw_option as Dictionary).get("id", "")))
+	for index in range(event_ordering_answer.size()):
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		var label := Label.new()
+		label.text = "%d. %s" % [index + 1, _event_option_label(event_ordering_answer[index])]
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row.add_child(label)
+		var up := Button.new()
+		up.name = "QuestionOrderUp_%d" % index
+		up.text = "↑"
+		up.tooltip_text = "上移"
+		up.custom_minimum_size = Vector2(44, 44)
+		up.disabled = event_answer_locked or index == 0
+		_skin_button(up, Color("#2f7f8d"))
+		up.pressed.connect(func() -> void: _move_event_order_item(index, -1))
+		row.add_child(up)
+		var down := Button.new()
+		down.name = "QuestionOrderDown_%d" % index
+		down.text = "↓"
+		down.tooltip_text = "下移"
+		down.custom_minimum_size = Vector2(44, 44)
+		down.disabled = event_answer_locked or index == event_ordering_answer.size() - 1
+		_skin_button(down, Color("#2f7f8d"))
+		down.pressed.connect(func() -> void: _move_event_order_item(index, 1))
+		row.add_child(down)
+		question_interaction.add_child(row)
+
+
+func _move_event_order_item(index: int, offset: int) -> void:
+	if event_answer_locked or !pending_card_selection.is_empty():
+		return
+	var target := index + offset
+	if index < 0 or index >= event_ordering_answer.size() or target < 0 or target >= event_ordering_answer.size():
+		return
+	var option_id := event_ordering_answer[index]
+	event_ordering_answer.remove_at(index)
+	event_ordering_answer.insert(target, option_id)
+	_render_state()
+
+
+func _event_option_label(option_id: String) -> String:
+	for raw_option in current_event.get("options", []) as Array:
+		var option := raw_option as Dictionary
+		if str(option.get("id", "")) == option_id:
+			return str(option.get("label", option_id))
+	return option_id
+
+
+func _render_question_waveform() -> void:
+	var waveform := current_event.get("waveform", {}) as Dictionary
+	var series: Array[Dictionary] = []
+	for series_key in ["samples", "raw", "filtered"]:
+		var values: Array = waveform.get(series_key, []) as Array
+		if !values.is_empty():
+			series.append({"id": series_key, "values": values})
+	if series.is_empty():
+		var fallback := Label.new()
+		fallback.name = "QuestionWaveformFallback"
+		fallback.text = "样本 | 1 | 2 | 3\n读数 | -- | -- | --"
+		fallback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		fallback.add_theme_color_override("font_color", Color("#486068"))
+		question_interaction.add_child(fallback)
+		return
+
+	var minimum := INF
+	var maximum := -INF
+	for item in series:
+		for raw_value in item.get("values", []) as Array:
+			minimum = minf(minimum, float(raw_value))
+			maximum = maxf(maximum, float(raw_value))
+	var plot := Control.new()
+	plot.name = "QuestionWaveformPlot"
+	plot.custom_minimum_size = Vector2(0, 120)
+	plot.clip_contents = true
+	question_interaction.add_child(plot)
+	var plot_width := 300.0 if size.x < 720.0 else 520.0
+	var plot_height := 108.0
+	var colors := [Color("#2f7f8d"), Color("#b75a3a"), Color("#517943")]
+	for series_index in range(series.size()):
+		var item := series[series_index]
+		var values: Array = item.get("values", []) as Array
+		var line := Line2D.new()
+		line.name = "QuestionWaveform_%s" % item.get("id", series_index)
+		line.width = 3.0
+		line.default_color = colors[series_index % colors.size()]
+		line.antialiased = true
+		for value_index in range(values.size()):
+			var x := 12.0 + (plot_width - 24.0) * float(value_index) / float(maxi(values.size() - 1, 1))
+			var normalized := 0.5 if is_equal_approx(maximum, minimum) else (float(values[value_index]) - minimum) / (maximum - minimum)
+			var y := plot_height - 10.0 - normalized * (plot_height - 20.0)
+			line.add_point(Vector2(x, y))
+		plot.add_child(line)
+	var reading_table := Label.new()
+	reading_table.name = "QuestionWaveformReadings"
+	var reading_rows: Array[String] = []
+	for item in series:
+		var value_texts: Array[String] = []
+		for raw_value in item.get("values", []) as Array:
+			value_texts.append(str(raw_value))
+		reading_rows.append("%s | %s" % [str(item.get("id", "samples")), " | ".join(value_texts)])
+	reading_table.text = "\n".join(reading_rows)
+	reading_table.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reading_table.add_theme_color_override("font_color", Color("#486068"))
+	question_interaction.add_child(reading_table)
+
+
+func _render_question_consequence() -> void:
+	var result_label := Label.new()
+	result_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if bool(event_result.get("dataError", false)):
+		result_label.text = "未应用奖励或惩罚。"
+	elif !bool(event_result.get("correct", false)):
+		result_label.text = "回答错误 · %s" % _event_effect_text(current_event.get("penalty", {}) as Dictionary)
+	elif bool(event_result.get("rewardPending", false)):
+		result_label.text = "回答正确 · 选择一项奖励"
+	else:
+		result_label.text = "回答正确 · 奖励已确认"
+	question_consequence.add_child(result_label)
+	if !bool(event_result.get("rewardPending", false)):
+		return
+	var rewards: Array = event_result.get("rewardChoices", []) as Array
+	for index in range(rewards.size()):
+		var reward := rewards[index] as Dictionary
+		var reward_button := Button.new()
+		reward_button.name = "QuestionReward_%s" % str(reward.get("id", index))
+		reward_button.text = str(reward.get("label", "选择奖励"))
+		reward_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_skin_button(reward_button, Color("#517943"))
+		_size_choice_button(reward_button, 52)
+		reward_button.pressed.connect(func() -> void:
+			choose_event_reward(index)
+			_render_state()
+		)
+		question_consequence.add_child(reward_button)
+
+
+func _event_effect_text(effect: Dictionary) -> String:
+	var op := str(effect.get("op", ""))
+	var amount := int(effect.get("amount", 0))
+	match op:
+		"budget":
+			return "预算 %s%d" % ["+" if amount >= 0 else "", amount]
+		"heal":
+			return "稳定度 %s%d" % ["+" if amount >= 0 else "", amount]
+		"add_negative":
+			var card_id := str(effect.get("cardId", ""))
+			return "加入 %s" % (negative_defs.get(card_id, {}) as Dictionary).get("name", card_id)
+		"reveal_nodes":
+			var node_ids: Array[String] = []
+			for raw_node in effect.get("nodes", []) as Array:
+				node_ids.append(str(raw_node))
+			return "预览节点 %s" % ", ".join(node_ids)
+		_:
+			return "结果已记录"
 
 
 func _choice_scene_kind() -> String:
@@ -1916,6 +2212,39 @@ func _index_by_id(items: Array) -> Dictionary:
 	return result
 
 
+func _select_question_event(tier: String, node_id: String) -> Dictionary:
+	var tier_ids: Array[String] = []
+	for raw_id in event_defs.keys():
+		var event_id := str(raw_id)
+		var event := event_defs[event_id] as Dictionary
+		if str(event.get("tier", "")) == tier:
+			tier_ids.append(event_id)
+	tier_ids.sort()
+	if tier_ids.is_empty():
+		return {}
+
+	var prior_types := {}
+	var prior_primary_tags := {}
+	for event in event_history:
+		prior_types[str(event.get("questionType", ""))] = true
+		var tags: Array = event.get("knowledgeTags", []) as Array
+		if !tags.is_empty():
+			prior_primary_tags[str(tags[0])] = true
+	var eligible_ids: Array[String] = []
+	for event_id in tier_ids:
+		var event := event_defs[event_id] as Dictionary
+		var tags: Array = event.get("knowledgeTags", []) as Array
+		var primary_tag := str(tags[0]) if !tags.is_empty() else ""
+		if !prior_types.has(str(event.get("questionType", ""))) and !prior_primary_tags.has(primary_tag):
+			eligible_ids.append(event_id)
+	if eligible_ids.is_empty():
+		eligible_ids = tier_ids.duplicate()
+		_log("事件去重约束已放宽")
+	var selection_hash := hash("%d:%s" % [run_seed, node_id]) & 0x7FFFFFFF
+	var selected_id := eligible_ids[selection_hash % eligible_ids.size()]
+	return (event_defs[selected_id] as Dictionary).duplicate(true)
+
+
 func _reset_run() -> void:
 	formal_run_active = !node_lab_active
 	tutorial_active = false
@@ -1940,11 +2269,19 @@ func _reset_run() -> void:
 	message_log.clear()
 	debug_reports.clear()
 	component_choices.clear()
+	current_event.clear()
+	event_answer_locked = false
+	event_result.clear()
+	revealed_nodes.clear()
+	event_selected_answer = null
+	event_ordering_answer.clear()
 	deck.clear()
 	for card_id in STARTER_CARD_IDS:
 		deck.append(_card_copy(card_id))
 	run_map = (map_defs.get(run_map_id, map_defs.get("mvp_a", {})) as Dictionary).duplicate(true)
-	rng.seed = int(run_map.get("seedId", 901))
+	run_seed = int(run_map.get("seedId", 901))
+	event_history.clear()
+	rng.seed = run_seed
 	draw_pile = deck.duplicate(true)
 	_shuffle(draw_pile)
 	discard_pile.clear()
@@ -2308,8 +2645,8 @@ func choose_node(choice_index: int) -> bool:
 			boss_phase = 0
 			_start_encounter(str(current_node.get("contentId", "warehouse_acceptance")), "boss")
 		"event":
-			current_event = (event_defs.get(str(current_node.get("contentId", "")), {}) as Dictionary).duplicate(true)
-			state = RunState.EVENT
+			var event_tier := str(current_node.get("eventTier", "basic" if current_layer <= RUN_NODE_COUNT / 2 else "advanced"))
+			_begin_question_event(_select_question_event(event_tier, str(current_node.get("id", current_layer))), true)
 		"shop":
 			_open_shop()
 		"service":
@@ -2701,9 +3038,22 @@ func choose_pending_card(index: int) -> bool:
 				return false
 			var card := (selected as Dictionary).duplicate(true)
 			var context := selection.get("context", {}) as Dictionary
-			if str(context.get("action", "")) != "add_card":
-				return false
-			deck.append(card)
+			var action := str(context.get("action", ""))
+			var deck_index := int(card.get("_deckIndex", -1))
+			card.erase("_deckIndex")
+			match action:
+				"add_card":
+					deck.append(card)
+				"upgrade_card":
+					if deck_index < 0 or deck_index >= deck.size():
+						return false
+					(deck[deck_index] as Dictionary)["upgraded"] = true
+				"remove_card":
+					if deck_index < 0 or deck_index >= deck.size():
+						return false
+					deck.remove_at(deck_index)
+				_:
+					return false
 		"event_component":
 			if !(selected is Dictionary):
 				return false
@@ -3277,8 +3627,162 @@ func choose_reward(card_id: String) -> bool:
 	return true
 
 
+func _begin_question_event(event: Dictionary, record_history: bool = false) -> void:
+	pending_card_selection.clear()
+	current_event = event.duplicate(true)
+	event_answer_locked = false
+	event_result.clear()
+	event_selected_answer = null
+	event_ordering_answer.clear()
+	if str(current_event.get("questionType", "")) == "ordering":
+		for raw_option in current_event.get("options", []) as Array:
+			event_ordering_answer.append(str((raw_option as Dictionary).get("id", "")))
+	if record_history and !current_event.is_empty():
+		event_history.append(current_event.duplicate(true))
+	state = RunState.EVENT
+	if !_event_data_valid(current_event):
+		_resolve_malformed_event()
+
+
+func _event_data_valid(event: Dictionary) -> bool:
+	var question_type := str(event.get("questionType", ""))
+	var options: Array = event.get("options", []) as Array
+	var rewards: Array = event.get("rewardChoices", []) as Array
+	var penalty := event.get("penalty", {}) as Dictionary
+	if !["diagnosis", "ordering", "code_trace", "parameter", "waveform", "tradeoff"].has(question_type):
+		return false
+	if options.is_empty() or rewards.size() != 2 or penalty.is_empty() or !event.has("correctAnswer"):
+		return false
+	if str(event.get("explanation", "")).is_empty():
+		return false
+	var option_ids: Array[String] = []
+	for raw_option in options:
+		if !(raw_option is Dictionary):
+			return false
+		var option_id := str((raw_option as Dictionary).get("id", ""))
+		if option_id.is_empty() or option_ids.has(option_id):
+			return false
+		option_ids.append(option_id)
+	for raw_reward in rewards:
+		if !(raw_reward is Dictionary) or ((raw_reward as Dictionary).get("effect", {}) as Dictionary).is_empty():
+			return false
+	if question_type == "ordering":
+		var answer = event.get("correctAnswer")
+		if !(answer is Array) or (answer as Array).size() != option_ids.size():
+			return false
+		for raw_id in answer as Array:
+			if !option_ids.has(str(raw_id)):
+				return false
+		return true
+	return option_ids.has(str(event.get("correctAnswer", "")))
+
+
+func _event_answer_is_valid(answer: Variant) -> bool:
+	var option_ids: Array[String] = []
+	for raw_option in current_event.get("options", []) as Array:
+		option_ids.append(str((raw_option as Dictionary).get("id", "")))
+	if str(current_event.get("questionType", "")) == "ordering":
+		if !(answer is Array) or (answer as Array).size() != option_ids.size():
+			return false
+		var seen := {}
+		for raw_id in answer as Array:
+			var answer_id := str(raw_id)
+			if !option_ids.has(answer_id) or seen.has(answer_id):
+				return false
+			seen[answer_id] = true
+		return true
+	if !(answer is String or answer is StringName):
+		return false
+	return option_ids.has(str(answer))
+
+
+func _event_answer_matches(answer: Variant, expected: Variant) -> bool:
+	if answer is Array and expected is Array:
+		var answer_ids: Array = answer as Array
+		var expected_ids: Array = expected as Array
+		if answer_ids.size() != expected_ids.size():
+			return false
+		for index in range(answer_ids.size()):
+			if str(answer_ids[index]) != str(expected_ids[index]):
+				return false
+		return true
+	return str(answer) == str(expected)
+
+
+func _resolve_malformed_event() -> void:
+	event_answer_locked = true
+	event_result = {
+		"correct": false,
+		"dataError": true,
+		"explanation": "事件数据无效",
+		"rewardChoices": [],
+		"rewardPending": false,
+		"resolved": true
+	}
+
+
+func submit_event_answer(answer: Variant) -> bool:
+	if state != RunState.EVENT or !pending_card_selection.is_empty() or event_answer_locked:
+		return false
+	if !_event_data_valid(current_event):
+		_resolve_malformed_event()
+		return true
+	if !_event_answer_is_valid(answer):
+		return false
+	var correct := _event_answer_matches(answer, current_event.get("correctAnswer"))
+	var recorded_answer = answer.duplicate(true) if answer is Array or answer is Dictionary else answer
+	event_answer_locked = true
+	event_result = {
+		"answer": recorded_answer,
+		"correctAnswer": current_event.get("correctAnswer"),
+		"correct": correct,
+		"explanation": str(current_event.get("explanation", "")),
+		"rewardChoices": (current_event.get("rewardChoices", []) as Array).duplicate(true),
+		"rewardPending": correct,
+		"resolved": false
+	}
+	if !correct:
+		event_result["consequenceApplied"] = _apply_event_consequence(current_event.get("penalty", {}) as Dictionary)
+		event_result["resolved"] = true
+	return true
+
+
+func choose_event_reward(index: int) -> bool:
+	if state != RunState.EVENT or !event_answer_locked or !pending_card_selection.is_empty():
+		return false
+	if !bool(event_result.get("correct", false)) or !bool(event_result.get("rewardPending", false)):
+		return false
+	var rewards: Array = event_result.get("rewardChoices", []) as Array
+	if index < 0 or index >= rewards.size():
+		return false
+	var reward := rewards[index] as Dictionary
+	var effect := reward.get("effect", {}) as Dictionary
+	event_result["rewardPending"] = false
+	event_result["chosenRewardId"] = str(reward.get("id", ""))
+	event_result["resolved"] = false
+	var applied := _apply_event_consequence(effect)
+	event_result["consequenceApplied"] = applied
+	if pending_card_selection.is_empty():
+		event_result["resolved"] = true
+	return applied
+
+
+func continue_event() -> bool:
+	if state != RunState.EVENT or !pending_card_selection.is_empty():
+		return false
+	if !event_answer_locked or !bool(event_result.get("resolved", false)) or bool(event_result.get("rewardPending", false)):
+		return false
+	current_event.clear()
+	event_answer_locked = false
+	event_result.clear()
+	state = RunState.MAP
+	return true
+
+
 func choose_event_option(option_index: int) -> bool:
 	if state != RunState.EVENT or !pending_card_selection.is_empty():
+		return false
+	if current_event.has("questionType"):
 		return false
 	var options: Array = current_event.get("options", [])
 	if option_index < 0 or option_index >= options.size():
@@ -3301,6 +3805,10 @@ func _apply_event_effects(effects: Array) -> void:
 
 
 func _resume_pending_event_effects(selection: Dictionary) -> void:
+	var context := selection.get("context", {}) as Dictionary
+	if str(context.get("eventFlow", "")) == "question_reward":
+		event_result["resolved"] = true
+		return
 	var remaining: Array = selection.get("eventRemainingEffects", []) as Array
 	if remaining.is_empty():
 		_finish_event_option()
@@ -3311,6 +3819,134 @@ func _resume_pending_event_effects(selection: Dictionary) -> void:
 func _finish_event_option() -> void:
 	current_event = {}
 	state = RunState.MAP
+
+
+func _apply_event_consequence(effect: Dictionary) -> bool:
+	var op := str(effect.get("op", ""))
+	var amount := int(effect.get("amount", 0))
+	match op:
+		"budget":
+			budget = maxi(int(effect.get("minimum", 0)), budget + amount)
+		"heal":
+			stability = clampi(stability + amount, int(effect.get("minimum", 1)), max_stability)
+		"add_negative":
+			var negative_id := str(effect.get("cardId", ""))
+			if !negative_defs.has(negative_id):
+				return false
+			deck.append(_negative_card(negative_id))
+		"reveal_nodes":
+			var nodes: Array = effect.get("nodes", []) as Array
+			if nodes.is_empty():
+				return false
+			for raw_node in nodes:
+				var node_id := int(raw_node)
+				if node_id > 0 and !revealed_nodes.has(node_id):
+					revealed_nodes.append(node_id)
+			revealed_nodes.sort()
+		"choose_card":
+			return _open_question_card_selection(effect, "add_card")
+		"add_upgraded_card":
+			var card_id := str(effect.get("cardId", ""))
+			if !card_defs.has(card_id):
+				return false
+			var card := _card_copy(card_id)
+			card["upgraded"] = true
+			deck.append(card)
+		"upgrade_card":
+			return _open_question_deck_selection(effect, "upgrade_card")
+		"remove_card":
+			return _open_question_deck_selection(effect, "remove_card")
+		"choose_component":
+			return _open_question_component_selection(effect)
+		_:
+			return false
+	return true
+
+
+func _open_question_card_selection(effect: Dictionary, action: String) -> bool:
+	var card_ids: Array[String] = []
+	for raw_id in effect.get("cardIds", []) as Array:
+		card_ids.append(str(raw_id))
+	if effect.has("cardId"):
+		card_ids.append(str(effect.get("cardId", "")))
+	if card_ids.is_empty():
+		for raw_id in card_defs.keys():
+			card_ids.append(str(raw_id))
+	card_ids.sort()
+	var options: Array = []
+	var expected_rarity := str(effect.get("rarity", ""))
+	var expected_type := str(effect.get("type", ""))
+	var expected_tag := str(effect.get("tag", ""))
+	for card_id in card_ids:
+		if !card_defs.has(card_id):
+			continue
+		var card := card_defs[card_id] as Dictionary
+		if !expected_rarity.is_empty() and str(card.get("rarity", "")) != expected_rarity:
+			continue
+		if !expected_type.is_empty() and str(card.get("type", "")) != expected_type:
+			continue
+		if !expected_tag.is_empty() and !(card.get("tags", []) as Array).has(expected_tag):
+			continue
+		options.append(_card_copy(card_id))
+	if options.is_empty() and !expected_rarity.is_empty() and (!expected_type.is_empty() or !expected_tag.is_empty()):
+		for card_id in card_ids:
+			if !card_defs.has(card_id):
+				continue
+			var card := card_defs[card_id] as Dictionary
+			if !expected_type.is_empty() and str(card.get("type", "")) != expected_type:
+				continue
+			if !expected_tag.is_empty() and !(card.get("tags", []) as Array).has(expected_tag):
+				continue
+			options.append(_card_copy(card_id))
+		if !options.is_empty():
+			_log("事件卡牌稀有度约束已放宽")
+	if options.is_empty():
+		return false
+	_open_card_selection("event_card", options, [], "event", {"action": action, "eventFlow": "question_reward"})
+	return !pending_card_selection.is_empty()
+
+
+func _open_question_deck_selection(effect: Dictionary, action: String) -> bool:
+	var expected_rarity := str(effect.get("rarity", ""))
+	var expected_type := str(effect.get("type", ""))
+	var options: Array = []
+	for index in range(deck.size()):
+		var deck_card := deck[index] as Dictionary
+		if bool(deck_card.get("negative", false)):
+			continue
+		if !expected_rarity.is_empty() and str(deck_card.get("rarity", "")) != expected_rarity:
+			continue
+		if !expected_type.is_empty() and str(deck_card.get("type", "")) != expected_type:
+			continue
+		if action == "upgrade_card" and bool(deck_card.get("upgraded", false)):
+			continue
+		var option := deck_card.duplicate(true)
+		option["_deckIndex"] = index
+		options.append(option)
+	if options.is_empty():
+		return false
+	_open_card_selection("event_card", options, [], "event", {"action": action, "eventFlow": "question_reward"})
+	return !pending_card_selection.is_empty()
+
+
+func _open_question_component_selection(effect: Dictionary) -> bool:
+	var component_ids: Array[String] = []
+	for raw_id in effect.get("componentIds", []) as Array:
+		component_ids.append(str(raw_id))
+	if effect.has("componentId"):
+		component_ids.append(str(effect.get("componentId", "")))
+	if component_ids.is_empty():
+		for raw_id in relic_defs.keys():
+			component_ids.append(str(raw_id))
+	component_ids.sort()
+	var options: Array = []
+	for component_id in component_ids:
+		if relic_defs.has(component_id) and !relics.has(component_id):
+			options.append((relic_defs[component_id] as Dictionary).duplicate(true))
+	if options.is_empty():
+		return false
+	_open_card_selection("event_component", options, [], "event", {"action": "add_component", "eventFlow": "question_reward"})
+	return !pending_card_selection.is_empty()
 
 
 func _apply_run_effect(effect: Dictionary) -> void:
@@ -3574,6 +4210,8 @@ func start_lab_scenario(entry: Dictionary, deck_fixture: String = "starter") -> 
 		return false
 	var selected_entry := entry.duplicate(true)
 	_reset_lab_fixture(deck_fixture)
+	run_seed = int(selected_entry.get("seedId", run_seed))
+	rng.seed = run_seed
 	lab_current_entry = selected_entry
 	var kind := str(selected_entry.get("kind", ""))
 	match kind:
@@ -3587,10 +4225,10 @@ func start_lab_scenario(entry: Dictionary, deck_fixture: String = "starter") -> 
 			current_node = {"type": "boss", "contentId": selected_entry.get("contentId", "warehouse_acceptance")}
 			_start_encounter(str(selected_entry.get("contentId", "warehouse_acceptance")), "boss")
 		"event":
-			current_event = (event_defs.get(str(selected_entry.get("contentId", "")), {}) as Dictionary).duplicate(true)
-			if current_event.is_empty():
+			var selected_event := (event_defs.get(str(selected_entry.get("contentId", "")), {}) as Dictionary).duplicate(true)
+			if selected_event.is_empty():
 				return false
-			state = RunState.EVENT
+			_begin_question_event(selected_event)
 		"checkpoint_sensor":
 			current_node = {"type": "checkpoint_sensor"}
 			_start_checkpoint(true)

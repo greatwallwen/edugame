@@ -13,6 +13,7 @@ func _run() -> void:
 	get_root().add_child(game)
 	await process_frame
 	game._reset_run()
+	_assert_seeded_event_selection(game)
 
 	for seed in range(32):
 		game.rng.seed = seed
@@ -94,6 +95,53 @@ func _assert_bounded_refund_loop(game) -> void:
 		_assert(game.play_card(0), "bounded refund probe should play")
 		_assert(game.processing_points <= 3, "all refund powers should keep processing points bounded across 20 plays")
 		_assert(game.hand.size() <= 2, "turn-limited refund draws should keep hand size bounded across 20 plays")
+
+
+func _assert_seeded_event_selection(game) -> void:
+	if !game.has_method("_select_question_event"):
+		_assert(false, "question events should expose a seeded selector")
+		return
+	var has_run_seed := false
+	var has_event_history := false
+	for property in game.get_property_list():
+		var property_name := str((property as Dictionary).get("name", ""))
+		has_run_seed = has_run_seed or property_name == "run_seed"
+		has_event_history = has_event_history or property_name == "event_history"
+	_assert(has_run_seed, "question events should expose the active run seed")
+	_assert(has_event_history, "question events should expose event history")
+	if !has_run_seed or !has_event_history:
+		return
+	_assert(int(game.run_seed) == 901, "the active map seed should initialize question selection")
+	game.run_seed = 901
+	game.event_history.clear()
+	var basic: Dictionary = game._select_question_event("basic", "a2")
+	game.event_history.append(basic)
+	var advanced: Dictionary = game._select_question_event("advanced", "a6")
+	_assert(str(basic.get("tier", "")) == "basic", "node two should draw basic")
+	_assert(str(advanced.get("tier", "")) == "advanced", "node six should draw advanced")
+	_assert(basic.get("questionType") != advanced.get("questionType"), "event types should not repeat")
+	_assert((basic.get("knowledgeTags", []) as Array)[0] != (advanced.get("knowledgeTags", []) as Array)[0], "primary knowledge tags should not repeat")
+
+	game.event_history.clear()
+	game.run_seed = 901
+	_assert(game._select_question_event("basic", "a2").get("id") == basic.get("id"), "same seed and node should reproduce event")
+
+	game.event_history.clear()
+	for event_id in game.event_defs:
+		var event := game.event_defs[event_id] as Dictionary
+		if str(event.get("tier", "")) == "advanced":
+			game.event_history.append(event)
+	game.message_log.clear()
+	var fallback: Dictionary = game._select_question_event("advanced", "fallback")
+	_assert(!fallback.is_empty() and str(fallback.get("tier", "")) == "advanced", "dedup exhaustion should fall back to the full sorted tier")
+	_assert(_log_contains(game.message_log, "事件去重约束已放宽"), "dedup exhaustion should explain its relaxed fallback")
+
+
+func _log_contains(entries: Array, needle: String) -> bool:
+	for entry in entries:
+		if str(entry).contains(needle):
+			return true
+	return false
 
 
 func _assert(condition: bool, message: String) -> void:

@@ -1,0 +1,336 @@
+{
+  "events": [
+    {
+      "id": "basic_mq2_warmup",
+      "tier": "basic",
+      "name": "MQ-2 预热诊断",
+      "questionType": "diagnosis",
+      "knowledgeTags": ["mq2", "warmup"],
+      "prompt": "MQ-2 刚上电时读数持续偏高且缓慢回落，最可能的原因是什么？",
+      "options": [
+        {"id": "insufficient_warmup", "label": "传感器预热时间不足"},
+        {"id": "adc_resolution", "label": "ADC 分辨率过低"},
+        {"id": "lcd_refresh", "label": "LCD 刷新过慢"}
+      ],
+      "correctAnswer": "insufficient_warmup",
+      "explanation": "MQ-2 的加热器与敏感材料需要充分预热，冷启动阶段的漂移不能直接当作稳定浓度。",
+      "rewardChoices": [
+        {"id": "budget_20", "label": "补充调试预算 +20", "effect": {"op": "budget", "amount": 20}},
+        {"id": "stability_6", "label": "恢复稳定度 +6", "effect": {"op": "heal", "amount": 6}}
+      ],
+      "penalty": {"op": "heal", "amount": -6, "minimum": 1}
+    },
+    {
+      "id": "basic_signal_order",
+      "tier": "basic",
+      "name": "信号链顺序",
+      "questionType": "ordering",
+      "knowledgeTags": ["signal_chain", "ordering"],
+      "prompt": "把环境监测信号链按正确顺序排列。",
+      "options": [
+        {"id": "convert", "label": "换算与处理"},
+        {"id": "sensor", "label": "传感器采集"},
+        {"id": "output", "label": "显示或上报"},
+        {"id": "interface", "label": "接口读取"}
+      ],
+      "correctAnswer": ["sensor", "interface", "convert", "output"],
+      "explanation": "先由传感器形成信号，再通过接口读取，随后完成换算与校验，最后才显示或上报。",
+      "rewardChoices": [
+        {"id": "common_card", "label": "选择 1 张普通卡", "effect": {"op": "choose_card", "rarity": "common"}},
+        {"id": "budget_25", "label": "补充调试预算 +25", "effect": {"op": "budget", "amount": 25}}
+      ],
+      "penalty": {"op": "add_negative", "cardId": "stale_data"}
+    },
+    {
+      "id": "basic_adc_spike",
+      "tier": "basic",
+      "name": "ADC 尖峰识别",
+      "questionType": "waveform",
+      "knowledgeTags": ["adc", "noise"],
+      "prompt": "这组 ADC 采样中最突出的异常属于哪一类？",
+      "waveform": {"samples": [20, 21, 20, 79, 21, 20]},
+      "options": [
+        {"id": "spike_noise", "label": "孤立尖峰噪声"},
+        {"id": "steady_drift", "label": "稳定漂移"},
+        {"id": "periodic_signal", "label": "周期信号"}
+      ],
+      "correctAnswer": "spike_noise",
+      "explanation": "79 是偏离邻近样本的孤立尖峰，适合在平均前先做异常值识别。",
+      "rewardChoices": [
+        {"id": "common_filter", "label": "选择 1 张普通滤波卡", "effect": {"op": "choose_card", "rarity": "common", "tag": "filter"}},
+        {"id": "reveal_3_4", "label": "预览节点 3-4", "effect": {"op": "reveal_nodes", "nodes": [3, 4]}}
+      ],
+      "penalty": {"op": "heal", "amount": -6, "minimum": 1}
+    },
+    {
+      "id": "basic_i2c_pullup",
+      "tier": "basic",
+      "name": "I2C 上拉排查",
+      "questionType": "diagnosis",
+      "knowledgeTags": ["i2c", "hardware"],
+      "prompt": "I2C 总线高电平上升缓慢并出现 NACK，第一步应检查什么？",
+      "options": [
+        {"id": "inspect_pullups", "label": "检查 SDA/SCL 上拉电阻"},
+        {"id": "change_sample_period", "label": "修改传感器采样周期"},
+        {"id": "clear_lcd", "label": "清空 LCD 显存"}
+      ],
+      "correctAnswer": "inspect_pullups",
+      "explanation": "开漏 I2C 依赖上拉形成高电平，上升沿异常应优先检查上拉阻值、连线与总线电容。",
+      "rewardChoices": [
+        {"id": "budget_20", "label": "补充调试预算 +20", "effect": {"op": "budget", "amount": 20}},
+        {"id": "reveal_3_4", "label": "预览节点 3-4", "effect": {"op": "reveal_nodes", "nodes": [3, 4]}}
+      ],
+      "penalty": {"op": "budget", "amount": -15, "minimum": 0}
+    },
+    {
+      "id": "basic_raw_trusted",
+      "tier": "basic",
+      "name": "原始值与可信值",
+      "questionType": "tradeoff",
+      "knowledgeTags": ["data_trust", "conversion"],
+      "prompt": "采到寄存器原始值后，怎样进入报警判断最可靠？",
+      "options": [
+        {"id": "convert_then_validate", "label": "先换算并校验，再用于报警"},
+        {"id": "alarm_raw", "label": "直接用原始值触发报警"},
+        {"id": "display_raw", "label": "只显示原始值并跳过校验"}
+      ],
+      "correctAnswer": "convert_then_validate",
+      "explanation": "原始值必须经过单位换算、范围检查与状态校验后才能成为可信数据。",
+      "rewardChoices": [
+        {"id": "common_process", "label": "选择 1 张普通处理卡", "effect": {"op": "choose_card", "rarity": "common", "type": "process"}},
+        {"id": "stability_8", "label": "恢复稳定度 +8", "effect": {"op": "heal", "amount": 8}}
+      ],
+      "penalty": {"op": "add_negative", "cardId": "uncalibrated_reading"}
+    },
+    {
+      "id": "basic_sample_period",
+      "tier": "basic",
+      "name": "采样周期设置",
+      "questionType": "parameter",
+      "knowledgeTags": ["scheduler", "sampling"],
+      "prompt": "需要每 500 ms 更新一次传感器，同时保持主循环响应，应该采用哪种设置？",
+      "options": [
+        {"id": "blocking_10ms", "label": "每次阻塞 10 ms 连续轮询"},
+        {"id": "nonblocking_500ms", "label": "用非阻塞计时每 500 ms 采样"},
+        {"id": "blocking_5s", "label": "每次采样后阻塞 5 s"}
+      ],
+      "correctAnswer": "nonblocking_500ms",
+      "explanation": "基于 tick 或 millis 的非阻塞调度能满足 500 ms 周期，同时让接口、显示和报警任务继续运行。",
+      "rewardChoices": [
+        {"id": "budget_25", "label": "补充调试预算 +25", "effect": {"op": "budget", "amount": 25}},
+        {"id": "stability_6", "label": "恢复稳定度 +6", "effect": {"op": "heal", "amount": 6}}
+      ],
+      "penalty": {"op": "heal", "amount": -6, "minimum": 1}
+    },
+    {
+      "id": "basic_i2c_result",
+      "tier": "basic",
+      "name": "I2C 返回值处理",
+      "questionType": "code_trace",
+      "knowledgeTags": ["i2c", "error_handling"],
+      "prompt": "I2C 读取返回 NACK 时，程序下一步最合适的动作是什么？",
+      "codeSnippet": "status = i2c_read(sensor_addr);\nif (status == NACK) { /* ? */ }",
+      "options": [
+        {"id": "use_stale_value", "label": "继续使用上次旧值"},
+        {"id": "retry_and_log", "label": "限次重试并记录错误"},
+        {"id": "refresh_lcd", "label": "仅刷新 LCD"}
+      ],
+      "correctAnswer": "retry_and_log",
+      "explanation": "NACK 应进入有上限的重试与日志路径，不能把旧值伪装成新采样。",
+      "rewardChoices": [
+        {"id": "common_diagnosis", "label": "选择 1 张普通诊断卡", "effect": {"op": "choose_card", "rarity": "common", "tag": "diagnosis"}},
+        {"id": "budget_20", "label": "补充调试预算 +20", "effect": {"op": "budget", "amount": 20}}
+      ],
+      "penalty": {"op": "add_negative", "cardId": "i2c_nack"}
+    },
+    {
+      "id": "basic_sensor_interface",
+      "tier": "basic",
+      "name": "传感器接口匹配",
+      "questionType": "parameter",
+      "knowledgeTags": ["interface", "sensor"],
+      "prompt": "MQ-2、BH1750 与 HDC1080 的接口组合应如何配置？",
+      "options": [
+        {"id": "all_adc", "label": "全部使用 ADC"},
+        {"id": "mq2_adc_others_i2c", "label": "MQ-2 用 ADC，其余使用 I2C"},
+        {"id": "all_uart", "label": "全部使用 UART"}
+      ],
+      "correctAnswer": "mq2_adc_others_i2c",
+      "explanation": "MQ-2 的 AO 是模拟量，需要 ADC；BH1750 与 HDC1080 提供 I2C 数字接口。",
+      "rewardChoices": [
+        {"id": "reveal_3_4", "label": "预览节点 3-4", "effect": {"op": "reveal_nodes", "nodes": [3, 4]}},
+        {"id": "common_interface", "label": "选择 1 张普通接口卡", "effect": {"op": "choose_card", "rarity": "common", "type": "interface"}}
+      ],
+      "penalty": {"op": "budget", "amount": -15, "minimum": 0}
+    },
+    {
+      "id": "advanced_moving_average",
+      "tier": "advanced",
+      "name": "滑动平均响应",
+      "questionType": "waveform",
+      "knowledgeTags": ["filter", "latency"],
+      "prompt": "对比原始与滤波序列，滑动平均带来了什么效果？",
+      "waveform": {
+        "raw": [20, 21, 70, 22, 21],
+        "filtered": [20, 20, 37, 38, 37]
+      },
+      "options": [
+        {"id": "reduce_spike_add_delay", "label": "削弱尖峰但增加响应延迟"},
+        {"id": "remove_all_delay", "label": "完全消除延迟"},
+        {"id": "amplify_spike", "label": "放大尖峰"}
+      ],
+      "correctAnswer": "reduce_spike_add_delay",
+      "explanation": "均值滤波压低了尖峰，但窗口中的旧样本让输出变化滞后。",
+      "rewardChoices": [
+        {"id": "upgrade_process", "label": "升级 1 张处理卡", "effect": {"op": "upgrade_card", "type": "process"}},
+        {"id": "window_n8", "label": "获得滑动窗口 N=8", "effect": {"op": "choose_component", "componentIds": ["window_n8"]}}
+      ],
+      "penalty": {"op": "heal", "amount": -8, "minimum": 1}
+    },
+    {
+      "id": "advanced_address_shift",
+      "tier": "advanced",
+      "name": "I2C 地址左移",
+      "questionType": "code_trace",
+      "knowledgeTags": ["i2c_address", "protocol"],
+      "prompt": "设备 7 位地址为 0x23，调用发送地址字节的写操作时应写入什么？",
+      "codeSnippet": "uint8_t addr7 = 0x23;\ni2c_write_address(/* ? */);",
+      "options": [
+        {"id": "write_byte_0x23", "label": "写入字节 0x23"},
+        {"id": "write_byte_0x46", "label": "写入字节 0x46"},
+        {"id": "read_byte_0x47", "label": "按读方向写入 0x47"}
+      ],
+      "correctAnswer": "write_byte_0x46",
+      "explanation": "地址字节由 7 位地址左移一位并附加 R/W 位；写方向为 0，因此 0x23 << 1 = 0x46。",
+      "rewardChoices": [
+        {"id": "address_shift", "label": "获得升级版地址左移", "effect": {"op": "add_upgraded_card", "cardId": "address_shift"}},
+        {"id": "remove_starter", "label": "移除 1 张初始牌", "effect": {"op": "remove_card", "rarity": "starter"}}
+      ],
+      "penalty": {"op": "add_negative", "cardId": "stale_data"}
+    },
+    {
+      "id": "advanced_nonblocking_loop",
+      "tier": "advanced",
+      "name": "非阻塞主循环",
+      "questionType": "code_trace",
+      "knowledgeTags": ["scheduler", "state_machine"],
+      "prompt": "多传感器任务需要等待转换完成时，哪种主循环结构最合适？",
+      "codeSnippet": "for (;;) {\n  sample_if_due();\n  service_bus();\n  refresh_if_due();\n}",
+      "options": [
+        {"id": "delay_loop", "label": "在每个任务后调用 delay"},
+        {"id": "millis_state_machine", "label": "基于时间戳与状态机推进任务"},
+        {"id": "lcd_clear_loop", "label": "每轮只清空 LCD"}
+      ],
+      "correctAnswer": "millis_state_machine",
+      "explanation": "时间戳与状态机把等待阶段拆开，不会阻塞其他传感器、总线与输出任务。",
+      "rewardChoices": [
+        {"id": "state_template", "label": "获得状态机模板", "effect": {"op": "choose_component", "componentIds": ["state_template"]}},
+        {"id": "uncommon_scheduler", "label": "选择 1 张罕见调度卡", "effect": {"op": "choose_card", "rarity": "uncommon", "tag": "scheduler"}}
+      ],
+      "penalty": {"op": "heal", "amount": -10, "minimum": 1}
+    },
+    {
+      "id": "advanced_display_buffer",
+      "tier": "advanced",
+      "name": "显示缓冲权衡",
+      "questionType": "tradeoff",
+      "knowledgeTags": ["display", "buffer"],
+      "prompt": "采样频率高于 LCD 刷新频率时，怎样避免显示阻塞采样？",
+      "options": [
+        {"id": "refresh_every_sample", "label": "每次采样都立即刷新 LCD"},
+        {"id": "separate_sample_refresh", "label": "分离采样与刷新周期并使用缓冲"},
+        {"id": "disable_sampling", "label": "刷新期间停止采样"}
+      ],
+      "correctAnswer": "separate_sample_refresh",
+      "explanation": "独立调度采样与显示，并用缓冲保存最新可信值，可避免慢速 LCD 阻塞采集。",
+      "rewardChoices": [
+        {"id": "lcd_buffer", "label": "获得 LCD 缓冲区", "effect": {"op": "choose_component", "componentIds": ["lcd_buffer"]}},
+        {"id": "upgrade_output", "label": "升级 1 张输出卡", "effect": {"op": "upgrade_card", "type": "output"}}
+      ],
+      "penalty": {"op": "budget", "amount": -20, "minimum": 0}
+    },
+    {
+      "id": "advanced_alarm_hysteresis",
+      "tier": "advanced",
+      "name": "报警迟滞参数",
+      "questionType": "parameter",
+      "knowledgeTags": ["alarm", "hysteresis"],
+      "prompt": "报警在 70 开启，需要避免阈值附近反复抖动，应选择哪组关闭阈值？",
+      "options": [
+        {"id": "on70_off70", "label": "70 开启，70 关闭"},
+        {"id": "on70_off60", "label": "70 开启，60 关闭"},
+        {"id": "on60_off70", "label": "60 开启，70 关闭"}
+      ],
+      "correctAnswer": "on70_off60",
+      "explanation": "开启与关闭阈值分离形成迟滞区，能抑制读数在 70 附近波动造成的重复报警。",
+      "rewardChoices": [
+        {"id": "uncommon_alarm", "label": "选择 1 张罕见报警卡", "effect": {"op": "choose_card", "rarity": "uncommon", "tag": "alarm"}},
+        {"id": "remove_starter", "label": "移除 1 张初始牌", "effect": {"op": "remove_card", "rarity": "starter"}}
+      ],
+      "penalty": {"op": "add_negative", "cardId": "false_alarm"}
+    },
+    {
+      "id": "advanced_outlier_reject",
+      "tier": "advanced",
+      "name": "异常值剔除",
+      "questionType": "waveform",
+      "knowledgeTags": ["outlier", "filter"],
+      "prompt": "这组读数包含一个孤立异常值，进入滑动平均前应如何处理？",
+      "waveform": {"samples": [48, 49, 50, 121, 49, 50]},
+      "options": [
+        {"id": "average_everything", "label": "把所有样本直接平均"},
+        {"id": "reject_isolated_before_average", "label": "先识别孤立异常，再进行平均"},
+        {"id": "publish_peak", "label": "把峰值直接作为可信值发布"}
+      ],
+      "correctAnswer": "reject_isolated_before_average",
+      "explanation": "121 与相邻稳定读数明显不一致，应先标记并剔除孤立异常，避免污染平均窗口。",
+      "rewardChoices": [
+        {"id": "upgrade_process", "label": "升级 1 张处理卡", "effect": {"op": "upgrade_card", "type": "process"}},
+        {"id": "window_n8", "label": "获得滑动窗口 N=8", "effect": {"op": "choose_component", "componentIds": ["window_n8"]}}
+      ],
+      "penalty": {"op": "add_negative", "cardId": "abnormal_reading"}
+    },
+    {
+      "id": "advanced_polling_order",
+      "tier": "advanced",
+      "name": "轮询链路顺序",
+      "questionType": "ordering",
+      "knowledgeTags": ["polling", "signal_chain"],
+      "prompt": "把非阻塞轮询中的处理阶段按正确顺序排列。",
+      "options": [
+        {"id": "publish", "label": "发布结果"},
+        {"id": "sample", "label": "采集原始值"},
+        {"id": "schedule", "label": "检查调度时刻"},
+        {"id": "validate", "label": "校验可信度"},
+        {"id": "convert", "label": "换算工程量"}
+      ],
+      "correctAnswer": ["schedule", "sample", "convert", "validate", "publish"],
+      "explanation": "先由调度器确定任务到期，再采样、换算、校验，最后发布可信结果。",
+      "rewardChoices": [
+        {"id": "serial_helper", "label": "获得串口调试助手", "effect": {"op": "choose_component", "componentIds": ["serial_helper"]}},
+        {"id": "uncommon_chain", "label": "选择 1 张罕见连携卡", "effect": {"op": "choose_card", "rarity": "uncommon", "tag": "chain"}}
+      ],
+      "penalty": {"op": "heal", "amount": -8, "minimum": 1}
+    },
+    {
+      "id": "advanced_uart_report",
+      "tier": "advanced",
+      "name": "UART 调试报告",
+      "questionType": "diagnosis",
+      "knowledgeTags": ["uart", "reporting"],
+      "prompt": "为了复现间歇性异常，UART 日志至少应保留哪组信息？",
+      "options": [
+        {"id": "value_only", "label": "只记录最终显示值"},
+        {"id": "timestamp_status_raw_trusted", "label": "记录时间戳、状态、原始值与可信值"},
+        {"id": "lcd_text_only", "label": "只记录 LCD 文本"}
+      ],
+      "correctAnswer": "timestamp_status_raw_trusted",
+      "explanation": "时间戳、接口状态、原始值和可信值共同建立可追溯链，才能定位采样、通信或处理阶段的问题。",
+      "rewardChoices": [
+        {"id": "upgrade_output", "label": "升级 1 张输出卡", "effect": {"op": "upgrade_card", "type": "output"}},
+        {"id": "remove_starter", "label": "移除 1 张初始牌", "effect": {"op": "remove_card", "rarity": "starter"}}
+      ],
+      "penalty": {"op": "budget", "amount": -25, "minimum": 0}
+    }
+  ]
+}

@@ -17,6 +17,8 @@ func _run() -> void:
 	get_root().add_child(game)
 	await process_frame
 	game._reset_run()
+	_assert_question_event_resolution(game)
+	game._reset_run()
 
 	_assert(game.current_layer == 0 and game.state == game.RunState.MAP, "new run should begin before layer one")
 	var script_constants: Dictionary = game.get_script().get_script_constant_map()
@@ -72,7 +74,17 @@ func _run() -> void:
 
 	_assert(bool(game.choose_node(0)), "layer two event should be selectable")
 	_assert(game.state == game.RunState.EVENT, "event node should enter event state")
-	_assert(bool(game.choose_event_option(1)), "event option should resolve")
+	if game.has_method("submit_event_answer"):
+		_assert(!game.current_event.is_empty(), "normal event nodes should select a seeded question")
+		_assert(game.event_history.size() == 1, "normal event selection should enter event history")
+		var route_answer = game.current_event.get("correctAnswer")
+		_assert(game.submit_event_answer(route_answer), "the seeded route event should accept its ID-based answer")
+		_assert(game.choose_event_reward(0), "the seeded route event should accept one reward")
+		if !game.pending_card_selection.is_empty():
+			_assert(game.choose_pending_card(0), "the route reward should resolve through the shared event owner")
+		_assert(game.continue_event(), "the explained route event should continue")
+	else:
+		game.state = game.RunState.MAP
 	_assert(game.state == game.RunState.MAP, "event should return to map")
 
 	_assert(bool(game.choose_node(0)), "layer three ordinary fault should be selectable")
@@ -204,6 +216,138 @@ func _log_contains(entries: Array, expected: String) -> bool:
 		if str(entry).contains(expected):
 			return true
 	return false
+
+
+func _assert_question_event_resolution(game) -> void:
+	for method_name in ["submit_event_answer", "choose_event_reward", "continue_event", "_apply_event_consequence"]:
+		if !game.has_method(method_name):
+			_assert(false, "question events should expose %s" % method_name)
+			return
+	for property_name in ["event_answer_locked", "event_result"]:
+		if !_object_has_property(game, property_name):
+			_assert(false, "question events should expose %s" % property_name)
+			return
+
+	_force_event(game, "basic_mq2_warmup")
+	game.stability = 4
+	var budget_before_wrong: int = game.budget
+	var deck_before_wrong: int = game.deck.size()
+	_assert(!game.continue_event(), "event should not continue before an answer")
+	_assert(game.submit_event_answer("adc_resolution"), "wrong answer should lock")
+	_assert(game.event_answer_locked, "answer should lock immediately")
+	_assert(!bool(game.event_result.get("correct", true)), "wrong answer should be recorded")
+	_assert(str(game.event_result.get("explanation", "")).length() > 0, "wrong answer should show explanation")
+	_assert(game.stability == 1, "wrong stability penalty should clamp at one")
+	_assert(game.budget == budget_before_wrong and game.deck.size() == deck_before_wrong, "wrong answer should apply only its declared penalty")
+	_assert(game.continue_event() and game.state == game.RunState.MAP, "wrong explained result should continue to the map")
+
+	_force_event(game, "basic_mq2_warmup")
+	game.stability = game.max_stability
+	var budget_before_reward: int = game.budget
+	_assert(game.submit_event_answer("insufficient_warmup"), "correct option ID should lock")
+	_assert(bool(game.event_result.get("correct", false)), "correct answer should be recorded")
+	_assert(bool(game.event_result.get("rewardPending", false)), "correct answer should expose a pending reward")
+	_assert((game.event_result.get("rewardChoices", []) as Array).size() == 2, "correct answer should expose two rewards")
+	_assert(game.budget == budget_before_reward, "correct answer should not apply a reward before selection")
+	_assert(!game.continue_event(), "correct event should not continue before reward selection")
+	_assert(game.choose_event_reward(0), "one correct-answer reward should be selectable")
+	_assert(game.budget == budget_before_reward + 20, "selected budget reward should apply once")
+	_assert(!game.choose_event_reward(1), "a second reward should be rejected")
+	_assert(game.continue_event() and game.state == game.RunState.MAP, "rewarded event should continue after explanation")
+
+	_force_event(game, "basic_signal_order")
+	var ordering_answer := ["sensor", "interface", "convert", "output"]
+	var deck_before_card_choice: int = game.deck.size()
+	_assert(game.submit_event_answer(ordering_answer), "ordering should accept an array of option IDs")
+	_assert(bool(game.event_result.get("correct", false)), "correct ordering IDs should resolve as correct")
+	_assert(game.choose_event_reward(0), "card reward should begin a shared selection")
+	_assert(game.state == game.RunState.EVENT, "event should remain the owner while card selection is pending")
+	_assert(str(game.pending_card_selection.get("owner", "")) == "event", "card selection should declare the event owner")
+	_assert(!bool(game.event_result.get("resolved", true)), "event should wait for its card selection")
+	_assert(game.choose_pending_card(0), "event-owned card selection should resolve")
+	_assert(game.deck.size() == deck_before_card_choice + 1, "selected event card should join the deck")
+	_assert(bool(game.event_result.get("resolved", false)), "card selection should resume the event result")
+	_assert(game.continue_event(), "card reward event should continue explicitly")
+
+	_force_event(game, "advanced_moving_average")
+	_assert(game.submit_event_answer("reduce_spike_add_delay"), "advanced waveform answer should resolve")
+	_assert(game.choose_event_reward(1), "component reward should begin a shared selection")
+	_assert(game.state == game.RunState.EVENT and str(game.pending_card_selection.get("owner", "")) == "event", "component selection should preserve the event owner")
+	_assert(game.choose_pending_card(0), "event-owned component selection should resolve")
+	_assert(game.relics.has("window_n8"), "selected event component should join the run")
+	_assert(game.continue_event(), "component reward event should continue explicitly")
+
+	_force_event(game, "advanced_alarm_hysteresis")
+	_assert(game.submit_event_answer("on70_off60"), "hysteresis answer ID should resolve")
+	_assert(game.choose_event_reward(0), "alarm-card reward should offer a tagged fallback when exact rarity is unavailable")
+	var alarm_options: Array = game.pending_card_selection.get("options", []) as Array
+	_assert(!alarm_options.is_empty() and ((alarm_options[0] as Dictionary).get("tags", []) as Array).has("alarm"), "alarm reward fallback should preserve its engineering tag")
+	_assert(game.choose_pending_card(0), "alarm reward fallback should resolve through the event owner")
+	_assert(game.continue_event(), "alarm reward event should continue explicitly")
+
+	_force_event(game, "advanced_polling_order")
+	_assert(game.submit_event_answer(["schedule", "sample", "convert", "validate", "publish"]), "advanced ordering should accept an array of IDs")
+	_assert(game.choose_event_reward(1), "chain-card reward should offer a tagged fallback when exact rarity is unavailable")
+	var chain_options: Array = game.pending_card_selection.get("options", []) as Array
+	_assert(!chain_options.is_empty() and ((chain_options[0] as Dictionary).get("tags", []) as Array).has("chain"), "chain reward fallback should preserve its engineering tag")
+	_assert(game.choose_pending_card(0), "chain reward fallback should resolve through the event owner")
+	_assert(game.continue_event(), "chain reward event should continue explicitly")
+
+	_force_event(game, "basic_i2c_pullup")
+	game.budget = 5
+	_assert(game.submit_event_answer("change_sample_period"), "wrong budget answer should resolve")
+	_assert(game.budget == 0, "budget penalty should clamp at zero")
+	_assert(game.continue_event(), "budget penalty should not block continuation")
+
+	_force_event(game, "basic_i2c_result")
+	var negative_count_before: int = game.deck.size()
+	_assert(game.submit_event_answer("use_stale_value"), "wrong code-trace answer should resolve")
+	_assert(game.deck.size() == negative_count_before + 1 and _array_has_id(game.deck, "i2c_nack"), "negative penalty should add exactly one declared card")
+	_assert(game.continue_event(), "negative penalty should still allow continuation")
+
+	_force_event(game, "basic_adc_spike")
+	_assert(game.submit_event_answer("spike_noise"), "waveform answer ID should resolve")
+	_assert(game.choose_event_reward(1), "node-reveal reward should resolve")
+	_assert(game.revealed_nodes == [3, 4], "node-reveal reward should retain structured node IDs")
+	_assert(game.continue_event(), "node-reveal reward should allow continuation")
+
+	_force_event(game, "advanced_address_shift")
+	var upgraded_count_before: int = game.deck.size()
+	_assert(game.submit_event_answer("write_byte_0x46"), "address answer ID should resolve")
+	_assert(game.choose_event_reward(0), "upgraded-card reward should resolve")
+	_assert(game.deck.size() == upgraded_count_before + 1, "upgraded-card reward should add one card")
+	var gained_address_shift := game.deck[game.deck.size() - 1] as Dictionary
+	_assert(str(gained_address_shift.get("id", "")) == "address_shift" and bool(gained_address_shift.get("upgraded", false)), "address reward should add the specified upgraded card")
+	_assert(game.continue_event(), "upgraded-card reward should allow continuation")
+
+	var malformed_stability: int = game.stability
+	var malformed_budget: int = game.budget
+	var malformed_deck_size: int = game.deck.size()
+	game.current_event = {
+		"id": "malformed_event",
+		"tier": "basic",
+		"questionType": "diagnosis",
+		"options": [],
+		"correctAnswer": "missing",
+		"rewardChoices": [],
+		"penalty": {"op": "heal", "amount": -50, "minimum": 1}
+	}
+	game.state = game.RunState.EVENT
+	game.event_answer_locked = false
+	game.event_result.clear()
+	game.pending_card_selection.clear()
+	_assert(game.submit_event_answer("missing"), "malformed event should resolve safely")
+	_assert(str(game.event_result.get("explanation", "")).contains("事件数据无效"), "malformed event should expose a visible data error")
+	_assert(game.stability == malformed_stability and game.budget == malformed_budget and game.deck.size() == malformed_deck_size, "malformed event should apply no consequence")
+	_assert(game.continue_event() and game.state == game.RunState.MAP, "malformed event should safely continue to map")
+
+
+func _force_event(game, event_id: String) -> void:
+	game.current_event = (game.event_defs[event_id] as Dictionary).duplicate(true)
+	game.state = game.RunState.EVENT
+	game.event_answer_locked = false
+	game.event_result.clear()
+	game.pending_card_selection.clear()
 
 
 func _assert_fault_rule_counterplay(game) -> void:

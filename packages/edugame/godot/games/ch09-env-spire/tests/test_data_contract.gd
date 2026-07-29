@@ -5,6 +5,109 @@ const SINGLE_ROUTE_TYPES := [
 	"checkpoint_sensor", "component", "ordinary", "checkpoint_trust",
 	"shop", "elite", "service", "boss"
 ]
+const EVENT_IDS := [
+	"advanced_address_shift",
+	"advanced_alarm_hysteresis",
+	"advanced_display_buffer",
+	"advanced_moving_average",
+	"advanced_nonblocking_loop",
+	"advanced_outlier_reject",
+	"advanced_polling_order",
+	"advanced_uart_report",
+	"basic_adc_spike",
+	"basic_i2c_pullup",
+	"basic_i2c_result",
+	"basic_mq2_warmup",
+	"basic_raw_trusted",
+	"basic_sample_period",
+	"basic_sensor_interface",
+	"basic_signal_order"
+]
+const EVENT_EXPECTATIONS := {
+	"basic_mq2_warmup": {
+		"answer": "insufficient_warmup",
+		"rewards": [{"op": "budget", "amount": 20}, {"op": "heal", "amount": 6}],
+		"penalty": {"op": "heal", "amount": -6, "minimum": 1}
+	},
+	"basic_signal_order": {
+		"answer": ["sensor", "interface", "convert", "output"],
+		"rewards": [{"op": "choose_card", "rarity": "common"}, {"op": "budget", "amount": 25}],
+		"penalty": {"op": "add_negative", "cardId": "stale_data"}
+	},
+	"basic_adc_spike": {
+		"answer": "spike_noise",
+		"rewards": [{"op": "choose_card", "rarity": "common", "tag": "filter"}, {"op": "reveal_nodes", "nodes": [3, 4]}],
+		"penalty": {"op": "heal", "amount": -6, "minimum": 1},
+		"waveform": {"samples": [20, 21, 20, 79, 21, 20]}
+	},
+	"basic_i2c_pullup": {
+		"answer": "inspect_pullups",
+		"rewards": [{"op": "budget", "amount": 20}, {"op": "reveal_nodes", "nodes": [3, 4]}],
+		"penalty": {"op": "budget", "amount": -15, "minimum": 0}
+	},
+	"basic_raw_trusted": {
+		"answer": "convert_then_validate",
+		"rewards": [{"op": "choose_card", "rarity": "common", "type": "process"}, {"op": "heal", "amount": 8}],
+		"penalty": {"op": "add_negative", "cardId": "uncalibrated_reading"}
+	},
+	"basic_sample_period": {
+		"answer": "nonblocking_500ms",
+		"rewards": [{"op": "budget", "amount": 25}, {"op": "heal", "amount": 6}],
+		"penalty": {"op": "heal", "amount": -6, "minimum": 1}
+	},
+	"basic_i2c_result": {
+		"answer": "retry_and_log",
+		"rewards": [{"op": "choose_card", "rarity": "common", "tag": "diagnosis"}, {"op": "budget", "amount": 20}],
+		"penalty": {"op": "add_negative", "cardId": "i2c_nack"}
+	},
+	"basic_sensor_interface": {
+		"answer": "mq2_adc_others_i2c",
+		"rewards": [{"op": "reveal_nodes", "nodes": [3, 4]}, {"op": "choose_card", "rarity": "common", "type": "interface"}],
+		"penalty": {"op": "budget", "amount": -15, "minimum": 0}
+	},
+	"advanced_moving_average": {
+		"answer": "reduce_spike_add_delay",
+		"rewards": [{"op": "upgrade_card", "type": "process"}, {"op": "choose_component", "componentIds": ["window_n8"]}],
+		"penalty": {"op": "heal", "amount": -8, "minimum": 1},
+		"waveform": {"raw": [20, 21, 70, 22, 21], "filtered": [20, 20, 37, 38, 37]}
+	},
+	"advanced_address_shift": {
+		"answer": "write_byte_0x46",
+		"rewards": [{"op": "add_upgraded_card", "cardId": "address_shift"}, {"op": "remove_card", "rarity": "starter"}],
+		"penalty": {"op": "add_negative", "cardId": "stale_data"}
+	},
+	"advanced_nonblocking_loop": {
+		"answer": "millis_state_machine",
+		"rewards": [{"op": "choose_component", "componentIds": ["state_template"]}, {"op": "choose_card", "rarity": "uncommon", "tag": "scheduler"}],
+		"penalty": {"op": "heal", "amount": -10, "minimum": 1}
+	},
+	"advanced_display_buffer": {
+		"answer": "separate_sample_refresh",
+		"rewards": [{"op": "choose_component", "componentIds": ["lcd_buffer"]}, {"op": "upgrade_card", "type": "output"}],
+		"penalty": {"op": "budget", "amount": -20, "minimum": 0}
+	},
+	"advanced_alarm_hysteresis": {
+		"answer": "on70_off60",
+		"rewards": [{"op": "choose_card", "rarity": "uncommon", "tag": "alarm"}, {"op": "remove_card", "rarity": "starter"}],
+		"penalty": {"op": "add_negative", "cardId": "false_alarm"}
+	},
+	"advanced_outlier_reject": {
+		"answer": "reject_isolated_before_average",
+		"rewards": [{"op": "upgrade_card", "type": "process"}, {"op": "choose_component", "componentIds": ["window_n8"]}],
+		"penalty": {"op": "add_negative", "cardId": "abnormal_reading"},
+		"waveform": {"samples": [48, 49, 50, 121, 49, 50]}
+	},
+	"advanced_polling_order": {
+		"answer": ["schedule", "sample", "convert", "validate", "publish"],
+		"rewards": [{"op": "choose_component", "componentIds": ["serial_helper"]}, {"op": "choose_card", "rarity": "uncommon", "tag": "chain"}],
+		"penalty": {"op": "heal", "amount": -8, "minimum": 1}
+	},
+	"advanced_uart_report": {
+		"answer": "timestamp_status_raw_trusted",
+		"rewards": [{"op": "upgrade_card", "type": "output"}, {"op": "remove_card", "rarity": "starter"}],
+		"penalty": {"op": "budget", "amount": -25, "minimum": 0}
+	}
+}
 
 var failures := 0
 
@@ -73,7 +176,37 @@ func _run() -> void:
 			_assert(!str(rule.get("description", "")).is_empty(), "fault rule should explain its trigger")
 			_assert(!str(rule.get("counterText", "")).is_empty(), "fault rule should explain its counter")
 			_assert((rule.get("counterTags", []) as Array).size() >= 2 or bool(rule.get("behaviorCounter", false)), "fault rule should have broad counterplay")
-	_assert(events.size() == 4, "MVP should define four events")
+	_assert(events.size() == 16, "question event pool should define sixteen events")
+	_assert(_count_where(events, "tier", "basic") == 8, "question event pool should define eight basic events")
+	_assert(_count_where(events, "tier", "advanced") == 8, "question event pool should define eight advanced events")
+	var actual_event_ids: Array = []
+	for raw_event in events:
+		var event := raw_event as Dictionary
+		var event_id := str(event.get("id", ""))
+		actual_event_ids.append(event_id)
+		_assert(["basic", "advanced"].has(str(event.get("tier", ""))), "event tier should be basic or advanced")
+		_assert([
+			"diagnosis", "ordering", "code_trace", "parameter", "waveform", "tradeoff"
+		].has(str(event.get("questionType", ""))), "event should use a supported question type")
+		_assert(!(event.get("knowledgeTags", []) as Array).is_empty(), "event should declare knowledge tags")
+		_assert(event.has("correctAnswer"), "event should declare the answer")
+		_assert(!str(event.get("explanation", "")).is_empty(), "event should explain the answer")
+		_assert((event.get("rewardChoices", []) as Array).size() == 2, "event should offer two correct-answer rewards")
+		_assert(!(event.get("penalty", {}) as Dictionary).is_empty(), "event should declare one wrong-answer penalty")
+		var expected := EVENT_EXPECTATIONS.get(event_id, {}) as Dictionary
+		_assert(!expected.is_empty(), "event %s should be part of the specified pool" % event_id)
+		if expected.is_empty():
+			continue
+		_assert(_same_value(event.get("correctAnswer"), expected.get("answer")), "%s should keep answer identity on IDs or arrays" % event_id)
+		var reward_effects: Array = []
+		for raw_reward in event.get("rewardChoices", []) as Array:
+			reward_effects.append((raw_reward as Dictionary).get("effect", {}))
+		_assert(_same_value(reward_effects, expected.get("rewards")), "%s should declare the specified rewards" % event_id)
+		_assert(_same_value(event.get("penalty"), expected.get("penalty")), "%s should declare the specified penalty" % event_id)
+		if expected.has("waveform"):
+			_assert(_same_value(event.get("waveform"), expected.get("waveform")), "%s should declare the specified waveform samples" % event_id)
+	actual_event_ids.sort()
+	_assert(actual_event_ids == EVENT_IDS, "question event pool should use the sixteen specified IDs")
 	_assert(relics.size() == 5, "MVP should define five engineering components")
 	var state_template := {}
 	for raw_relic in relics:
@@ -84,7 +217,6 @@ func _run() -> void:
 	_assert(maps.size() == 3, "MVP should define three fixed map seeds")
 
 	var enemy_ids := _ids_by_type(enemies)
-	var event_ids := _ids_by_type(events)
 	for raw_map in maps:
 		var run_map := raw_map as Dictionary
 		var layers: Array = run_map.get("layers", [])
@@ -103,7 +235,7 @@ func _run() -> void:
 			if ["ordinary", "elite", "boss"].has(node_type):
 				_assert(enemy_ids.has(content_id), "%s should resolve enemy %s" % [run_map.get("id", "map"), content_id])
 			elif node_type == "event":
-				_assert(event_ids.has(content_id), "%s should resolve event %s" % [run_map.get("id", "map"), content_id])
+				_assert(!str(choice.get("id", "")).is_empty(), "%s event node should expose a seeded-selection node id" % run_map.get("id", "map"))
 
 	if game != null:
 		game.queue_free()
@@ -151,6 +283,30 @@ func _ids_by_type(items: Array) -> Dictionary:
 		var item := raw_item as Dictionary
 		result[str(item.get("id", ""))] = true
 	return result
+
+
+func _same_value(actual: Variant, expected: Variant) -> bool:
+	if (actual is int or actual is float) and (expected is int or expected is float):
+		return float(actual) == float(expected)
+	if actual is Array and expected is Array:
+		var actual_array := actual as Array
+		var expected_array := expected as Array
+		if actual_array.size() != expected_array.size():
+			return false
+		for index in range(actual_array.size()):
+			if !_same_value(actual_array[index], expected_array[index]):
+				return false
+		return true
+	if actual is Dictionary and expected is Dictionary:
+		var actual_dictionary := actual as Dictionary
+		var expected_dictionary := expected as Dictionary
+		if actual_dictionary.size() != expected_dictionary.size():
+			return false
+		for key in expected_dictionary:
+			if !actual_dictionary.has(key) or !_same_value(actual_dictionary[key], expected_dictionary[key]):
+				return false
+		return true
+	return actual == expected
 
 
 func _assert(condition: bool, message: String) -> void:
