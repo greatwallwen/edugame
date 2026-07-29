@@ -19,6 +19,9 @@ func _run() -> void:
 	game._reset_run()
 
 	_assert(game.deck.size() == 12, "starter deck should contain twelve cards")
+	var starter_ids: Array = game.get_script().get_script_constant_map().get("STARTER_CARD_IDS", [])
+	_assert(starter_ids.count("unit_convert") == 1, "starter deck should keep one unit conversion")
+	_assert(starter_ids.count("sliding_average") == 2, "starter deck should contain two filters")
 	_assert(game.hand.size() == 5, "reset should draw five cards")
 	_assert(game.processing_points == 3, "each turn should start with three processing points")
 
@@ -217,9 +220,235 @@ func _run() -> void:
 	game.phase_output_types = {"uart": true}
 	_assert(game._boss_phase_requirements_met(), "persistent scheduler plus current UART should satisfy final acceptance")
 
+	_assert_card_selection_effects(game)
+	_assert_card_resolution_effects(game)
+	_assert_chain_draw_state_template(game)
+	_assert_reward_composition(game)
+
 	game.queue_free()
 	await process_frame
 	_finish()
+
+
+func _assert_card_selection_effects(game) -> void:
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.draw_pile = [
+		game._card_copy("mq2_sample"),
+		game._card_copy("sliding_average"),
+		game._card_copy("uart_log")
+	]
+	game.discard_pile.clear()
+	game.hand = [game._card_copy("logic_probe")]
+	game.processing_points = 3
+	_assert(game.play_card(0), "logic probe should open top-three selection")
+	var selection := _pending_selection(game)
+	_assert(selection.get("kind", "") == "draw_one", "logic probe should expose draw-one selection")
+	game.hand = [game._card_copy("time_slice")]
+	_assert(!game.play_card(0), "normal card play should be disabled while selection is open")
+	_assert(!game.end_turn(), "end turn should be disabled while selection is open")
+	if _choose_pending_card(game, 1, "logic probe should expose public card selection"):
+		_assert(game._hand_has_card("sliding_average"), "selected inspected card should enter hand")
+		_assert(_card_id_at(game.draw_pile, game.draw_pile.size() - 1) == "uart_log", "unchosen inspected cards should return to draw-pile top in original order")
+		_assert(_card_id_at(game.draw_pile, game.draw_pile.size() - 2) == "mq2_sample", "unchosen inspected cards should preserve their relative order")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.draw_pile = [
+		game._card_copy("mq2_sample"),
+		game._card_copy("sliding_average"),
+		game._card_copy("uart_log")
+	]
+	var upgraded_baseline: Dictionary = game._card_copy("environment_baseline")
+	upgraded_baseline["upgraded"] = true
+	game.hand = [upgraded_baseline]
+	game.processing_points = 3
+	_assert(game.play_card(0), "upgraded environment baseline should inspect cards")
+	_assert(_pending_selection(game).get("kind", "") == "draw_one", "upgraded environment baseline should expose draw-one selection")
+	if _choose_pending_card(game, 1, "upgraded environment baseline should select an inspected card"):
+		_assert(game._hand_has_card("sliding_average"), "upgraded environment baseline should add its chosen card to hand")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.draw_pile = [game._card_copy("mq2_sample"), game._card_copy("sliding_average"), game._card_copy("uart_log")]
+	game.hand = [game._card_copy("polling_scan")]
+	game.processing_points = 3
+	_assert(game.play_card(0), "polling scan should open source selection")
+	_assert(_pending_selection(game).get("kind", "") == "raw_source", "polling scan should let the player choose a raw source")
+	if _choose_pending_card(game, 1, "polling scan should select a raw source"):
+		_assert(int(game.raw_data.get("light", 0)) == 1, "polling scan should gain the selected raw source")
+		_assert(_pending_selection(game).get("kind", "") == "discard_one", "polling scan should draw before prompting for one discard")
+		if _choose_pending_card(game, 0, "polling scan should discard one drawn card"):
+			_assert(game.hand.size() == 1, "draw-discard should leave one drawn card in hand")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.hand = [game._card_copy("dma_queue"), game._card_copy("mq2_sample")]
+	game.processing_points = 3
+	_assert(game.play_card(0), "DMA queue should open retained-card selection")
+	_assert(_pending_selection(game).get("kind", "") == "retain_one", "DMA queue should expose retain-one selection")
+	if _choose_pending_card(game, 0, "DMA queue should retain its selected card"):
+		_assert(_retained_cards(game).size() == 1, "DMA queue should store the selected card for next turn")
+		_assert(game.block == 5, "DMA queue should grant five block")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	var upgraded_cache: Dictionary = game._card_copy("data_cache")
+	upgraded_cache["upgraded"] = true
+	game.draw_pile.clear()
+	game.hand = [upgraded_cache, game._card_copy("mq2_sample")]
+	game.processing_points = 3
+	_assert(game.play_card(0), "upgraded data cache should open retained-card selection")
+	_assert(_pending_selection(game).get("kind", "") == "retain_one", "upgraded data cache should retain one selected card instead of drawing two")
+	if _choose_pending_card(game, 0, "upgraded data cache should select a retained card"):
+		_assert(game.end_turn(), "retained-card selection should resolve before end turn")
+		_assert(game._hand_has_card("mq2_sample"), "retained cards should return before normal next-turn draw")
+
+
+func _assert_card_resolution_effects(game) -> void:
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.draw_pile = [game._card_copy("uart_log")]
+	game.discard_pile = [{"id": "abnormal_reading", "negative": true, "group": "noise"}]
+	game.hand = [game._card_copy("median_filter")]
+	game.processing_points = 3
+	game.repair_progress = 0
+	_assert(game.play_card(0), "median filter should play")
+	_assert(game._hand_has_card("uart_log"), "median filter should draw after it removes noise")
+	_assert(game.repair_progress == 5, "median filter should repair five")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	var upgraded_outlier: Dictionary = game._card_copy("outlier_reject")
+	upgraded_outlier["upgraded"] = true
+	game.draw_pile = [game._card_copy("uart_log")]
+	game.hand = [upgraded_outlier]
+	game.processing_points = 3
+	_assert(game.play_card(0), "upgraded outlier reject should play without a target")
+	_assert(!game._hand_has_card("uart_log"), "outlier reject should not draw when it removes no negative card")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	var upgraded_delay: Dictionary = game._card_copy("nonblocking_delay")
+	upgraded_delay["upgraded"] = true
+	game.draw_pile = [game._card_copy("uart_log")]
+	game.hand = [upgraded_delay]
+	game.processing_points = 3
+	_assert(game.play_card(0), "upgraded nonblocking delay should play without a delay target")
+	_assert(!game._hand_has_card("uart_log"), "nonblocking delay should draw only when blocking delay is removed")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.draw_pile = [game._card_copy("uart_log")]
+	game.hand = [game._card_copy("task_yield")]
+	game.processing_points = 3
+	_assert(game.play_card(0), "task yield should play")
+	_assert(game.block == 6 and game._hand_has_card("uart_log"), "task yield should gain six block and draw one")
+	_assert(int(game.powers.get("interface_discount", 0)) == 1, "task yield should reduce the next interface cost")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.trusted_data["light"] = 1
+	game.draw_pile = [game._card_copy("uart_log")]
+	game.hand = [game._card_copy("trusted_snapshot")]
+	game.processing_points = 3
+	_assert(game.play_card(0), "trusted snapshot should play")
+	_assert(game.retain_data and game._hand_has_card("uart_log"), "trusted snapshot should retain data and draw one")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.raw_data["light"] = 1
+	var upgraded_register: Dictionary = game._card_copy("i2c_register_read")
+	upgraded_register["upgraded"] = true
+	game.draw_pile = [game._card_copy("uart_log")]
+	game.hand = [upgraded_register]
+	game.processing_points = 3
+	_assert(game.play_card(0), "upgraded I2C register read should play")
+	_assert(int(game.raw_data.get("light", 0)) == 0 and int(game.trusted_data.get("light", 0)) == 1, "successful I2C register read should convert one raw source")
+	_assert(game._hand_has_card("uart_log"), "successful I2C register read should draw one")
+	game.raw_data["temp"] = 1
+	game.draw_pile = [game._card_copy("sliding_average")]
+	game.hand = [upgraded_register.duplicate(true)]
+	_assert(game.play_card(0), "a second upgraded I2C register read should play")
+	_assert(!game._hand_has_card("sliding_average"), "I2C register draw should be limited to once per turn")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.fault_rule_state["suppressed"] = true
+	game.draw_pile = [game._card_copy("uart_log")]
+	game.hand = [game._card_copy("interrupt_trace")]
+	game.processing_points = 3
+	game.repair_progress = 0
+	_assert(game.play_card(0), "interrupt trace should play against a suppressed fault")
+	_assert(game.repair_progress == 8 and game._hand_has_card("uart_log"), "interrupt trace should draw and repair eight when the fault is suppressed")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.fault_rule_state["suppressed"] = false
+	game.draw_pile = [game._card_copy("uart_log")]
+	game.hand = [game._card_copy("interrupt_trace")]
+	game.processing_points = 3
+	game.repair_progress = 0
+	_assert(game.play_card(0), "interrupt trace should play against an active fault")
+	_assert(game.repair_progress == 4 and !game._hand_has_card("uart_log"), "interrupt trace should repair four without a suppressed-fault draw")
+
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.trusted_data = {"smoke": 2, "light": 1, "temp": 0, "humidity": 0}
+	game.hand = [game._card_copy("multi_source_dashboard")]
+	game.processing_points = 3
+	game.repair_progress = 0
+	_assert(game.play_card(0), "multi-source dashboard should play")
+	_assert(int(game.trusted_data.get("smoke", 0)) == 1 and int(game.trusted_data.get("light", 0)) == 0, "multi-source dashboard should consume at most one trusted item per source")
+	_assert(game.repair_progress == 16, "multi-source dashboard should repair eight per distinct source")
+
+
+func _assert_chain_draw_state_template(game) -> void:
+	game._reset_run()
+	game.state = game.RunState.COMPONENT
+	game.component_choices = [(game.relic_defs.get("state_template", {}) as Dictionary).duplicate(true)]
+	_assert(game.choose_component("state_template"), "state template component should be selectable")
+	_assert(int(game.powers.get("chain_draw", 0)) == 1, "state template should activate chain draw")
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.powers["chain_energy"] = 8
+	game.draw_pile = [game._card_copy("uart_log")]
+	game.hand.clear()
+	for stage in ["collect", "interface", "process", "output"]:
+		game._advance_chain(stage)
+	_assert(game._hand_has_card("uart_log"), "chain-draw state template should draw on the first complete chain")
+	_assert(game.processing_points <= 4, "legacy chain energy should not restore extra processing points")
+
+
+func _assert_reward_composition(game) -> void:
+	game._reset_run()
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.rng.seed = 12345
+	game._open_reward()
+	_assert(game.reward_choices.size() == 3, "reward should contain three cards")
+	if !game.has_method("_reward_reason"):
+		_assert(false, "rewards should expose a public reason helper")
+		return
+	var reasons := {}
+	for raw_card in game.reward_choices:
+		reasons[game._reward_reason(raw_card as Dictionary)] = true
+	_assert(reasons.has("协同"), "reward should include current-deck synergy")
+	_assert(reasons.has("补链"), "reward should include a missing-chain card")
+	_assert(reasons.has("反制"), "reward should include defense, draw, or fault counterplay")
+
+
+func _pending_selection(game) -> Dictionary:
+	for raw_property in game.get_property_list():
+		if str((raw_property as Dictionary).get("name", "")) == "pending_card_selection":
+			var value = game.get("pending_card_selection")
+			return value as Dictionary if value is Dictionary else {}
+	return {}
+
+
+func _retained_cards(game) -> Array:
+	for raw_property in game.get_property_list():
+		if str((raw_property as Dictionary).get("name", "")) == "retained_cards":
+			var value = game.get("retained_cards")
+			return value as Array if value is Array else []
+	return []
+
+
+func _choose_pending_card(game, index: int, message: String) -> bool:
+	if !game.has_method("choose_pending_card"):
+		_assert(false, message)
+		return false
+	return bool(game.choose_pending_card(index))
+
+
+func _card_id_at(cards: Array, index: int) -> String:
+	if index < 0 or index >= cards.size():
+		return ""
+	return str((cards[index] as Dictionary).get("id", ""))
 
 
 func _assert(condition: bool, message: String) -> void:

@@ -1,0 +1,9 @@
+{
+  "relics": [
+    {"id": "pullup_4k7", "name": "4.7k 上拉电阻", "description": "I2C 战斗开局获得 1 个诊断标记。", "effect": {"id": "i2c_start_diagnosis", "amount": 1}},
+    {"id": "serial_helper", "name": "串口调试助手", "description": "每场第一张 UART 牌费用为 0。", "effect": {"id": "first_uart_free", "amount": 1}},
+    {"id": "window_n8", "name": "滑动窗口 N=8", "description": "每场第一张滤波牌额外获得 4 防护。", "effect": {"id": "first_filter_block", "amount": 4}},
+    {"id": "state_template", "name": "状态机模板", "description": "每回合首次完成四段连携时抽 1 张。", "effect": {"id": "chain_draw", "amount": 1}},
+    {"id": "lcd_buffer", "name": "LCD 缓冲区", "description": "每场第一次阻塞延时无效。", "effect": {"id": "block_first_delay", "amount": 1}}
+  ]
+}

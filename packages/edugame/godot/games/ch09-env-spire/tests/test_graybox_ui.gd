@@ -314,6 +314,8 @@ func _verify_viewport(size: Vector2i) -> void:
 		for reward_card in reward_cards.get_children():
 			_assert((reward_card as Control).custom_minimum_size.y >= 88.0, "normal reward cards should remain visually scannable")
 			_assert(viewport_rect.intersects((reward_card as Control).get_global_rect()), "normal reward card should remain visible at %s" % size)
+			var reward_text := (reward_card as Button).text
+			_assert(reward_text.contains("协同") or reward_text.contains("补链") or reward_text.contains("反制"), "normal reward cards should display their composition reason")
 		_assert((reward_skip as Control).custom_minimum_size.y < (reward_cards.get_child(0) as Control).custom_minimum_size.y, "reward skip should be visually secondary to reward cards")
 	_assert_visible_primary_command_heights(game)
 

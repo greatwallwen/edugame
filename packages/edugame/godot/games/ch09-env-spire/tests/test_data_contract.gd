@@ -19,12 +19,43 @@ func _run() -> void:
 	var events := _load_array("res://data/events.local.json", "events")
 	var relics := _load_array("res://data/relics.local.json", "relics")
 	var maps := _load_array("res://data/run_maps.local.json", "maps")
+	var scene := load("res://scenes/main.tscn")
+	var game = scene.instantiate() if scene != null else null
+	if game != null:
+		get_root().add_child(game)
+		await process_frame
 	var stretch_mode := str(ProjectSettings.get_setting("display/window/stretch/mode", ""))
 	var allow_hidpi := bool(ProjectSettings.get_setting("display/window/dpi/allow_hidpi", true))
 
 	_assert(stretch_mode == "disabled", "Responsive UI should use the browser's actual CSS-pixel dimensions")
 	_assert(not allow_hidpi, "Web UI should not multiply its logical dimensions by device pixel ratio")
-	_assert(cards.size() == 29, "MVP should define exactly 29 cards")
+	var card_ids := {}
+	for raw_card in cards:
+		var card := raw_card as Dictionary
+		if !bool(card.get("negative", false)):
+			card_ids[str(card.get("id", ""))] = true
+	_assert(card_ids.size() == 37, "graybox card pool should contain 37 playable cards")
+	for card_id in [
+		"polling_scan", "logic_probe", "task_yield", "median_filter",
+		"dma_queue", "trusted_snapshot", "interrupt_trace", "multi_source_dashboard"
+	]:
+		_assert(card_ids.has(card_id), "card pool should contain %s" % card_id)
+	if game == null:
+		_assert(false, "main scene should expose the starter deck contract")
+	else:
+		var starter_ids: Array = game.get_script().get_script_constant_map().get("STARTER_CARD_IDS", [])
+		_assert(starter_ids.count("unit_convert") == 1, "starter deck should keep one unit conversion")
+		_assert(starter_ids.count("sliding_average") == 2, "starter deck should contain two filters")
+	for raw_card in cards:
+		var card := raw_card as Dictionary
+		var can_be_zero_cost := int(card.get("cost", 0)) == 0 or int(card.get("upgradeCost", card.get("cost", 0))) == 0
+		if !can_be_zero_cost:
+			continue
+		for effects in [card.get("effects", []), card.get("upgradeEffects", [])]:
+			for raw_effect in effects:
+				var effect := raw_effect as Dictionary
+				if ["draw", "draw_discard", "select_draw", "draw_if_removed", "next_energy"].has(str(effect.get("op", ""))):
+					_assert(int(effect.get("perTurnLimit", 0)) > 0, "%s zero-cost draw or refund should be turn-limited" % card.get("id", "card"))
 	_assert(_unique_ids(cards), "card ids should be unique and non-empty")
 	_assert(_count_where(enemies, "tier", "ordinary") == 5, "MVP should define five ordinary faults")
 	_assert(_count_where(enemies, "tier", "elite") == 1, "MVP should define one elite fault")
@@ -44,6 +75,12 @@ func _run() -> void:
 			_assert((rule.get("counterTags", []) as Array).size() >= 2 or bool(rule.get("behaviorCounter", false)), "fault rule should have broad counterplay")
 	_assert(events.size() == 4, "MVP should define four events")
 	_assert(relics.size() == 5, "MVP should define five engineering components")
+	var state_template := {}
+	for raw_relic in relics:
+		var relic := raw_relic as Dictionary
+		if str(relic.get("id", "")) == "state_template":
+			state_template = relic
+	_assert(str((state_template.get("effect", {}) as Dictionary).get("id", "")) == "chain_draw", "state template should draw for the first complete chain instead of restoring energy")
 	_assert(maps.size() == 3, "MVP should define three fixed map seeds")
 
 	var enemy_ids := _ids_by_type(enemies)
@@ -68,6 +105,9 @@ func _run() -> void:
 			elif node_type == "event":
 				_assert(event_ids.has(content_id), "%s should resolve event %s" % [run_map.get("id", "map"), content_id])
 
+	if game != null:
+		game.queue_free()
+		await process_frame
 	_finish()
 
 

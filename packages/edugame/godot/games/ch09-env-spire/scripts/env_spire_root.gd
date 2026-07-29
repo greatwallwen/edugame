@@ -7,7 +7,7 @@ const TUTORIAL_RECORD_PATH := "user://ch09_tutorial.cfg"
 const STARTER_CARD_IDS := [
 	"mq2_sample", "mq2_sample", "bh1750_read", "hdc1080_read",
 	"adc_convert", "adc_convert", "i2c_transaction", "i2c_transaction",
-	"unit_convert", "unit_convert", "sliding_average", "uart_log"
+	"unit_convert", "sliding_average", "sliding_average", "uart_log"
 ]
 const SOURCE_ORDER := ["smoke", "light", "temp", "humidity"]
 const STAGE_ORDER := ["collect", "interface", "process", "output"]
@@ -76,6 +76,7 @@ var draw_pile: Array = []
 var discard_pile: Array = []
 var exhaust_pile: Array = []
 var hand: Array = []
+var retained_cards: Array = []
 var relics: Array = []
 var powers := {}
 
@@ -93,6 +94,8 @@ var chain_rewards_claimed := {}
 var cards_played_this_turn := 0
 var reroute_available := false
 var reroute_mode := false
+var pending_card_selection: Dictionary = {}
+var turn_effect_uses: Dictionary = {}
 var turn_number := 0
 var turn_card_types := {}
 var turn_sources := {}
@@ -192,6 +195,9 @@ var end_turn_button: Button
 var reroute_button: Button
 var reroute_cancel_button: Button
 var action_trailing_spacer: Control
+var card_selection_modal: PanelContainer
+var card_selection_title: Label
+var card_selection_options: GridContainer
 var choice_view: PanelContainer
 var choice_title: Label
 var choice_description: Label
@@ -962,6 +968,36 @@ func _build_combat_view() -> void:
 	action_trailing_spacer = Control.new()
 	action_trailing_spacer.custom_minimum_size = Vector2(1, 0)
 	combat_actions.add_child(action_trailing_spacer)
+	card_selection_modal = PanelContainer.new()
+	card_selection_modal.name = "CardSelectionModal"
+	card_selection_modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	card_selection_modal.add_theme_stylebox_override("panel", _panel_style(Color("#f7fbf8"), Color("#2f7f8d")))
+	card_selection_modal.mouse_filter = Control.MOUSE_FILTER_STOP
+	card_selection_modal.visible = false
+	combat_view.add_child(card_selection_modal)
+	var selection_margin := MarginContainer.new()
+	selection_margin.add_theme_constant_override("margin_left", 24)
+	selection_margin.add_theme_constant_override("margin_top", 24)
+	selection_margin.add_theme_constant_override("margin_right", 24)
+	selection_margin.add_theme_constant_override("margin_bottom", 24)
+	card_selection_modal.add_child(selection_margin)
+	var selection_content := VBoxContainer.new()
+	selection_content.add_theme_constant_override("separation", 14)
+	selection_margin.add_child(selection_content)
+	card_selection_title = Label.new()
+	card_selection_title.name = "CardSelectionTitle"
+	card_selection_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	card_selection_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	card_selection_title.add_theme_font_size_override("font_size", 20)
+	card_selection_title.add_theme_color_override("font_color", Color("#24434b"))
+	selection_content.add_child(card_selection_title)
+	card_selection_options = GridContainer.new()
+	card_selection_options.name = "CardSelectionOptions"
+	card_selection_options.columns = 3
+	card_selection_options.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	card_selection_options.add_theme_constant_override("h_separation", 10)
+	card_selection_options.add_theme_constant_override("v_separation", 10)
+	selection_content.add_child(card_selection_options)
 
 
 func _build_choice_view() -> void:
@@ -1386,6 +1422,11 @@ func _lane_color(lane: String) -> Color:
 
 
 func _render_combat() -> void:
+	var selection_open := !pending_card_selection.is_empty()
+	if card_selection_modal != null:
+		card_selection_modal.visible = selection_open
+		if selection_open:
+			_render_card_selection_modal()
 	encounter_name_label.text = str(current_encounter.get("name", "故障诊断"))
 	var tier := str(current_encounter.get("tier", "ordinary"))
 	var phase_text := " · 阶段 %d/3" % (boss_phase + 1) if tier == "boss" else ""
@@ -1434,10 +1475,10 @@ func _render_combat() -> void:
 		stage_label.add_theme_color_override("font_color", stage_color)
 	if reroute_button != null:
 		reroute_button.visible = !tutorial_active
-		reroute_button.disabled = tutorial_active or reroute_mode or !reroute_available or cards_played_this_turn > 0
+		reroute_button.disabled = selection_open or tutorial_active or reroute_mode or !reroute_available or cards_played_this_turn > 0
 	if reroute_cancel_button != null:
 		reroute_cancel_button.visible = !tutorial_active and reroute_mode
-		reroute_cancel_button.disabled = tutorial_active or !reroute_mode
+		reroute_cancel_button.disabled = selection_open or tutorial_active or !reroute_mode
 	_clear_children(hand_row)
 	for index in range(hand.size()):
 		var card := hand[index] as Dictionary
@@ -1451,7 +1492,7 @@ func _render_combat() -> void:
 			var cost := _card_cost_preview(card)
 			button.text = "[%d]\n%s\n%s\n\n%s" % [cost, card.get("name", "卡牌"), card.get("type", ""), card.get("upgradedEffectText", "") if bool(card.get("upgraded", false)) else card.get("effectText", "")]
 			button.tooltip_text = str(card.get("knowledgePoint", ""))
-			button.disabled = !reroute_mode and (processing_points < cost or !_card_requirements_met(card) or (tutorial_active and !_tutorial_card_allowed(str(card.get("id", "")))))
+			button.disabled = selection_open or (!reroute_mode and (processing_points < cost or !_card_requirements_met(card) or (tutorial_active and !_tutorial_card_allowed(str(card.get("id", ""))))))
 			_skin_button(button, _card_accent(card))
 			button.pressed.connect(func() -> void:
 				if reroute_mode:
@@ -1465,10 +1506,47 @@ func _render_combat() -> void:
 			button.name = "TutorialRequiredCard"
 			_apply_tutorial_card_focus(button)
 		hand_row.add_child(button)
-	end_turn_button.disabled = tutorial_active and !_tutorial_end_turn_allowed()
+	end_turn_button.disabled = selection_open or (tutorial_active and !_tutorial_end_turn_allowed())
 	_render_tutorial_focus()
 	if tutorial_active and !_tutorial_expected_card_id().is_empty():
 		call_deferred("_reveal_tutorial_required_card")
+
+
+func _render_card_selection_modal() -> void:
+	if card_selection_title == null or card_selection_options == null:
+		return
+	_clear_children(card_selection_options)
+	var kind := str(pending_card_selection.get("kind", ""))
+	card_selection_title.text = {
+		"draw_one": "从检索结果中选择 1 张牌",
+		"discard_one": "选择 1 张手牌弃置",
+		"retain_one": "选择 1 张手牌保留到下回合",
+		"raw_source": "选择 1 个原始数据源"
+	}.get(kind, "选择一个工程动作")
+	card_selection_options.columns = 1 if size.x < 720.0 else 3
+	var options: Array = pending_card_selection.get("options", []) as Array
+	for index in range(options.size()):
+		var option = options[index]
+		var button := Button.new()
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		if option is Dictionary:
+			var card := option as Dictionary
+			button.text = "%s  [%d]\n%s" % [card.get("name", "卡牌"), _card_cost_preview(card), card.get("upgradedEffectText", "") if bool(card.get("upgraded", false)) else card.get("effectText", "")]
+			button.tooltip_text = str(card.get("knowledgePoint", ""))
+			_skin_button(button, _card_accent(card))
+		else:
+			button.text = _source_name(str(option))
+			_skin_button(button, Color("#2f7f8d"))
+		button.custom_minimum_size = Vector2(0, 88)
+		button.pressed.connect(func() -> void:
+			choose_pending_card(index)
+			_render_state()
+		)
+		card_selection_options.add_child(button)
+
+
+func _source_name(source: String) -> String:
+	return {"smoke": "烟雾", "light": "光照", "temp": "温度", "humidity": "湿度"}.get(source, source)
 
 
 func _apply_tutorial_card_focus(button: Button) -> void:
@@ -1568,6 +1646,8 @@ func _card_cost_preview(card: Dictionary) -> int:
 			cost -= 1
 	if str(card.get("type", "")) == "process" and int(powers.get("process_discount", 0)) > 0:
 		cost -= 1
+	if str(card.get("type", "")) == "interface" and int(powers.get("interface_discount", 0)) > 0:
+		cost -= 1
 	return maxi(cost, 0)
 
 
@@ -1620,7 +1700,7 @@ func _render_choices() -> void:
 			for raw_card in reward_choices:
 				var card := raw_card as Dictionary
 				var button := Button.new()
-				button.text = "%s  [%d]\n%s" % [card.get("name", "卡牌"), card.get("cost", 0), card.get("effectText", "")]
+				button.text = "%s  [%d]  ·  %s\n%s" % [card.get("name", "卡牌"), card.get("cost", 0), _reward_reason(card), card.get("effectText", "")]
 				button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 				_skin_button(button, _card_accent(card))
 				_size_choice_button(button, 104)
@@ -1851,6 +1931,9 @@ func _reset_run() -> void:
 	discard_pile.clear()
 	exhaust_pile.clear()
 	hand.clear()
+	retained_cards.clear()
+	pending_card_selection.clear()
+	turn_effect_uses.clear()
 	_reset_combat_resources()
 	_draw_cards(5)
 	state = RunState.MAP
@@ -1879,6 +1962,9 @@ func _reset_combat_resources() -> void:
 	cards_played_this_turn = 0
 	reroute_available = false
 	reroute_mode = false
+	pending_card_selection.clear()
+	turn_effect_uses.clear()
+	retained_cards.clear()
 	turn_number = 0
 	turn_card_types.clear()
 	turn_sources.clear()
@@ -2281,6 +2367,8 @@ func _reset_turn_state(first_turn: bool = false) -> void:
 	cards_played_this_turn = 0
 	reroute_available = !tutorial_active
 	reroute_mode = false
+	pending_card_selection.clear()
+	turn_effect_uses.clear()
 	turn_card_types.clear()
 	turn_sources.clear()
 	pending_i2c_count = 0
@@ -2290,11 +2378,14 @@ func _reset_turn_state(first_turn: bool = false) -> void:
 	fault_rule_state["triggered"] = false
 	if !first_turn:
 		hand.clear()
+		for raw_card in retained_cards:
+			hand.append(raw_card)
+		retained_cards.clear()
 		_draw_cards(5)
 
 
 func play_card(hand_index: int) -> bool:
-	if state != RunState.COMBAT or hand_index < 0 or hand_index >= hand.size():
+	if state != RunState.COMBAT or !pending_card_selection.is_empty() or hand_index < 0 or hand_index >= hand.size():
 		return false
 	var card := hand[hand_index] as Dictionary
 	if bool(card.get("negative", false)):
@@ -2332,15 +2423,13 @@ func play_card(hand_index: int) -> bool:
 			phase_filters_played += 1
 	var repair_before := repair_progress
 	var effects: Array = card.get("upgradeEffects", []) if bool(card.get("upgraded", false)) else card.get("effects", [])
-	var trusted_spent := 0
-	for raw_effect in effects:
-		trusted_spent += _apply_card_effect(raw_effect as Dictionary, card, trusted_spent)
+	_apply_card_effects(effects, card)
 	_resolve_fault_rule_after_card(card)
 	var matched_weaknesses := _matched_weakness_tags(card)
 	if !matched_weaknesses.is_empty():
 		var bonus_text := "  ·  诊断修复 +2" if diagnosis > 0 and repair_progress > repair_before else ""
 		_log("%s 命中弱点：%s%s" % [card.get("name", card.get("id", "card")), "/".join(matched_weaknesses), bonus_text])
-	if str(card.get("type", "")) == "power":
+	if str(card.get("type", "")) == "power" or bool(card.get("exhaust", false)):
 		exhaust_pile.append(card)
 	else:
 		discard_pile.append(card)
@@ -2356,7 +2445,7 @@ func play_card(hand_index: int) -> bool:
 
 
 func begin_reroute() -> bool:
-	if state != RunState.COMBAT or tutorial_active or !reroute_available or cards_played_this_turn > 0:
+	if state != RunState.COMBAT or !pending_card_selection.is_empty() or tutorial_active or !reroute_available or cards_played_this_turn > 0:
 		return false
 	reroute_mode = true
 	_render_state()
@@ -2405,6 +2494,8 @@ func _consume_card_discounts(card: Dictionary) -> void:
 		powers["i2c_discount"] = int(powers.get("i2c_discount", 0)) - 1
 	if str(card.get("type", "")) == "process" and int(powers.get("process_discount", 0)) > 0:
 		powers["process_discount"] = int(powers.get("process_discount", 0)) - 1
+	if str(card.get("type", "")) == "interface" and int(powers.get("interface_discount", 0)) > 0:
+		powers["interface_discount"] = int(powers.get("interface_discount", 0)) - 1
 
 
 func _card_requirements_met(card: Dictionary) -> bool:
@@ -2445,6 +2536,8 @@ func _apply_chain_threshold_rewards() -> void:
 	if chain_count >= 3 and !bool(chain_rewards_claimed.get("four", false)):
 		repair_progress = mini(repair_target, repair_progress + 8)
 		diagnosis = mini(diagnosis + 1, 3)
+		if int(powers.get("chain_draw", 0)) > 0:
+			_draw_cards(1)
 		chain_rewards_claimed["four"] = true
 
 
@@ -2459,6 +2552,134 @@ func _chain_preview_for_stage(stage: String) -> Dictionary:
 	}
 
 
+func _apply_card_effects(effects: Array, card: Dictionary, trusted_spent: int = 0) -> int:
+	var spent := trusted_spent
+	for index in range(effects.size()):
+		spent += _apply_card_effect(effects[index] as Dictionary, card, spent)
+		if !pending_card_selection.is_empty():
+			var remaining: Array = []
+			for remaining_index in range(index + 1, effects.size()):
+				remaining.append(effects[remaining_index])
+			pending_card_selection["remainingEffects"] = remaining
+			pending_card_selection["card"] = card.duplicate(true)
+			pending_card_selection["trustedSpent"] = spent
+			break
+	return spent
+
+
+func _effect_is_available(effect: Dictionary, card: Dictionary) -> bool:
+	var limit := int(effect.get("perTurnLimit", 0))
+	if limit <= 0:
+		return true
+	var effect_id := str(effect.get("effectId", "%s_%s" % [card.get("id", "card"), effect.get("op", "effect")]))
+	return int(turn_effect_uses.get(effect_id, 0)) < limit
+
+
+func _mark_effect_use(effect: Dictionary, card: Dictionary) -> void:
+	if int(effect.get("perTurnLimit", 0)) <= 0:
+		return
+	var effect_id := str(effect.get("effectId", "%s_%s" % [card.get("id", "card"), effect.get("op", "effect")]))
+	turn_effect_uses[effect_id] = int(turn_effect_uses.get(effect_id, 0)) + 1
+
+
+func _open_card_selection(kind: String, options: Array, hand_indexes: Array = []) -> void:
+	if options.is_empty():
+		return
+	pending_card_selection = {"kind": kind, "options": options.duplicate()}
+	if !hand_indexes.is_empty():
+		pending_card_selection["handIndexes"] = hand_indexes.duplicate()
+
+
+func _open_hand_selection(kind: String) -> void:
+	var options: Array = []
+	var indexes: Array = []
+	for index in range(hand.size()):
+		options.append(hand[index])
+		indexes.append(index)
+	_open_card_selection(kind, options, indexes)
+
+
+func _inspect_top_cards(amount: int) -> Array:
+	var inspected: Array = []
+	for _index in range(amount):
+		if draw_pile.is_empty():
+			if discard_pile.is_empty():
+				break
+			draw_pile = discard_pile.duplicate(true)
+			discard_pile.clear()
+			_shuffle(draw_pile)
+		if draw_pile.is_empty():
+			break
+		inspected.append(draw_pile.pop_back())
+	return inspected
+
+
+func _return_cards_to_draw_top(cards: Array) -> void:
+	for index in range(cards.size() - 1, -1, -1):
+		draw_pile.append(cards[index])
+
+
+func choose_pending_card(index: int) -> bool:
+	if state != RunState.COMBAT or pending_card_selection.is_empty():
+		return false
+	var selection := pending_card_selection.duplicate(true)
+	var options: Array = selection.get("options", []) as Array
+	if index < 0 or index >= options.size():
+		return false
+	pending_card_selection.clear()
+	var kind := str(selection.get("kind", ""))
+	var selected = options[index]
+	match kind:
+		"raw_source":
+			var source := str(selected)
+			_add_data(raw_data, source, int(selection.get("amount", 1)))
+			source_coverage[source] = true
+			if str(current_encounter.get("tier", "")) == "boss":
+				phase_source_coverage[source] = true
+		"draw_one":
+			if !(selected is Dictionary):
+				return false
+			hand.append(selected)
+			var unchosen: Array = []
+			for option_index in range(options.size()):
+				if option_index != index:
+					unchosen.append(options[option_index])
+			_return_cards_to_draw_top(unchosen)
+		"discard_one", "retain_one":
+			var hand_indexes: Array = selection.get("handIndexes", []) as Array
+			if index >= hand_indexes.size():
+				return false
+			var hand_index := int(hand_indexes[index])
+			if hand_index < 0 or hand_index >= hand.size():
+				return false
+			var card := hand[hand_index] as Dictionary
+			hand.remove_at(hand_index)
+			if kind == "discard_one":
+				discard_pile.append(card)
+			else:
+				retained_cards.append(card)
+		_:
+			return false
+	_resume_pending_card_effects(selection)
+	return true
+
+
+func _resume_pending_card_effects(selection: Dictionary) -> void:
+	var card := selection.get("card", {}) as Dictionary
+	var remaining: Array = selection.get("remainingEffects", []) as Array
+	if card.is_empty() or remaining.is_empty():
+		return
+	_apply_card_effects(remaining, card, int(selection.get("trustedSpent", 0)))
+
+
+func _prepare_counter(counter_tag: String) -> void:
+	var rule := _fault_rule_definition()
+	if rule.is_empty() or bool(fault_rule_state.get("suppressed", false)) or bool(fault_rule_state.get("triggered", false)):
+		return
+	if (rule.get("counterTags", []) as Array).has(counter_tag):
+		fault_rule_state["suppressed"] = true
+
+
 func _apply_card_effect(effect: Dictionary, card: Dictionary, trusted_spent: int) -> int:
 	if int(effect.get("requiresDiagnosis", 0)) > diagnosis:
 		return 0
@@ -2466,10 +2687,22 @@ func _apply_card_effect(effect: Dictionary, card: Dictionary, trusted_spent: int
 		return 0
 	if int(effect.get("requiresTrustedSpent", 0)) > trusted_spent:
 		return 0
+	if bool(effect.get("requiresFaultSuppressed", false)) and !bool(fault_rule_state.get("suppressed", false)):
+		return 0
+	if bool(effect.get("requiresFaultUnsuppressed", false)) and bool(fault_rule_state.get("suppressed", false)):
+		return 0
+	if !_effect_is_available(effect, card):
+		return 0
+	_mark_effect_use(effect, card)
 	var op := str(effect.get("op", ""))
 	var amount := int(effect.get("amount", 0))
 	match op:
 		"gain_raw":
+			var source_options: Array = effect.get("sourceOptions", []) as Array
+			if !source_options.is_empty():
+				_open_card_selection("raw_source", source_options)
+				pending_card_selection["amount"] = amount
+				return 0
 			var source := str(effect.get("source", "smoke"))
 			_add_data(raw_data, source, amount)
 			source_coverage[source] = true
@@ -2484,7 +2717,7 @@ func _apply_card_effect(effect: Dictionary, card: Dictionary, trusted_spent: int
 				phase_trusted_sources[source] = true
 				phase_source_coverage[source] = true
 		"convert":
-			_convert_data(str(effect.get("source", "any")), amount)
+			return _convert_data(str(effect.get("source", "any")), amount)
 		"repair":
 			var spent := _consume_for_effect(effect)
 			if effect.has("consumeTrusted") or effect.has("consumeTrustedSource"):
@@ -2500,6 +2733,16 @@ func _apply_card_effect(effect: Dictionary, card: Dictionary, trusted_spent: int
 			block += amount
 		"draw":
 			_draw_cards(amount)
+		"draw_discard":
+			_draw_cards(amount)
+			_open_hand_selection("discard_one")
+		"select_draw":
+			var inspected := _inspect_top_cards(amount)
+			_open_card_selection("draw_one", inspected)
+		"draw_if_removed":
+			var removed := _remove_negative(str(effect.get("kind", "")), amount)
+			if removed > 0:
+				_draw_cards(int(effect.get("drawAmount", 1)))
 		"diagnose":
 			diagnosis = mini(diagnosis + amount, 3)
 		"gain_alarm":
@@ -2513,6 +2756,21 @@ func _apply_card_effect(effect: Dictionary, card: Dictionary, trusted_spent: int
 			next_turn_energy += amount
 		"retain_data":
 			retain_data = true
+		"retain_card":
+			_open_hand_selection("retain_one")
+		"prepare_counter":
+			_prepare_counter(str(effect.get("tag", "")))
+		"multi_source_repair":
+			var consumed_sources := 0
+			for source in SOURCE_ORDER:
+				if consumed_sources >= amount:
+					break
+				if int(trusted_data.get(source, 0)) <= 0:
+					continue
+				trusted_data[source] = int(trusted_data.get(source, 0)) - 1
+				consumed_sources += 1
+			_add_repair(consumed_sources * int(effect.get("repairPer", 0)), card)
+			return consumed_sources
 		"heal":
 			stability = mini(max_stability, stability + amount)
 		"power":
@@ -2722,7 +2980,7 @@ func _take_damage(amount: int) -> void:
 
 
 func end_turn() -> bool:
-	if state != RunState.COMBAT:
+	if state != RunState.COMBAT or !pending_card_selection.is_empty():
 		return false
 	if tutorial_active and !_tutorial_end_turn_allowed():
 		_log("请先完成当前教学操作。")
@@ -2753,7 +3011,6 @@ func end_turn() -> bool:
 		raw_data = {"smoke": 0, "light": 0, "temp": 0, "humidity": 0}
 		trusted_data = {"smoke": 0, "light": 0, "temp": 0, "humidity": 0}
 	retain_data = false
-	powers.erase("chain_energy_used")
 	_reset_turn_state(false)
 	return true
 
@@ -2853,16 +3110,83 @@ func _checkpoint_requirements_met() -> bool:
 
 func _open_reward() -> void:
 	reward_choices.clear()
-	var candidates: Array = []
+	var full_pool: Array[String] = []
+	var deck_tags := {}
+	var deck_stages := {}
+	for raw_card in deck:
+		var deck_card := raw_card as Dictionary
+		for raw_tag in deck_card.get("tags", []) as Array:
+			deck_tags[str(raw_tag)] = true
+		var stage := str(deck_card.get("stage", ""))
+		if !stage.is_empty():
+			deck_stages[stage] = true
 	for card_id in card_defs.keys():
 		var card := card_defs[card_id] as Dictionary
 		if str(card.get("rarity", "")) != "starter":
-			candidates.append(str(card_id))
-	candidates.sort()
-	_shuffle(candidates)
-	for index in range(mini(3, candidates.size())):
-		reward_choices.append(_card_copy(str(candidates[index])))
+			full_pool.append(str(card_id))
+	full_pool.sort()
+	var missing_stages: Array[String] = []
+	for stage in STAGE_ORDER:
+		if !deck_stages.has(stage):
+			missing_stages.append(stage)
+	var counter_tags: Array = (_fault_rule_definition().get("counterTags", []) as Array).duplicate()
+	var synergy_candidates: Array[String] = []
+	var chain_candidates: Array[String] = []
+	var counter_candidates: Array[String] = []
+	for card_id in full_pool:
+		var card := card_defs[card_id] as Dictionary
+		var tags: Array = card.get("tags", []) as Array
+		for raw_tag in tags:
+			if deck_tags.has(str(raw_tag)):
+				synergy_candidates.append(card_id)
+				break
+		if missing_stages.has(str(card.get("stage", ""))):
+			chain_candidates.append(card_id)
+		if str(card.get("type", "")) == "defense" or _card_has_draw_effect(card) or _arrays_intersect(tags, counter_tags):
+			counter_candidates.append(card_id)
+	var used := {}
+	for bucket in [
+		{"candidates": synergy_candidates, "reason": "协同"},
+		{"candidates": chain_candidates, "reason": "补链"},
+		{"candidates": counter_candidates, "reason": "反制"}
+	]:
+		var reward := _pick_reward_card(bucket.get("candidates", []) as Array, full_pool, used, str(bucket.get("reason", "")))
+		if !reward.is_empty():
+			reward_choices.append(reward)
 	state = RunState.REWARD
+
+
+func _pick_reward_card(candidates: Array, full_pool: Array, used: Dictionary, reason: String) -> Dictionary:
+	var available: Array[String] = []
+	for raw_card_id in candidates:
+		var card_id := str(raw_card_id)
+		if !used.has(card_id):
+			available.append(card_id)
+	if available.is_empty():
+		for raw_card_id in full_pool:
+			var card_id := str(raw_card_id)
+			if !used.has(card_id):
+				available.append(card_id)
+	if available.is_empty():
+		return {}
+	available.sort()
+	var selected_id := available[rng.randi_range(0, available.size() - 1)]
+	used[selected_id] = true
+	var reward := _card_copy(selected_id)
+	reward["rewardReason"] = reason
+	return reward
+
+
+func _card_has_draw_effect(card: Dictionary) -> bool:
+	for effects in [card.get("effects", []), card.get("upgradeEffects", [])]:
+		for raw_effect in effects:
+			if ["draw", "draw_discard", "select_draw", "draw_if_removed"].has(str((raw_effect as Dictionary).get("op", ""))):
+				return true
+	return false
+
+
+func _reward_reason(card: Dictionary) -> String:
+	return str(card.get("rewardReason", ""))
 
 
 func choose_reward(card_id: String) -> bool:
@@ -3078,6 +3402,7 @@ func choose_component(component_id: String) -> bool:
 		_upgrade_first_card()
 	else:
 		relics.append(component_id)
+		_activate_relic(component_id)
 		_log("获得工程组件：%s" % (relic_defs[component_id] as Dictionary).get("name", component_id))
 	component_choices.clear()
 	state = RunState.MAP
@@ -3091,7 +3416,16 @@ func _grant_random_relic() -> void:
 	for relic_id in ids:
 		if !relics.has(relic_id):
 			relics.append(relic_id)
+			_activate_relic(str(relic_id))
 			return
+
+
+func _activate_relic(relic_id: String) -> void:
+	var effect := (relic_defs.get(relic_id, {}) as Dictionary).get("effect", {}) as Dictionary
+	var effect_id := str(effect.get("id", ""))
+	if effect_id.is_empty():
+		return
+	powers[effect_id] = int(powers.get(effect_id, 0)) + int(effect.get("amount", 0))
 
 
 func _reset_lab_fixture(deck_fixture: String) -> void:
