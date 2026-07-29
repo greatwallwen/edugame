@@ -2,9 +2,15 @@ extends SceneTree
 
 const SINGLE_ROUTE_TYPES := [
 	"ordinary", "event", "ordinary", "service",
-	"checkpoint_sensor", "component", "ordinary", "checkpoint_trust",
+	"checkpoint_sensor", "event", "ordinary", "checkpoint_trust",
 	"shop", "elite", "service", "boss"
 ]
+const REQUIRED_ROUTE_MILESTONES := {
+	2: {"type": "event", "contentId": "random_basic", "eventTier": "basic"},
+	6: {"type": "event", "contentId": "random_advanced", "eventTier": "advanced"},
+	11: {"type": "service", "contentId": "service"},
+	12: {"type": "boss", "contentId": "warehouse_acceptance"}
+}
 const EVENT_IDS := [
 	"advanced_address_shift",
 	"advanced_alarm_hysteresis",
@@ -232,6 +238,13 @@ func _run() -> void:
 			var node_type := str(choice.get("type", ""))
 			var content_id := str(choice.get("contentId", ""))
 			_assert(node_type == SINGLE_ROUTE_TYPES[index], "layer %d should be %s" % [index + 1, SINGLE_ROUTE_TYPES[index]])
+			var layer_number := index + 1
+			if REQUIRED_ROUTE_MILESTONES.has(layer_number):
+				var milestone := REQUIRED_ROUTE_MILESTONES[layer_number] as Dictionary
+				_assert(node_type == str(milestone.get("type", "")), "layer %d should use the required route node type" % layer_number)
+				_assert(content_id == str(milestone.get("contentId", "")), "layer %d should use the required route content" % layer_number)
+				if milestone.has("eventTier"):
+					_assert(str(choice.get("eventTier", "")) == str(milestone.get("eventTier", "")), "layer %d should use the required event tier" % layer_number)
 			if ["ordinary", "elite", "boss"].has(node_type):
 				_assert(enemy_ids.has(content_id), "%s should resolve enemy %s" % [run_map.get("id", "map"), content_id])
 			elif node_type == "event":
