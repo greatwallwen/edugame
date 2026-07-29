@@ -2245,9 +2245,6 @@ func _advance_chain(stage: String) -> void:
 	elif stage != last_stage:
 		chain_count = 0
 	last_stage = stage
-	if chain_count >= 3 and int(powers.get("chain_energy", 0)) > 0 and !bool(powers.get("chain_energy_used", false)):
-		processing_points += int(powers.get("chain_energy", 0))
-		powers["chain_energy_used"] = true
 
 
 func _apply_chain_threshold_rewards() -> void:

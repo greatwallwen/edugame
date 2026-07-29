@@ -91,6 +91,21 @@ func _run() -> void:
 	_assert(game.processing_points == points_after_first_chain, "repeat chain should not repeat the three-stage reward")
 	_assert(game.repair_progress == repair_after_first_chain and game.diagnosis == diagnosis_after_first_chain, "repeat chain should not repeat the complete-chain reward")
 
+	game._reset_turn_state(true)
+	game.block = 0
+	game.diagnosis = 0
+	game.repair_progress = 0
+	game.processing_points = 3
+	game.powers["chain_energy"] = 1
+	game._advance_chain("collect")
+	game._advance_chain("interface")
+	_assert(game.block == 3, "active state template should retain the two-stage block reward")
+	game._advance_chain("process")
+	_assert(game.processing_points == 4, "active state template should receive exactly one three-stage processing-point refund")
+	game._advance_chain("output")
+	_assert(game.processing_points == 4, "complete chain should not add a legacy state-template processing-point refund")
+	_assert(game.repair_progress == 8 and game.diagnosis == 1, "complete chain should grant exactly 8 repair and 1 diagnosis once")
+
 	game._start_encounter("mq2_warmup", "ordinary")
 	game.hand = [game._card_copy("mq2_sample")]
 	game.processing_points = 3
