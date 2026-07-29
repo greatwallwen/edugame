@@ -1858,6 +1858,13 @@ func _reset_run() -> void:
 
 
 func _reset_combat_resources() -> void:
+	fault_rule_state = {
+		"cardTagCounts": {},
+		"stageCounts": {},
+		"suppressed": false,
+		"triggered": false,
+		"nextEnergyPenalty": 0
+	}
 	processing_points = 3
 	next_turn_energy = 0
 	block = 0
@@ -2163,13 +2170,6 @@ func _start_encounter(enemy_id: String, tier: String = "ordinary") -> void:
 	repair_progress = 0
 	intent_index = 0
 	state = RunState.COMBAT
-	fault_rule_state = {
-		"cardTagCounts": {},
-		"stageCounts": {},
-		"suppressed": false,
-		"triggered": false,
-		"nextEnergyPenalty": 0
-	}
 	_reset_turn_state(true)
 	_draw_cards(5)
 	_log("进入故障：%s" % current_encounter.get("name", enemy_id))

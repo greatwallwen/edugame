@@ -246,6 +246,36 @@ func _assert_fault_rule_counterplay(game) -> void:
 	game.processing_points = 2
 	_assert(game.play_card(0), "unbuffered LCD output should be playable")
 	_assert(int(game.fault_rule_state.get("nextEnergyPenalty", 0)) == -1, "unprepared LCD output should queue one less next-turn energy")
+	game.encounter_evidence_tags = {"display": true, "buffer": true}
+	game.repair_progress = game.repair_target
+	game._finish_encounter()
+	_assert(game.state == game.RunState.REWARD, "queued LCD penalty should survive until encounter transition")
+	game.current_node = {"type": "checkpoint_sensor"}
+	game._start_checkpoint(true)
+	_assert(game.processing_points == 3, "checkpoint should not inherit queued LCD energy loss")
+	_assert((game.fault_rule_state.get("cardTagCounts", {}) as Dictionary).is_empty(), "checkpoint should not inherit fault tag counts")
+	_assert((game.fault_rule_state.get("stageCounts", {}) as Dictionary).is_empty(), "checkpoint should not inherit fault stage counts")
+	_assert(!bool(game.fault_rule_state.get("suppressed", false)), "checkpoint should not inherit fault suppression")
+	_assert(!bool(game.fault_rule_state.get("triggered", false)), "checkpoint should not inherit fault trigger state")
+	_assert(int(game.fault_rule_state.get("nextEnergyPenalty", 0)) == 0, "checkpoint should not inherit a queued fault penalty")
+
+	game._start_encounter("lcd_blocking", "ordinary")
+	game.trusted_data.smoke = 1
+	game.hand = [game._card_copy("lcd_display")]
+	game.processing_points = 2
+	_assert(game.play_card(0), "second unbuffered LCD output should be playable")
+	game.encounter_evidence_tags = {"display": true, "buffer": true}
+	game.repair_progress = game.repair_target
+	game._finish_encounter()
+	game._start_tutorial_encounter()
+	_assert(game.tutorial_active and game.state == game.RunState.COMBAT, "tutorial entry should begin the real practice encounter")
+	_assert(game.processing_points == 3, "tutorial should not inherit queued LCD energy loss")
+	_assert((game.fault_rule_state.get("cardTagCounts", {}) as Dictionary).is_empty(), "tutorial should not inherit fault tag counts")
+	_assert((game.fault_rule_state.get("stageCounts", {}) as Dictionary).is_empty(), "tutorial should not inherit fault stage counts")
+	_assert(!bool(game.fault_rule_state.get("suppressed", false)), "tutorial should not inherit fault suppression")
+	_assert(!bool(game.fault_rule_state.get("triggered", false)), "tutorial should not inherit fault trigger state")
+	_assert(int(game.fault_rule_state.get("nextEnergyPenalty", 0)) == 0, "tutorial should not inherit a queued fault penalty")
+	game._reset_run()
 
 	game._start_encounter("lcd_blocking", "ordinary")
 	game.trusted_data.smoke = 1
