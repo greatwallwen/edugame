@@ -11,6 +11,13 @@ const STARTER_CARD_IDS := [
 ]
 const SOURCE_ORDER := ["smoke", "light", "temp", "humidity"]
 const STAGE_ORDER := ["collect", "interface", "process", "output"]
+const BOSS_STAGE_TAG_REQUIREMENTS := [
+	{"id": "source", "tags": ["smoke", "light", "temp", "humidity"]},
+	{"id": "trusted", "tags": ["adc", "i2c", "calculation", "trusted_data"]},
+	{"id": "filter", "tags": ["filter"]},
+	{"id": "report", "tags": ["display", "uart"]},
+	{"id": "control", "tags": ["alarm", "scheduler"]}
+]
 const BOSS_DRAW_SEED := 90909
 const RUN_NODE_COUNT := 12
 const TUTORIAL_ENCOUNTER := {
@@ -2651,7 +2658,13 @@ func choose_node(choice_index: int) -> bool:
 			_start_encounter(str(current_node.get("contentId", "warehouse_acceptance")), "boss")
 		"event":
 			var event_tier := str(current_node.get("eventTier", "basic" if current_layer <= RUN_NODE_COUNT / 2 else "advanced"))
-			_begin_question_event(_select_question_event(event_tier, str(current_node.get("id", current_layer))), true)
+			var event_content_id := str(current_node.get("contentId", ""))
+			var selected_event := {}
+			if event_content_id.begins_with("random_"):
+				selected_event = _select_question_event(event_tier, str(current_node.get("id", current_layer)))
+			else:
+				selected_event = (event_defs.get(event_content_id, {}) as Dictionary).duplicate(true)
+			_begin_question_event(selected_event, true)
 		"shop":
 			_open_shop()
 		"service":
@@ -3786,6 +3799,38 @@ func continue_event() -> bool:
 	return true
 
 
+func force_lab_question_result(correct: bool) -> bool:
+	if !node_lab_active or state != RunState.EVENT or !current_event.has("questionType"):
+		return false
+	var answer: Variant
+	if correct:
+		var expected = current_event.get("correctAnswer")
+		answer = expected.duplicate(true) if expected is Array or expected is Dictionary else expected
+	else:
+		answer = _lab_incorrect_event_answer()
+	if answer == null or !submit_event_answer(answer):
+		return false
+	_render_state()
+	return true
+
+
+func _lab_incorrect_event_answer() -> Variant:
+	var expected = current_event.get("correctAnswer")
+	if expected is Array:
+		var reordered := (expected as Array).duplicate(true)
+		if reordered.size() < 2:
+			return null
+		var first = reordered[0]
+		reordered[0] = reordered[1]
+		reordered[1] = first
+		return reordered
+	for raw_option in current_event.get("options", []) as Array:
+		var option_id := str((raw_option as Dictionary).get("id", ""))
+		if option_id != str(expected):
+			return option_id
+	return null
+
+
 func choose_event_option(option_index: int) -> bool:
 	if state != RunState.EVENT or !pending_card_selection.is_empty():
 		return false
@@ -4025,12 +4070,13 @@ func _open_shop() -> void:
 	var ids: Array = card_defs.keys()
 	ids.sort()
 	_shuffle(ids)
-	var gap_card_id := _boss_gap_card_id()
-	if gap_card_id != "" and ids.has(gap_card_id):
-		var gap_card := _card_copy(gap_card_id)
-		gap_card["price"] = _card_price(gap_card)
-		shop_cards.append(gap_card)
-		ids.erase(gap_card_id)
+	if current_layer >= 8:
+		var guaranteed_id := _guaranteed_boss_shop_card_id()
+		if !guaranteed_id.is_empty() and ids.has(guaranteed_id):
+			var guaranteed_card := _card_copy(guaranteed_id)
+			guaranteed_card["price"] = mini(_card_price(guaranteed_card), budget)
+			shop_cards.append(guaranteed_card)
+			ids.erase(guaranteed_id)
 	for card_id in ids:
 		var card := _card_copy(str(card_id))
 		if str(card.get("rarity", "")) == "starter":
@@ -4042,14 +4088,46 @@ func _open_shop() -> void:
 	state = RunState.SHOP
 
 
-func _boss_gap_card_id() -> String:
-	var has_report := _deck_has_any_tag(["display", "uart"])
-	var has_control := _deck_has_any_tag(["alarm", "scheduler"])
-	if !has_report:
-		return "lcd_display"
-	if !has_control:
-		return "time_slice"
-	return ""
+func _missing_boss_stage_tags() -> Array[String]:
+	var missing: Array[String] = []
+	for raw_requirement in BOSS_STAGE_TAG_REQUIREMENTS:
+		var requirement := raw_requirement as Dictionary
+		if !_deck_has_any_tag(requirement.get("tags", []) as Array):
+			missing.append(str(requirement.get("id", "")))
+	return missing
+
+
+func _guaranteed_boss_shop_card_id() -> String:
+	var missing := _missing_boss_stage_tags()
+	if missing.is_empty():
+		return ""
+	var required_tags: Array = []
+	for raw_requirement in BOSS_STAGE_TAG_REQUIREMENTS:
+		var requirement := raw_requirement as Dictionary
+		if str(requirement.get("id", "")) == missing[0]:
+			required_tags = requirement.get("tags", []) as Array
+			break
+
+	var best_id := ""
+	var best_price := 0
+	for raw_id in card_defs.keys():
+		var card_id := str(raw_id)
+		var card := card_defs[card_id] as Dictionary
+		if !["common", "uncommon"].has(str(card.get("rarity", ""))):
+			continue
+		var card_tags: Array = card.get("tags", [])
+		var fills_gap := false
+		for raw_tag in required_tags:
+			if card_tags.has(str(raw_tag)):
+				fills_gap = true
+				break
+		if !fills_gap:
+			continue
+		var price := _card_price(card)
+		if best_id.is_empty() or price < best_price:
+			best_id = card_id
+			best_price = price
+	return best_id
 
 
 func _deck_has_any_tag(required_tags: Array) -> bool:
@@ -4219,11 +4297,25 @@ func start_lab_scenario(entry: Dictionary, deck_fixture: String = "starter") -> 
 			boss_phase = int(selected_entry.get("phase", 0))
 			current_node = {"type": "boss", "contentId": selected_entry.get("contentId", "warehouse_acceptance")}
 			_start_encounter(str(selected_entry.get("contentId", "warehouse_acceptance")), "boss")
-		"event":
+		"event", "question_event":
 			var selected_event := (event_defs.get(str(selected_entry.get("contentId", "")), {}) as Dictionary).duplicate(true)
 			if selected_event.is_empty():
 				return false
 			_begin_question_event(selected_event)
+		"question_correct", "question_wrong":
+			var result_event := (event_defs.get(str(selected_entry.get("contentId", "")), {}) as Dictionary).duplicate(true)
+			if result_event.is_empty():
+				return false
+			_begin_question_event(result_event)
+			if !force_lab_question_result(kind == "question_correct"):
+				return false
+		"fault_rule":
+			var fault_enemy_id := str(selected_entry.get("contentId", ""))
+			var fault_tier := str(selected_entry.get("tier", "ordinary"))
+			current_node = {"type": fault_tier, "contentId": fault_enemy_id}
+			_start_encounter(fault_enemy_id, fault_tier)
+			if current_encounter.is_empty() or !_prepare_lab_fault_rule_hand():
+				return false
 		"checkpoint_sensor":
 			current_node = {"type": "checkpoint_sensor"}
 			_start_checkpoint(true)
@@ -4245,6 +4337,48 @@ func start_lab_scenario(entry: Dictionary, deck_fixture: String = "starter") -> 
 	if node_lab_overlay != null:
 		node_lab_overlay.show_scenario_controls()
 	return true
+
+
+func _prepare_lab_fault_rule_hand() -> bool:
+	var rule_id := str(_fault_rule_definition().get("id", ""))
+	var card_ids := _lab_fault_rule_hand_ids(rule_id)
+	if card_ids.is_empty():
+		return false
+	hand.clear()
+	draw_pile.clear()
+	discard_pile.clear()
+	exhaust_pile.clear()
+	for card_id in card_ids:
+		var card := _card_copy(card_id)
+		if card.is_empty():
+			return false
+		hand.append(card)
+	processing_points = 6
+	if rule_id == "lcd_unprepared_output":
+		trusted_data["smoke"] = 1
+	elif rule_id == "alarm_without_trust":
+		alarm_markers = 1
+	elif rule_id == "i2c_second_transaction":
+		raw_data["light"] = 2
+	return true
+
+
+func _lab_fault_rule_hand_ids(rule_id: String) -> Array[String]:
+	var ids: Array[String] = []
+	match rule_id:
+		"mq2_uncalibrated":
+			ids.append_array(["mq2_sample", "mq2_sample", "environment_baseline"])
+		"bh1750_stale_raw":
+			ids.append_array(["bh1750_read", "data_cache"])
+		"adc_second_collect":
+			ids.append_array(["mq2_sample", "bh1750_read", "outlier_reject"])
+		"lcd_unprepared_output":
+			ids.append_array(["lcd_display", "data_cache"])
+		"alarm_without_trust":
+			ids.append_array(["led_alarm", "sliding_average"])
+		"i2c_second_transaction":
+			ids.append_array(["i2c_transaction", "i2c_transaction", "environment_baseline"])
+	return ids
 
 
 func restart_lab_scenario() -> bool:

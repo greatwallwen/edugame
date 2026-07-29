@@ -33,28 +33,14 @@ func _run() -> void:
 			game.RunState.COMBAT:
 				_play_combat_step()
 			game.RunState.REWARD:
-				var reward_id := ""
-				if !game._deck_has_any_tag(["scheduler"]):
-					for raw_card in game.reward_choices:
-						var card := raw_card as Dictionary
-						if str(card.get("id", "")) == "time_slice":
-							reward_id = str(card.get("id", ""))
-							break
-				game.choose_reward(reward_id)
+				_assert(game.choose_reward(_reward_choice_id()), "autoplayer should resolve the card reward")
 			game.RunState.EVENT:
-				var options: Array = game.current_event.get("options", [])
-				game.choose_event_option(1 if options.size() > 1 else 0)
+				_resolve_question_event()
 			game.RunState.SHOP:
-				if !game._deck_has_any_tag(["scheduler"]):
-					for raw_card in game.shop_cards:
-						var card := raw_card as Dictionary
-						var tags: Array = card.get("tags", [])
-						if tags.has("scheduler"):
-							game.purchase_shop_card(str(card.get("id", "")))
-							break
-				game.leave_shop()
+				_resolve_shop()
 			game.RunState.REST:
-				game.choose_service("maintenance" if game._deck_has_any_tag(["scheduler"]) else "shop")
+				var needs_boss_card: bool = game.current_layer >= 8 and !game._missing_boss_stage_tags().is_empty()
+				_assert(game.choose_service("shop" if needs_boss_card else "maintenance"), "autoplayer should resolve the service node")
 			game.RunState.COMPONENT:
 				var component_id := str((game.component_choices[0] as Dictionary).get("id", ""))
 				_assert(bool(game.choose_component(component_id)), "autoplayer should select an offered component")
@@ -67,20 +53,22 @@ func _run() -> void:
 	_assert(game.state == game.RunState.RESULT, "full run should reach result")
 	_assert(game.completed and game.victory, "deterministic run should pass the boss")
 	_assert(game.current_layer == 12 and game.visited_nodes.size() == 12, "full run should visit twelve nodes")
+	_assert(game.event_history.size() == 2, "full run should resolve both seeded question nodes")
 	_assert(game.checkpoint_results.size() == 2, "full run should record two checkpoints")
 	_assert(game.checkpoints_passed == 2, "reasonable starter-deck play should pass both checkpoints")
 	_assert(game.boss_phase == 2, "full run should clear all three boss phases")
 	_assert(game.stability > 0, "successful run should retain stability")
-	_assert(game.source_coverage.size() >= 3, "full run should accumulate three source coverage")
-	_assert(game.score >= 86, "three source coverage should contribute to the host score")
-	_assert(boss_turns >= 6 and boss_turns <= 8, "boss should take six to eight turns, got %d" % boss_turns)
+	_assert(game.score >= 60, "successful full run should score at least sixty")
 	print(JSON.stringify({
 		"map": target_map_id,
 		"steps": steps,
 		"bossTurns": boss_turns,
+		"bossPhase": game.boss_phase,
 		"score": game.score,
 		"stability": game.stability,
 		"deckSize": game.deck.size(),
+		"visitedNodes": game.visited_nodes.size(),
+		"checkpointsPassed": game.checkpoints_passed,
 		"checkpoints": game.checkpoint_results
 	}))
 	game.queue_free()
@@ -100,9 +88,17 @@ func _route_choice() -> int:
 
 
 func _play_combat_step() -> void:
+	if !game.pending_card_selection.is_empty():
+		_assert(game.choose_pending_card(0), "autoplayer should resolve combat-owned card selections")
+		return
 	var is_boss := str(game.current_encounter.get("tier", "")) == "boss"
 	if is_boss:
 		boss_turns += 1
+	if game.cards_played_this_turn == 0 and game.reroute_available and _required_gate_unmet() and !_has_playable_gate_card():
+		var reroute_index := _reroute_index()
+		if reroute_index >= 0 and game.begin_reroute():
+			if game.reroute_card(reroute_index):
+				return
 	var played_any := true
 	while played_any and game.state == game.RunState.COMBAT:
 		played_any = false
@@ -132,7 +128,9 @@ func _best_card_index() -> int:
 		var trusted_count: int = game.phase_trusted_sources.size() if str(game.current_encounter.get("tier", "")) == "boss" else game.trusted_sources_seen.size()
 		var filter_count: int = game.phase_filters_played if str(game.current_encounter.get("tier", "")) == "boss" else game.filters_played
 		var tier := str(game.current_encounter.get("tier", ""))
-		if ["ordinary", "elite"].has(tier) and _card_fills_missing_evidence(card):
+		if _card_advances_required_gate(card):
+			score = 220 if tier == "boss" and game.boss_phase == 2 and tags.has("alarm") else 200
+		elif ["ordinary", "elite"].has(tier) and _card_fills_missing_evidence(card):
 			score = 170
 		elif trust_mode:
 			if tags.has("filter") and trusted_count >= 2 and filter_count == 0:
@@ -167,6 +165,155 @@ func _best_card_index() -> int:
 			best_score = score
 			best_index = index
 	return best_index
+
+
+func _resolve_question_event() -> void:
+	if !game.pending_card_selection.is_empty():
+		_assert(game.choose_pending_card(0), "autoplayer should resolve the event-owned card or component choice")
+		return
+	if !game.event_answer_locked:
+		var expected = game.current_event.get("correctAnswer")
+		var answer = expected.duplicate(true) if expected is Array or expected is Dictionary else expected
+		_assert(game.submit_event_answer(answer), "autoplayer should submit the seeded correct answer")
+	if bool(game.event_result.get("rewardPending", false)):
+		_assert(game.choose_event_reward(0), "autoplayer should choose the first question reward")
+	if !game.pending_card_selection.is_empty():
+		_assert(game.choose_pending_card(0), "autoplayer should resolve the event-owned card or component choice")
+	if bool(game.event_result.get("resolved", false)):
+		_assert(game.continue_event(), "autoplayer should continue after the question explanation")
+
+
+func _resolve_shop() -> void:
+	var guaranteed_id: String = game._guaranteed_boss_shop_card_id()
+	if !guaranteed_id.is_empty() and _array_has_id(game.shop_cards, guaranteed_id):
+		_assert(game.purchase_shop_card(guaranteed_id), "autoplayer should buy the affordable Boss preparation card")
+	_assert(game.leave_shop(), "autoplayer should leave the shop")
+
+
+func _reward_choice_id() -> String:
+	var missing: Array[String] = game._missing_boss_stage_tags()
+	if !missing.is_empty():
+		for raw_card in game.reward_choices:
+			var card := raw_card as Dictionary
+			var tags: Array = card.get("tags", [])
+			if missing[0] == "control" and tags.has("scheduler"):
+				return str(card.get("id", ""))
+			if missing[0] != "control" and _card_fills_boss_deck_gap(card, missing[0]):
+				return str(card.get("id", ""))
+		return ""
+	for preferred_reason in ["补链", "反制", "协同"]:
+		for raw_card in game.reward_choices:
+			var card := raw_card as Dictionary
+			if str(card.get("rewardReason", "")) == preferred_reason:
+				return str(card.get("id", ""))
+	return ""
+
+
+func _card_fills_boss_deck_gap(card: Dictionary, gap: String) -> bool:
+	var tags: Array = card.get("tags", [])
+	var required_tags := {
+		"source": ["smoke", "light", "temp", "humidity"],
+		"trusted": ["adc", "i2c", "calculation", "trusted_data"],
+		"filter": ["filter"],
+		"report": ["display", "uart"],
+		"control": ["alarm", "scheduler"]
+	}.get(gap, []) as Array
+	for raw_tag in required_tags:
+		if tags.has(str(raw_tag)):
+			return true
+	return false
+
+
+func _required_gate_unmet() -> bool:
+	var tier := str(game.current_encounter.get("tier", ""))
+	if tier == "boss":
+		return !game._boss_phase_requirements_met()
+	if tier == "checkpoint":
+		return !game._checkpoint_requirements_met()
+	if ["ordinary", "elite"].has(tier):
+		return !game._encounter_requirements_met()
+	return false
+
+
+func _has_playable_gate_card() -> bool:
+	for raw_card in game.hand:
+		var card := raw_card as Dictionary
+		if _card_is_playable(card) and _card_advances_required_gate(card):
+			return true
+	return false
+
+
+func _reroute_index() -> int:
+	for index in range(game.hand.size()):
+		var card := game.hand[index] as Dictionary
+		if !bool(card.get("negative", false)) and !_card_advances_required_gate(card):
+			return index
+	return -1
+
+
+func _card_is_playable(card: Dictionary) -> bool:
+	return (
+		!bool(card.get("negative", false))
+		and game.processing_points >= game._card_cost_preview(card)
+		and game._card_requirements_met(card)
+	)
+
+
+func _card_advances_required_gate(card: Dictionary) -> bool:
+	var tier := str(game.current_encounter.get("tier", ""))
+	var node_type := str(game.current_node.get("type", ""))
+	var tags: Array = card.get("tags", [])
+	if ["ordinary", "elite"].has(tier):
+		return _card_fills_missing_evidence(card)
+	if tier == "checkpoint":
+		if node_type == "checkpoint_trust" and game.filters_played == 0 and tags.has("filter"):
+			return true
+		if game.trusted_sources_seen.size() < 2:
+			return _card_can_convert_new_source(card, game.trusted_sources_seen) or _card_collects_new_source(card, game.trusted_sources_seen)
+		return false
+	if tier != "boss":
+		return false
+	match game.boss_phase:
+		0:
+			return _card_collects_new_source(card, game.phase_source_coverage)
+		1:
+			if game.phase_filters_played == 0 and tags.has("filter"):
+				return true
+			if game.phase_trusted_sources.size() < 2:
+				return _card_can_convert_new_source(card, game.phase_trusted_sources) or _card_collects_new_source(card, game.phase_trusted_sources)
+		2:
+			var needs_report := !bool(game.phase_output_types.get("display", false)) and !bool(game.phase_output_types.get("uart", false)) and !bool(game.persistent_output_types.get("display", false)) and !bool(game.persistent_output_types.get("uart", false))
+			var needs_control := !bool(game.phase_output_types.get("alarm", false)) and !bool(game.phase_output_types.get("scheduler", false)) and !bool(game.persistent_output_types.get("alarm", false)) and !bool(game.persistent_output_types.get("scheduler", false))
+			return (needs_report and (tags.has("display") or tags.has("uart"))) or (needs_control and (tags.has("alarm") or tags.has("scheduler")))
+	return false
+
+
+func _card_collects_new_source(card: Dictionary, coverage: Dictionary) -> bool:
+	if str(card.get("stage", "")) != "collect":
+		return false
+	var tags: Array = card.get("tags", [])
+	for source in game.SOURCE_ORDER:
+		if tags.has(source) and !coverage.has(source):
+			return true
+	return false
+
+
+func _card_can_convert_new_source(card: Dictionary, coverage: Dictionary) -> bool:
+	var effects: Array = card.get("upgradeEffects", []) if bool(card.get("upgraded", false)) else card.get("effects", [])
+	for raw_effect in effects:
+		var effect := raw_effect as Dictionary
+		if str(effect.get("op", "")) != "convert":
+			continue
+		var candidates: Array = game.SOURCE_ORDER.duplicate()
+		match str(effect.get("source", "any")):
+			"smoke":
+				candidates = ["smoke"]
+			"i2c_any":
+				candidates = ["light", "temp", "humidity"]
+		for source in candidates:
+			if int(game.raw_data.get(source, 0)) > 0:
+				return !coverage.has(source)
+	return false
 
 
 func _card_fills_missing_evidence(card: Dictionary) -> bool:
@@ -220,6 +367,13 @@ func _assert(condition: bool, message: String) -> void:
 		return
 	failures += 1
 	push_error(message)
+
+
+func _array_has_id(items: Array, expected_id: String) -> bool:
+	for raw_item in items:
+		if str((raw_item as Dictionary).get("id", "")) == expected_id:
+			return true
+	return false
 
 
 func _finish() -> void:

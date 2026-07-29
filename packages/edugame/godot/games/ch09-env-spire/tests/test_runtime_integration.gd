@@ -96,6 +96,31 @@ func _run() -> void:
 	else:
 		var completion_count_before_lab := outbound_payloads.filter(func(payload: Dictionary) -> bool: return payload.get("type") == "DGB_GODOT_COMPLETE").size()
 		game._enter_node_lab()
+		var lab_entries: Array = game.node_lab_overlay.catalog_entries()
+		var correct_fixture := _catalog_entry(lab_entries, "question_correct")
+		var wrong_fixture := _catalog_entry(lab_entries, "question_wrong")
+		if correct_fixture.is_empty() or wrong_fixture.is_empty():
+			_assert(false, "Node Lab should expose correct and wrong result fixtures")
+		else:
+			_assert(game.start_lab_scenario(correct_fixture), "correct result fixture should launch")
+			_assert(game.node_lab_active and !game.formal_run_active, "correct result fixture should remain isolated from formal runs")
+			_assert(game.event_answer_locked and bool(game.event_result.get("correct", false)), "correct result fixture should open the forced correct outcome")
+			_assert(game.choose_event_reward(0), "correct result fixture should accept its first reward")
+			if !game.pending_card_selection.is_empty():
+				_assert(game.choose_pending_card(0), "correct result reward should resolve its owned selection")
+			_assert(game.continue_event(), "correct result fixture should continue")
+			_assert(_completion_count(outbound_payloads) == completion_count_before_lab, "continuing a result fixture should not report course completion")
+			_assert(game.restart_lab_scenario(), "correct result fixture should restart")
+			_assert(game.node_lab_active and !game.formal_run_active, "restarted result fixture should remain isolated")
+			_assert(_completion_count(outbound_payloads) == completion_count_before_lab, "restarting a result fixture should not report course completion")
+			runtime.bridge.receive_payload({"type": "DGB_GODOT_RESET", "version": 1})
+			await process_frame
+			_assert(game.node_lab_active and !game.formal_run_active, "reset result fixture should remain isolated")
+			_assert(_completion_count(outbound_payloads) == completion_count_before_lab, "resetting a result fixture should not report course completion")
+			_assert(game.start_lab_scenario(wrong_fixture), "wrong result fixture should launch")
+			_assert(game.event_answer_locked and !bool(game.event_result.get("correct", true)), "wrong result fixture should open the forced wrong outcome")
+			_assert(game.continue_event(), "wrong result fixture should continue")
+			_assert(_completion_count(outbound_payloads) == completion_count_before_lab, "wrong result continuation should not report course completion")
 		runtime.bridge.receive_payload({"type": "DGB_GODOT_RESET", "version": 1})
 		await process_frame
 		_assert(game.node_lab_active, "host reset should preserve Node Lab mode")
@@ -141,6 +166,20 @@ func _assert(condition: bool, message: String) -> void:
 		return
 	failures += 1
 	push_error(message)
+
+
+func _catalog_entry(entries: Array, expected_id: String) -> Dictionary:
+	for raw_entry in entries:
+		var entry := raw_entry as Dictionary
+		if str(entry.get("id", "")) == expected_id:
+			return entry
+	return {}
+
+
+func _completion_count(payloads: Array) -> int:
+	return payloads.filter(func(payload: Dictionary) -> bool:
+		return payload.get("type") == "DGB_GODOT_COMPLETE"
+	).size()
 
 
 func _finish() -> void:

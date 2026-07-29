@@ -11,6 +11,8 @@ var toolbar: PanelContainer
 var toolbar_title: Label
 var starter_button: Button
 var coverage_button: Button
+var force_correct_button: Button
+var force_wrong_button: Button
 var return_button: Button
 var restart_button: Button
 var group_grids: Array[GridContainer] = []
@@ -59,23 +61,60 @@ func _build_catalog() -> Array:
 					"tier": "boss",
 					"phase": phase_index
 				})
+		elif !(enemy.get("faultRule", {}) as Dictionary).is_empty():
+			result.append({
+				"id": "fault_rule_%s" % enemy_id,
+				"group": "故障规则",
+				"label": str(enemy.get("name", enemy_id)),
+				"kind": "fault_rule",
+				"contentId": enemy_id,
+				"tier": tier,
+				"phase": -1
+			})
 
 	var event_ids: Array = game.event_defs.keys()
-	event_ids.sort()
+	event_ids.sort_custom(func(a, b) -> bool:
+		var event_a := game.event_defs[str(a)] as Dictionary
+		var event_b := game.event_defs[str(b)] as Dictionary
+		var key_a := "%s:%s:%s" % [event_a.get("tier", ""), event_a.get("questionType", ""), a]
+		var key_b := "%s:%s:%s" % [event_b.get("tier", ""), event_b.get("questionType", ""), b]
+		return key_a < key_b
+	)
 	for raw_id in event_ids:
 		var event_id := str(raw_id)
 		var event := game.event_defs[event_id] as Dictionary
 		result.append({
 			"id": event_id,
-			"group": "调试事件",
-			"label": str(event.get("name", event_id)),
-			"kind": "event",
+			"group": "基础题事件" if str(event.get("tier", "")) == "basic" else "进阶题事件",
+			"label": "%s · %s" % [_question_type_label(str(event.get("questionType", ""))), event.get("name", event_id)],
+			"kind": "question_event",
 			"contentId": event_id,
-			"tier": "",
+			"tier": str(event.get("tier", "")),
+			"questionType": str(event.get("questionType", "")),
 			"phase": -1
 		})
 
 	result.append_array([
+		{
+			"id": "question_correct",
+			"group": "题目结果",
+			"label": "正确答案结果",
+			"kind": "question_correct",
+			"contentId": "basic_mq2_warmup",
+			"tier": "basic",
+			"questionType": "diagnosis",
+			"phase": -1
+		},
+		{
+			"id": "question_wrong",
+			"group": "题目结果",
+			"label": "错误答案结果",
+			"kind": "question_wrong",
+			"contentId": "basic_mq2_warmup",
+			"tier": "basic",
+			"questionType": "diagnosis",
+			"phase": -1
+		},
 		_catalog_entry("sensor_checkpoint", "教学检查点", "传感器接入检查", "checkpoint_sensor"),
 		_catalog_entry("trust_checkpoint", "教学检查点", "数据可信检查", "checkpoint_trust"),
 		_catalog_entry("component", "功能节点", "工程组件三选一", "component"),
@@ -85,6 +124,17 @@ func _build_catalog() -> Array:
 		_catalog_entry("elite_reward", "奖励节点", "精英故障奖励", "reward", "elite")
 	])
 	return result
+
+
+func _question_type_label(question_type: String) -> String:
+	return {
+		"diagnosis": "诊断",
+		"ordering": "排序",
+		"code_trace": "代码跟踪",
+		"parameter": "参数",
+		"waveform": "波形",
+		"tradeoff": "权衡"
+	}.get(question_type, question_type)
 
 
 func _catalog_entry(id: String, group: String, label: String, kind: String, tier: String = "") -> Dictionary:
@@ -150,6 +200,12 @@ func _build_ui() -> void:
 	coverage_button.toggle_mode = true
 	coverage_button.pressed.connect(func() -> void: _set_fixture("coverage"))
 	toolbar_row.add_child(coverage_button)
+	force_correct_button = _toolbar_button("NodeLabForceCorrect", "判为正确")
+	force_correct_button.pressed.connect(func() -> void: game.force_lab_question_result(true))
+	toolbar_row.add_child(force_correct_button)
+	force_wrong_button = _toolbar_button("NodeLabForceWrong", "判为错误")
+	force_wrong_button.pressed.connect(func() -> void: game.force_lab_question_result(false))
+	toolbar_row.add_child(force_wrong_button)
 
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -272,6 +328,8 @@ func show_catalog() -> void:
 	restart_button.visible = false
 	starter_button.visible = true
 	coverage_button.visible = true
+	force_correct_button.visible = false
+	force_wrong_button.visible = false
 	_set_fixture(deck_fixture)
 	var header: PanelContainer = game.header_panel
 	var game_shell: VBoxContainer = game.shell
@@ -290,6 +348,9 @@ func show_scenario_controls() -> void:
 	restart_button.visible = true
 	starter_button.visible = true
 	coverage_button.visible = true
+	var question_fixture := str(current_entry.get("kind", "")) == "question_event"
+	force_correct_button.visible = question_fixture
+	force_wrong_button.visible = question_fixture
 	var header: PanelContainer = game.header_panel
 	var game_shell: VBoxContainer = game.shell
 	header.visible = false
@@ -305,9 +366,11 @@ func _apply_responsive_layout() -> void:
 	toolbar_title.visible = !compact
 	starter_button.text = "基础" if compact else "基础牌组"
 	coverage_button.text = "全标签"
+	force_correct_button.text = "判对" if compact else "判为正确"
+	force_wrong_button.text = "判错" if compact else "判为错误"
 	return_button.text = "目录" if compact else "返回目录"
 	restart_button.text = "重开" if compact else "重开节点"
-	for button in [starter_button, coverage_button, return_button, restart_button]:
+	for button in [starter_button, coverage_button, force_correct_button, force_wrong_button, return_button, restart_button]:
 		button.custom_minimum_size.x = 58 if compact else 76
 		button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	for grid in group_grids:

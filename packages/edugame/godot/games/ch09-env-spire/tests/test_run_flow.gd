@@ -16,6 +16,7 @@ func _run() -> void:
 	var game = scene.instantiate()
 	get_root().add_child(game)
 	await process_frame
+	_assert_route_order(game)
 	game._reset_run()
 	_assert_question_event_resolution(game)
 	game._reset_run()
@@ -123,9 +124,8 @@ func _run() -> void:
 		_assert(false, "component node should expose a dedicated run state")
 	else:
 		game._reset_run()
-		game.current_layer = 5
-		_assert(bool(game.choose_node(0)), "node six should open the component choice")
-		_assert(game.state == int(run_states.get("COMPONENT")), "component node should enter its choice state")
+		game._open_component_choice()
+		_assert(game.state == int(run_states.get("COMPONENT")), "component fixture should enter its choice state")
 		_assert(game.component_choices.size() == 3, "component node should offer three choices")
 		var chosen_id := str((game.component_choices[0] as Dictionary).get("id", ""))
 		_assert(bool(game.choose_component(chosen_id)), "an offered component should be selectable")
@@ -140,6 +140,7 @@ func _run() -> void:
 		_assert(game.component_choices.size() == 2, "one remaining component should be paired with one fallback")
 		_assert(_array_has_id(game.component_choices, "upgrade_fallback"), "component shortage should offer a card upgrade fallback")
 
+	_assert_boss_shop_guarantee(game)
 	game.current_layer = 10
 	game.state = game.RunState.MAP
 	_assert(bool(game.choose_node(0)), "layer eleven service should be selectable")
@@ -216,6 +217,81 @@ func _log_contains(entries: Array, expected: String) -> bool:
 		if str(entry).contains(expected):
 			return true
 	return false
+
+
+func _assert_route_order(game) -> void:
+	var expected_types := [
+		"ordinary", "event", "ordinary", "service",
+		"checkpoint_sensor", "event", "ordinary", "checkpoint_trust",
+		"shop", "elite", "service", "boss"
+	]
+	for raw_map in game.map_defs.values():
+		var map := raw_map as Dictionary
+		var layers: Array = map.get("layers", [])
+		_assert(layers.size() == expected_types.size(), "%s should expose twelve route layers" % map.get("id", "map"))
+		for index in range(mini(layers.size(), expected_types.size())):
+			var layer := layers[index] as Dictionary
+			var choices: Array = layer.get("choices", [])
+			_assert(!choices.is_empty(), "%s layer %d should expose a route choice" % [map.get("id"), index + 1])
+			if choices.is_empty():
+				continue
+			var choice := choices[0] as Dictionary
+			_assert(str(choice.get("type", "")) == expected_types[index], "%s layer %d should use %s" % [map.get("id"), index + 1, expected_types[index]])
+			if index == 1:
+				_assert(str(choice.get("eventTier", "")) == "basic", "node two should request a basic event")
+				_assert(str(choice.get("contentId", "")) == "random_basic", "node two should use the seeded basic selector")
+			if index == 5:
+				_assert(str(choice.get("eventTier", "")) == "advanced", "node six should request an advanced event")
+				_assert(str(choice.get("contentId", "")) == "random_advanced", "node six should use the seeded advanced selector")
+
+
+func _assert_boss_shop_guarantee(game) -> void:
+	if !game.has_method("_missing_boss_stage_tags") or !game.has_method("_guaranteed_boss_shop_card_id"):
+		_assert(false, "late shops should expose Boss missing-link helpers")
+		return
+
+	game._reset_run()
+	_assert(game._missing_boss_stage_tags() == ["control"], "starter deck should expose only the Boss control-output gap")
+	_assert(game._guaranteed_boss_shop_card_id() == "time_slice", "equal-price control cards should preserve the first exact catalog candidate")
+
+	game._reset_run()
+	game.deck = [game._card_copy("mq2_sample")]
+	_assert(!game._missing_boss_stage_tags().is_empty(), "one-source deck should expose Boss gaps")
+	game.budget = 35
+	game.current_layer = 8
+	game._open_shop()
+	var guaranteed_id: String = game._guaranteed_boss_shop_card_id()
+	_assert(!guaranteed_id.is_empty(), "one-source deck should identify an exact Boss preparation card")
+	_assert(_array_has_id(game.shop_cards, guaranteed_id), "node nine shop should inject a missing-link card")
+	var guaranteed_price := 999
+	for raw_card in game.shop_cards:
+		var shop_card := raw_card as Dictionary
+		if str(shop_card.get("id", "")) == guaranteed_id:
+			guaranteed_price = int(shop_card.get("price", 999))
+	_assert(guaranteed_price <= game.budget, "guaranteed card should be affordable")
+
+	game._reset_run()
+	game.deck = [game._card_copy("mq2_sample")]
+	game.budget = 35
+	game.current_layer = 11
+	game.state = game.RunState.REST
+	_assert(game.choose_service("shop"), "node eleven service should open its shop")
+	guaranteed_id = game._guaranteed_boss_shop_card_id()
+	_assert(_array_has_id(game.shop_cards, guaranteed_id), "node eleven service shop should inject a missing-link card")
+	for raw_card in game.shop_cards:
+		var shop_card := raw_card as Dictionary
+		if str(shop_card.get("id", "")) == guaranteed_id:
+			_assert(int(shop_card.get("price", 999)) <= game.budget, "service-shop guarantee should also be affordable")
+
+	game._reset_run()
+	game.deck = [game._card_copy("mq2_sample")]
+	game.budget = 35
+	game.current_layer = 4
+	game._open_shop()
+	for raw_card in game.shop_cards:
+		var shop_card := raw_card as Dictionary
+		_assert(int(shop_card.get("price", -1)) == game._card_price(shop_card), "early service shop should preserve ordinary pricing")
+	game._reset_run()
 
 
 func _assert_question_event_resolution(game) -> void:
