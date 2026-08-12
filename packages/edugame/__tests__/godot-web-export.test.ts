@@ -4,6 +4,105 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 describe('Godot Web export release tooling', () => {
+  it('lets the repository command select one game and uses the Windows wrapper by default', async () => {
+    const repositoryPackage = JSON.parse(await readFile(
+      join(process.cwd(), '..', '..', 'package.json'),
+      'utf8',
+    ));
+    const { defaultGodotBinary } = await import('../godot/tools/export_web.mjs');
+
+    expect(repositoryPackage.scripts['godot:web:export']).toBe(
+      'node packages/edugame/godot/tools/export_web.mjs',
+    );
+    expect(defaultGodotBinary({ platform: 'win32' })).toBe('godot.cmd');
+    expect(defaultGodotBinary({ platform: 'linux' })).toBe('godot');
+  });
+
+  it('registers every production Godot game in the release pipeline', async () => {
+    const { configuredGodotGames } = await import('../godot/tools/export_web.mjs');
+
+    expect(configuredGodotGames()).toEqual([
+      {
+        gameId: 'ch09-env-spire',
+        entryFiles: [
+          'courses/stm32f10x/chapters/ch08_ch09.py',
+          'packages/edugame/godot/games/ch09-env-spire/levels/ch09_env_spire_level.json',
+          'apps/player/public/manifest.json',
+        ],
+      },
+      {
+        gameId: 'ch11-band-defense',
+        entryFiles: [
+          'courses/stm32f10x/chapters/ch10_ch12.py',
+          'packages/edugame/godot/games/ch11-band-defense/levels/ch11_band_defense_level.json',
+          'apps/player/public/manifest.json',
+        ],
+      },
+      {
+        gameId: 'ch12-solar-survivor',
+        entryFiles: [
+          'courses/stm32f10x/chapters/worksheets.py',
+          'packages/edugame/godot/games/ch12-solar-survivor/levels/ch12_solar_survivor_level.json',
+          'apps/player/public/manifest.json',
+        ],
+      },
+    ]);
+  });
+
+  it('publishes the Ch09 game entry through the course and player manifest', async () => {
+    const repoRoot = join(process.cwd(), '..', '..');
+    const entryUrlPattern = /^\/assets\/godot\/ch09-env-spire\/index\.html(?:\?v=[a-f0-9]{12})?$/;
+    const courseSource = await readFile(
+      join(repoRoot, 'courses', 'stm32f10x', 'chapters', 'ch08_ch09.py'),
+      'utf8',
+    );
+    const levelManifest = JSON.parse(await readFile(
+      join(process.cwd(), 'godot', 'games', 'ch09-env-spire', 'levels', 'ch09_env_spire_level.json'),
+      'utf8',
+    ));
+    const playerManifest = JSON.parse(await readFile(
+      join(repoRoot, 'apps', 'player', 'public', 'manifest.json'),
+      'utf8',
+    ));
+    const serializedPlayerManifest = JSON.stringify(playerManifest);
+    const findGameData = (value: unknown): Record<string, unknown> | undefined => {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          const found = findGameData(item);
+          if (found) return found;
+        }
+        return undefined;
+      }
+      if (!value || typeof value !== 'object') return undefined;
+      const record = value as Record<string, unknown>;
+      if (record.gameId === 'ch09-env-spire') return record;
+      for (const child of Object.values(record)) {
+        const found = findGameData(child);
+        if (found) return found;
+      }
+      return undefined;
+    };
+    const playerGameData = findGameData(playerManifest);
+    const courseEntryUrl = courseSource.match(
+      /"entryUrl": "(\/assets\/godot\/ch09-env-spire\/index\.html(?:\?v=[a-f0-9]{12})?)"/,
+    )?.[1];
+    const levelEntryUrl = levelManifest.data.entryUrl;
+    const playerEntryUrl = playerGameData?.entryUrl;
+
+    expect(courseSource).toContain('"gameId": "ch09-env-spire"');
+    expect(courseEntryUrl).toMatch(entryUrlPattern);
+    expect(courseSource).toContain('"nodeCount": 12');
+    expect(levelManifest.data).toMatchObject({
+      gameId: 'ch09-env-spire',
+      nodeCount: 12,
+    });
+    expect(levelEntryUrl).toMatch(entryUrlPattern);
+    expect(playerGameData).toMatchObject({ gameId: 'ch09-env-spire', nodeCount: 12 });
+    expect(playerEntryUrl).toMatch(entryUrlPattern);
+    expect([levelEntryUrl, playerEntryUrl]).toEqual([courseEntryUrl, courseEntryUrl]);
+    expect(serializedPlayerManifest).toContain('"gameId":"ch09-env-spire"');
+  });
+
   it('uses an explicit command interpreter for Windows wrappers without shell mode', async () => {
     const { createGodotSpawnSpec } = await import('../godot/tools/export_web.mjs');
     const spec = createGodotSpawnSpec(
@@ -19,7 +118,7 @@ describe('Godot Web export release tooling', () => {
   });
 
   it('excludes editor tooling and tests from both game exports', async () => {
-    for (const gameId of ['ch11-band-defense', 'ch12-solar-survivor']) {
+    for (const gameId of ['ch09-env-spire', 'ch11-band-defense', 'ch12-solar-survivor']) {
       const preset = await readFile(
         join(process.cwd(), 'godot', 'games', gameId, 'export_presets.cfg'),
         'utf8',
@@ -37,11 +136,54 @@ describe('Godot Web export release tooling', () => {
       join(process.cwd(), 'godot', 'games', 'ch12-solar-survivor', 'export_presets.cfg'),
       'utf8',
     );
+    const ch09Preset = await readFile(
+      join(process.cwd(), 'godot', 'games', 'ch09-env-spire', 'export_presets.cfg'),
+      'utf8',
+    );
+    expect(ch09Preset).toContain('export_filter="scenes"');
+    expect(ch09Preset).toContain(
+      'export_files=PackedStringArray("res://scenes/main.tscn")',
+    );
+    expect(ch09Preset).toContain('assets/card-art/prototypes/*-v4.png');
+    expect(ch09Preset).toContain('assets/enemy-art/*.png');
+    for (const runtimeData of [
+      'addons/dgbook_runtime/*.gd',
+	  'assets/fonts/DingTalkJinBuTi.ttf',
+      'assets/fonts/NotoSansSC-VF.ttf',
+      'data/cards.local.json',
+      'data/enemies.local.json',
+      'data/events.local.json',
+      'data/relics.local.json',
+      'data/run_maps.local.json',
+	  'dev/node_lab.gd',
+      'levels/ch09_env_spire_level.json',
+      'scripts/*.gd',
+    ]) {
+      expect(ch09Preset).toContain(runtimeData);
+    }
+    expect(ch09Preset).toContain('data/questions.local.json');
+    expect(ch09Preset).toContain('teaching-assets.lock.json');
     expect(ch11Preset).toContain('data/questions.local.json');
     expect(ch11Preset).toContain('teaching-assets.lock.json');
     expect(ch12Preset).toContain('data/questions.local.json');
     expect(ch12Preset).toContain('data/upgrades.local.json');
     expect(ch12Preset).toContain('teaching-assets.lock.json');
+  });
+
+  it('ships Ch09 as a desktop-only experience without compact mobile layout branches', async () => {
+    const gameRoot = join(process.cwd(), 'godot', 'games', 'ch09-env-spire');
+    const project = await readFile(join(gameRoot, 'project.godot'), 'utf8');
+    const preset = await readFile(join(gameRoot, 'export_presets.cfg'), 'utf8');
+    const rootScript = await readFile(join(gameRoot, 'scripts', 'env_spire_root.gd'), 'utf8');
+    const nodeLabScript = await readFile(join(gameRoot, 'dev', 'node_lab.gd'), 'utf8');
+
+    expect(project).not.toContain('rendering_method.mobile');
+    expect(preset).not.toContain('vram_texture_compression/for_mobile');
+    expect(rootScript).toContain('func is_desktop_viewport_supported(');
+    expect(rootScript).toContain('DesktopOnlyOverlay');
+    expect(rootScript).not.toContain('_apply_responsive_layout');
+    expect(nodeLabScript).not.toContain('_apply_responsive_layout');
+    expect(nodeLabScript).not.toContain('var compact');
   });
 
   it('cleans only a game directory below the configured public Godot root', async () => {

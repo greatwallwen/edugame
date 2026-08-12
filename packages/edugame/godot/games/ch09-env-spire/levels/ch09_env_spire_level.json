@@ -1,0 +1,20 @@
+{
+  "modeId": "godot-game",
+  "levelId": "ch09-env-spire-mvp",
+  "title": "环境监测调试路线",
+  "objective": "复习 MQ-2、BH1750、HDC1080、ADC、I2C、滤波与系统调度",
+  "difficulty": 3,
+  "starThresholds": [60, 75, 90],
+  "timeLimit": 0,
+  "data": {
+    "gameId": "ch09-env-spire",
+    "entryUrl": "/assets/godot/ch09-env-spire/index.html?v=82f01717079d",
+    "aspectRatio": "16 / 9",
+    "runMapId": "mvp_a",
+    "maxStability": 70,
+    "nodeCount": 12,
+    "scoreScale": 100,
+    "knowledgeSource": "external",
+    "questionsUrl": "/assets/courses/stm32-course/knowledge/ch09-env-spire.questions.json?v=d33313be864e"
+  }
+}

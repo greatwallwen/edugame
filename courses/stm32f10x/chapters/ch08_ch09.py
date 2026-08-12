@@ -232,7 +232,7 @@ def build_p8_pages():
 
 def build_p9_pages():
     """项目9：环境监测系统"""
-    return [make_simple_page(
+    p9_env = make_simple_page(
         "p9-env", "9.1 环境监测系统设计", "环境监测系统",
         key_points=[
             "MQ-2烟雾传感器：ADC采样，检测300~10000ppm，预热>5分钟",
@@ -454,6 +454,25 @@ def build_p9_pages():
             step(3, "读取并显示", "主循环中每1s调用env_task()，串口打印温度/湿度/气压，LCD刷新显示。", chk=True),
             step(4, "验证滤波效果", "用嘴对DHT11哈气，观察温度滑动平均值与原始值的差异（平滑延迟）。", chk=False),
         ]
-    )]
-
-
+    )
+    p9_env["game"] = {
+        "modeId": "godot-game",
+        "levelId": "ch09-env-spire-mvp",
+        "title": "环境监测调试路线",
+        "objective": "复习 MQ-2、BH1750、HDC1080、ADC、I2C、滤波与系统调度",
+        "difficulty": 3,
+        "starThresholds": [60, 75, 90],
+        "timeLimit": 0,
+        "data": {
+            "gameId": "ch09-env-spire",
+            "entryUrl": "/assets/godot/ch09-env-spire/index.html?v=82f01717079d",
+            "aspectRatio": "16 / 9",
+            "runMapId": "mvp_a",
+            "maxStability": 70,
+            "nodeCount": 12,
+            "scoreScale": 100,
+            "knowledgeSource": "external",
+            "questionsUrl": "/assets/courses/stm32-course/knowledge/ch09-env-spire.questions.json?v=d33313be864e",
+        },
+    }
+    return [p9_env]

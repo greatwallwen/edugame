@@ -190,6 +190,8 @@ reference/
 # 聊天工具/AI 产物（不入 git）
 DGBook*.json
 *.conversation.json
+!packages/edugame/godot/games/*/dgbook-runtime.lock.json
+!packages/edugame/godot/template/dgbook-runtime.lock.json
 
 # 构建缓存
 .turbo/cache/
@@ -202,3 +204,7 @@ apps/player/dist-offline/
 
 # OpenMAIC 参考资产（仅本地参考）
 OpenMAIC/assets/
+
+# Ch09 desktop acceptance recording intermediates
+artifacts/ch09-env-spire/*.avi
+artifacts/ch09-env-spire/frames/

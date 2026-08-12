@@ -6,6 +6,11 @@ import { fileURLToPath } from 'node:url';
 const COURSE_PUBLIC_ROOT = 'apps/player/public/assets/courses/stm32-course';
 
 const GAME_ENTRY_FILES = {
+  'ch09-env-spire': [
+    'courses/stm32f10x/chapters/ch08_ch09.py',
+    'packages/edugame/godot/games/ch09-env-spire/levels/ch09_env_spire_level.json',
+    'apps/player/public/manifest.json',
+  ],
   'ch11-band-defense': [
     'courses/stm32f10x/chapters/ch10_ch12.py',
     'packages/edugame/godot/games/ch11-band-defense/levels/ch11_band_defense_level.json',
@@ -19,6 +24,15 @@ const GAME_ENTRY_FILES = {
 };
 
 const ASSETS = [
+  {
+    id: 'ch09-questions',
+    gameId: 'ch09-env-spire',
+    kind: 'array',
+    source: 'courses/stm32f10x/knowledge/ch09-env-spire.questions.json',
+    publicTarget: `${COURSE_PUBLIC_ROOT}/knowledge/ch09-env-spire.questions.json`,
+    localTarget: 'packages/edugame/godot/games/ch09-env-spire/data/questions.local.json',
+    url: '/assets/courses/stm32-course/knowledge/ch09-env-spire.questions.json',
+  },
   {
     id: 'ch11-questions',
     gameId: 'ch11-band-defense',

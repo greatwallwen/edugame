@@ -1,0 +1,52 @@
+{
+  "version": 4,
+  "artWindowAspect": "4:3",
+  "actionLanguage": "input-operation-result",
+  "visualDensity": "one-subject-one-action-one-result",
+  "renderStyle": "minimal-symbolic-technical-illustration",
+  "backgroundMode": "type-solid-color",
+  "items": [
+    {
+      "cardId": "mq2_sample",
+      "type": "collect",
+      "accent": "#d56a54",
+      "file": "mq2_sample-v4.png"
+    },
+    {
+      "cardId": "adc_convert",
+      "type": "interface",
+      "accent": "#38b9c7",
+      "file": "adc_convert-v4.png"
+    },
+    {
+      "cardId": "sliding_average",
+      "type": "process",
+      "accent": "#8a63c7",
+      "file": "sliding_average-v4.png"
+    },
+    {
+      "cardId": "nonblocking_delay",
+      "type": "defense",
+      "accent": "#5b9a62",
+      "file": "nonblocking_delay-v4.png"
+    },
+    {
+      "cardId": "led_alarm",
+      "type": "output",
+      "accent": "#d69735",
+      "file": "led_alarm-v4.png"
+    },
+    {
+      "cardId": "diagnostic_manual",
+      "type": "power",
+      "accent": "#c4a34c",
+      "file": "diagnostic_manual-v4.png"
+    },
+    {
+      "cardId": "abnormal_reading",
+      "type": "negative",
+      "accent": "#9c5555",
+      "file": "abnormal_reading-v4.png"
+    }
+  ]
+}

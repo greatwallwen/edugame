@@ -1,49 +1,45 @@
 extends SceneTree
 
-const OUT_DIR := "C:/Users/sy/Desktop/dgbook-ref-main/dgbook-ref/.superpowers/visual-qa/ch09-env-spire"
+const OUT_DIR_PROJECT_PATH := "res://../../../../../.superpowers/visual-qa/ch09-env-spire"
 const DESKTOP_SIZE := Vector2i(1280, 720)
-const MOBILE_SIZE := Vector2i(390, 844)
+const CAPTURE_SAVE_PATH := "user://ch09_capture_run.json"
+const CAPTURE_SETTINGS_PATH := "user://ch09_capture_settings.cfg"
 const QUESTION_CAPTURE_CASES := [
 	{
 		"event_id": "basic_mq2_warmup",
 		"question_type": "diagnosis",
 		"desktop": "30-desktop-event-diagnosis.png",
-		"mobile": "50-mobile-event-diagnosis.png"
 	},
 	{
 		"event_id": "basic_signal_order",
 		"question_type": "ordering",
 		"desktop": "31-desktop-event-ordering.png",
-		"mobile": "51-mobile-event-ordering.png"
 	},
 	{
 		"event_id": "basic_i2c_result",
 		"question_type": "code_trace",
 		"desktop": "32-desktop-event-code-trace.png",
-		"mobile": "52-mobile-event-code-trace.png"
 	},
 	{
 		"event_id": "basic_sample_period",
 		"question_type": "parameter",
 		"desktop": "33-desktop-event-parameter.png",
-		"mobile": "53-mobile-event-parameter.png"
 	},
 	{
 		"event_id": "basic_adc_spike",
 		"question_type": "waveform",
 		"desktop": "34-desktop-event-waveform.png",
-		"mobile": "54-mobile-event-waveform.png"
 	},
 	{
 		"event_id": "basic_raw_trusted",
 		"question_type": "tradeoff",
 		"desktop": "35-desktop-event-trade-off.png",
-		"mobile": "55-mobile-event-trade-off.png"
 	}
 ]
 
 var capture_failed := false
 var capture_size := Vector2i.ZERO
+var out_dir := ProjectSettings.globalize_path(OUT_DIR_PROJECT_PATH)
 
 
 func _init() -> void:
@@ -51,9 +47,9 @@ func _init() -> void:
 
 
 func _run() -> void:
-	DirAccess.make_dir_recursive_absolute(OUT_DIR)
-	var mobile := OS.get_cmdline_user_args().has("--mobile")
-	capture_size = MOBILE_SIZE if mobile else DESKTOP_SIZE
+	DirAccess.make_dir_recursive_absolute(out_dir)
+	_clean_previous_captures()
+	capture_size = DESKTOP_SIZE
 	DisplayServer.window_set_size(capture_size)
 	get_root().size = capture_size
 	var scene := load("res://scenes/main.tscn")
@@ -62,6 +58,8 @@ func _run() -> void:
 		return
 
 	var game = scene.instantiate()
+	game.run_save_path = CAPTURE_SAVE_PATH
+	game.settings_path = CAPTURE_SETTINGS_PATH
 	get_root().add_child(game)
 	game.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	game.position = Vector2.ZERO
@@ -69,30 +67,77 @@ func _run() -> void:
 	await _settle()
 	print("capture viewport=", get_root().size, " control=", game.size, " window=", DisplayServer.window_get_size())
 
-	if !(await _capture_tutorial(game, mobile)):
+	if !(await _capture_menu_and_codex(game)):
 		await _finish_capture_run(game)
 		return
-	if !(await _capture_core_flow(game, mobile)):
+	if !(await _capture_release_flow(game)):
 		await _finish_capture_run(game)
 		return
-	if !(await _capture_combat_depth(game, mobile)):
+	if !(await _capture_tutorial(game)):
 		await _finish_capture_run(game)
 		return
-	if !(await _capture_question_events(game, mobile)):
+	if !(await _capture_core_flow(game)):
 		await _finish_capture_run(game)
 		return
-	if !(await _capture_node_lab(game, mobile)):
+	if !(await _capture_combat_depth(game)):
+		await _finish_capture_run(game)
+		return
+	if !(await _capture_boss_gate_gallery(game)):
+		await _finish_capture_run(game)
+		return
+	if !(await _capture_encounter_gallery(game)):
+		await _finish_capture_run(game)
+		return
+	if !(await _capture_question_events(game)):
+		await _finish_capture_run(game)
+		return
+	if !(await _capture_node_lab(game)):
 		await _finish_capture_run(game)
 		return
 	await _finish_capture_run(game)
 
 
-func _capture_tutorial(game, mobile: bool) -> bool:
+func _clean_previous_captures() -> void:
+	var output_dir := DirAccess.open(out_dir)
+	if output_dir == null:
+		return
+	for file_name in output_dir.get_files():
+		if file_name.get_extension().to_lower() == "png":
+			output_dir.remove(file_name)
+
+
+func _capture_menu_and_codex(game) -> bool:
+	game.show_start_menu()
+	if !(await _capture_checked(game, "00-desktop-start-menu.png", game.RunState.MENU, ["StartMenuView", "StartMenuRun", "StartMenuCodex"])):
+		return false
+	game.codex_progress = {"version": 1, "cards": [], "faults": []}
+	if !_expect(game.select_start_menu_command("codex"), "codex capture should open from the menu"):
+		return false
+	if !(await _capture_checked(game, "01-desktop-codex-locked.png", game.RunState.CODEX, ["CodexView", "CodexDetailTitle", "CodexBack"])):
+		return false
+	var card_ids: Array = game.card_defs.keys()
+	card_ids.sort()
+	var fault_ids: Array = game.enemy_defs.keys()
+	fault_ids.sort()
+	game.codex_progress = {"version": 1, "cards": card_ids, "faults": fault_ids}
+	game._refresh_codex()
+	game.codex_view.select_tab("cards")
+	game.codex_view.select_entry(0)
+	if !(await _capture_checked(game, "02-desktop-codex-cards.png", game.RunState.CODEX, ["CodexDetailTitle", "CodexProgress"])):
+		return false
+	game.codex_view.select_tab("faults")
+	game.codex_view.select_entry(0)
+	if !(await _capture_checked(game, "03-desktop-codex-faults.png", game.RunState.CODEX, ["CodexDetailBody", "CodexProgress"])):
+		return false
+	return true
+
+
+func _capture_tutorial(game) -> bool:
 	game._start_tutorial_briefing()
 	game._render_state()
 	if !(await _capture_checked(
 		game,
-		"39-mobile-tutorial-briefing.png" if mobile else "19-desktop-tutorial-briefing.png",
+		"19-desktop-tutorial-briefing.png",
 		game.RunState.WAITING,
 		["TutorialView", "TutorialStartButton"],
 		game.TutorialStep.BRIEFING
@@ -102,9 +147,9 @@ func _capture_tutorial(game, mobile: bool) -> bool:
 	game._start_tutorial_encounter()
 	if !(await _capture_checked(
 		game,
-		"40-mobile-tutorial-intent.png" if mobile else "20-desktop-tutorial-intent.png",
+		"20-desktop-tutorial-intent.png",
 		game.RunState.COMBAT,
-		["CombatView", "TutorialCoachLayer", "TutorialIntentButton"],
+		["CombatView", "TutorialCoachLayer", "EnemyIntent"],
 		game.TutorialStep.READ_INTENT
 	)):
 		return false
@@ -113,7 +158,7 @@ func _capture_tutorial(game, mobile: bool) -> bool:
 		return false
 	if !(await _capture_checked(
 		game,
-		"41-mobile-tutorial-defense.png" if mobile else "21-desktop-tutorial-defense.png",
+		"21-desktop-tutorial-defense.png",
 		game.RunState.COMBAT,
 		["CombatView", "TutorialCoachLayer", "TutorialRequiredCard"],
 		game.TutorialStep.PLAY_DEFENSE
@@ -124,7 +169,7 @@ func _capture_tutorial(game, mobile: bool) -> bool:
 		return false
 	if !(await _capture_checked(
 		game,
-		"42-mobile-tutorial-end-turn.png" if mobile else "22-desktop-tutorial-end-turn.png",
+		"22-desktop-tutorial-end-turn.png",
 		game.RunState.COMBAT,
 		["CombatView", "TutorialCoachLayer", "EndTurnButton"],
 		game.TutorialStep.END_TURN
@@ -135,7 +180,7 @@ func _capture_tutorial(game, mobile: bool) -> bool:
 		return false
 	if !(await _capture_checked(
 		game,
-		"43-mobile-tutorial-sample.png" if mobile else "23-desktop-tutorial-sample.png",
+		"23-desktop-tutorial-sample.png",
 		game.RunState.COMBAT,
 		["CombatView", "TutorialCoachLayer", "TutorialRequiredCard"],
 		game.TutorialStep.PLAY_SAMPLE
@@ -146,7 +191,7 @@ func _capture_tutorial(game, mobile: bool) -> bool:
 		return false
 	if !(await _capture_checked(
 		game,
-		"44-mobile-tutorial-convert.png" if mobile else "24-desktop-tutorial-convert.png",
+		"24-desktop-tutorial-convert.png",
 		game.RunState.COMBAT,
 		["CombatView", "TutorialCoachLayer", "TutorialRequiredCard"],
 		game.TutorialStep.PLAY_CONVERT
@@ -157,7 +202,7 @@ func _capture_tutorial(game, mobile: bool) -> bool:
 		return false
 	if !(await _capture_checked(
 		game,
-		"45-mobile-tutorial-output.png" if mobile else "25-desktop-tutorial-output.png",
+		"25-desktop-tutorial-output.png",
 		game.RunState.COMBAT,
 		["CombatView", "TutorialCoachLayer", "TutorialRequiredCard"],
 		game.TutorialStep.PLAY_OUTPUT
@@ -168,36 +213,114 @@ func _capture_tutorial(game, mobile: bool) -> bool:
 		return false
 	return await _capture_checked(
 		game,
-		"46-mobile-tutorial-complete.png" if mobile else "26-desktop-tutorial-complete.png",
+		"26-desktop-tutorial-complete.png",
 		game.RunState.COMBAT,
 		["CombatView", "TutorialCoachLayer", "TutorialCompletionSummary"],
 		game.TutorialStep.COMPLETE
 	)
 
 
-func _capture_core_flow(game, mobile: bool) -> bool:
+func _capture_release_flow(game) -> bool:
+	game._reset_run()
+	game.formal_run_active = true
+	game.current_layer = 2
+	game._save_run_now()
+	game.show_start_menu()
+	if !(await _capture_checked(game, "40-desktop-menu-resume.png", game.RunState.MENU, ["StartMenuResume", "StartMenuSettings"])):
+		return false
+	if !_expect(game.select_start_menu_command("settings"), "settings should open from the start menu"):
+		return false
+	if !(await _capture_checked(game, "41-desktop-settings.png", game.RunState.MENU, ["SettingsView", "SettingsSfxToggle", "SettingsAnimationSpeed", "SettingsReducedFlash"])):
+		return false
+	game._close_settings()
+	if !_expect(game.select_start_menu_command("resume"), "resume should load the capture run"):
+		return false
+	game._open_run_menu()
+	if !(await _capture_checked(game, "42-desktop-run-menu.png", game.RunState.MAP, ["RunMenuPanel", "RunMenuSaveReturn", "RunMenuAbandon"])):
+		return false
+	game._close_run_menu()
+	var report_cases := [
+		{"file": "43-desktop-report-victory.png", "victory": true, "tags": {"mq2": {"positive": 2, "errors": 0}}, "correct": 4, "total": 4, "weak": 40, "repair": 50, "review": []},
+		{"file": "44-desktop-report-failure.png", "victory": false, "tags": {"i2c": {"positive": 0, "errors": 2}}, "correct": 1, "total": 3, "weak": 8, "repair": 30, "review": ["mq2_warmup"]},
+		{"file": "45-desktop-report-mixed.png", "victory": true, "tags": {"adc": {"positive": 1, "errors": 0}, "filter": {"positive": 2, "errors": 1}}, "correct": 3, "total": 5, "weak": 24, "repair": 48, "review": ["adc_spike"]}
+	]
+	for raw_case in report_cases:
+		var report_case := raw_case as Dictionary
+		game.knowledge_stats = {
+			"tags": report_case.get("tags", {}),
+			"questionCorrect": report_case.get("correct", 0),
+			"questionTotal": report_case.get("total", 0),
+			"weaknessRepair": report_case.get("weak", 0),
+			"totalRepair": report_case.get("repair", 0),
+			"reviewFaultIds": report_case.get("review", [])
+		}
+		game.victory = bool(report_case.get("victory", false))
+		game.completed = true
+		game.score = 92 if game.victory else 38
+		game.state = game.RunState.RESULT
+		game._render_state()
+		var required_nodes := ["RunResultHeading", "RunResultMetrics", "RunLearningSummary"]
+		if !(report_case.get("review", []) as Array).is_empty():
+			required_nodes.append("ResultReviewButton")
+		if !(await _capture_checked(game, str(report_case.get("file", "")), game.RunState.RESULT, required_nodes)):
+			return false
+	return true
+
+
+func _capture_core_flow(game) -> bool:
 	game._reset_run()
 	game._render_state()
 	if !(await _capture_checked(
 		game,
-		"21-mobile-map.png" if mobile else "01-desktop-map.png",
+		"01-desktop-map.png",
 		game.RunState.MAP,
 		["MapView", "MapRoute", "MapEnterButton"]
 	)):
 		return false
+	game.current_layer = 6
+	game.map_energy_overlay.call("set_layer_immediate", 6)
+	game._render_state()
+	if !(await _capture_checked(
+		game,
+		"01a-desktop-map-charged-six.png",
+		game.RunState.MAP,
+		["MapView", "MapEnergyOverlay", "MapStep07"]
+	)):
+		return false
+	game.map_energy_overlay.call("set_layer_immediate", 0)
+	game.current_layer = 1
+	var original_motion_scale: float = game.motion_duration_scale
+	game.motion_duration_scale = 2.0
+	game._render_state()
+	game._animate_map_charge_entry(1)
+	await create_timer(0.28).timeout
+	await process_frame
+	if !_expect(bool(game.map_charge_snapshot().get("active", false)), "mid-charge capture should occur while the floor pulse is moving"):
+		return false
+	if !_capture_image("01b-desktop-map-charge-pulse.png"):
+		return false
+	await create_timer(0.65).timeout
+	game.motion_duration_scale = original_motion_scale
+	game.current_layer = 0
+	game.map_energy_overlay.call("set_layer_immediate", 0)
+	game._render_state()
 
 	if !_expect(game.choose_node(0), "normal combat capture should enter route node 1"):
 		return false
 	game._render_state()
 	if !(await _capture_checked(
 		game,
-		"22-mobile-combat.png" if mobile else "02-desktop-combat.png",
+		"02-desktop-combat.png",
 		game.RunState.COMBAT,
 		["CombatView", "FaultIntentRow", "EngineeringChainStrip", "HandRow", "EndTurnButton"]
 	)):
 		return false
 
-	game.encounter_evidence_tags = {"smoke": true, "adc": true}
+	game.encounter_evidence_tags.clear()
+	for raw_group in game.current_encounter.get("evidenceGroups", []) as Array:
+		var group := raw_group as Array
+		if !group.is_empty():
+			game.encounter_evidence_tags[str(group[0])] = true
 	game.repair_progress = game.repair_target
 	game._finish_encounter()
 	game._render_state()
@@ -205,30 +328,35 @@ func _capture_core_flow(game, mobile: bool) -> bool:
 		return false
 	if !(await _capture_checked(
 		game,
-		"23-mobile-reward.png" if mobile else "03-desktop-reward.png",
+		"03-desktop-reward.png",
 		game.RunState.REWARD,
 		["ChoiceView", "RewardCards", "RewardSkipButton"]
 	)):
 		return false
 
-	game._open_shop()
-	game._render_state()
-	if !(await _capture_checked(
-		game,
-		"24-mobile-shop.png" if mobile else "04-desktop-shop.png",
-		game.RunState.SHOP,
-		["ChoiceView", "ChoiceList"]
-	)):
-		return false
-
+	game.current_node = {"type": "service", "label": "工程整备室"}
+	game.current_layer = 9
 	game.state = game.RunState.REST
 	game._render_state()
 	if !(await _capture_checked(
 		game,
-		"25-mobile-rest.png" if mobile else "05-desktop-rest.png",
+		"04-desktop-service-room.png",
 		game.RunState.REST,
 		["ChoiceView", "ServiceBench", "ChoiceList"]
 	)):
+		return false
+
+	if !_expect(game.choose_service("add"), "service capture should open card supply selection"):
+		return false
+	game._render_state()
+	if !(await _capture_checked(
+		game,
+		"05-desktop-service-card-selection.png",
+		game.RunState.REST,
+		["CardSelectionModal", "CardSelectionOptions"]
+	)):
+		return false
+	if !_expect(game.choose_pending_card(0), "service capture should resolve the selected card"):
 		return false
 
 	game.current_node = {"type": "checkpoint_sensor", "contentId": "sensor_checkpoint"}
@@ -236,7 +364,7 @@ func _capture_core_flow(game, mobile: bool) -> bool:
 	game._render_state()
 	if !(await _capture_checked(
 		game,
-		"26-mobile-checkpoint-sensor.png" if mobile else "06-desktop-checkpoint-sensor.png",
+		"06-desktop-checkpoint-sensor.png",
 		game.RunState.COMBAT,
 		["CombatView", "EncounterArena", "HandRow"]
 	)):
@@ -247,7 +375,7 @@ func _capture_core_flow(game, mobile: bool) -> bool:
 	game._render_state()
 	if !(await _capture_checked(
 		game,
-		"27-mobile-checkpoint-trust.png" if mobile else "07-desktop-checkpoint-trust.png",
+		"07-desktop-checkpoint-trust.png",
 		game.RunState.COMBAT,
 		["CombatView", "EncounterArena", "HandRow"]
 	)):
@@ -258,33 +386,35 @@ func _capture_core_flow(game, mobile: bool) -> bool:
 	game._render_state()
 	if !(await _capture_checked(
 		game,
-		"28-mobile-boss-phase-1.png" if mobile else "08-desktop-boss-phase-1.png",
+		"08-desktop-boss-phase-1.png",
 		game.RunState.COMBAT,
-		["CombatView", "EncounterArena", "EndTurnButton"]
+		["CombatView", "EncounterArena", "EndTurnButton", "BossPhaseOverlay"]
 	)):
 		return false
 	game.boss_phase = 1
 	game._apply_boss_phase()
+	game._announce_boss_phase()
 	game._render_state()
 	if !_expect(game.boss_phase == 1, "Boss phase 2 capture should retain phase index 1"):
 		return false
 	if !(await _capture_checked(
 		game,
-		"29-mobile-boss-phase-2.png" if mobile else "09-desktop-boss-phase-2.png",
+		"09-desktop-boss-phase-2.png",
 		game.RunState.COMBAT,
-		["CombatView", "EncounterArena", "EndTurnButton"]
+		["CombatView", "EncounterArena", "EndTurnButton", "BossPhaseOverlay"]
 	)):
 		return false
 	game.boss_phase = 2
 	game._apply_boss_phase()
+	game._announce_boss_phase()
 	game._render_state()
 	if !_expect(game.boss_phase == 2, "Boss phase 3 capture should retain phase index 2"):
 		return false
 	if !(await _capture_checked(
 		game,
-		"30-mobile-boss-phase-3.png" if mobile else "10-desktop-boss-phase-3.png",
+		"10-desktop-boss-phase-3.png",
 		game.RunState.COMBAT,
-		["CombatView", "EncounterArena", "EndTurnButton"]
+		["CombatView", "EncounterArena", "EndTurnButton", "BossPhaseOverlay"]
 	)):
 		return false
 
@@ -294,7 +424,7 @@ func _capture_core_flow(game, mobile: bool) -> bool:
 	game._render_state()
 	if !(await _capture_checked(
 		game,
-		"31-mobile-result.png" if mobile else "11-desktop-result.png",
+		"11-desktop-result.png",
 		game.RunState.RESULT,
 		["ResultView", "RunResultHeading", "RestartButton"]
 	)):
@@ -309,7 +439,7 @@ func _capture_core_flow(game, mobile: bool) -> bool:
 	game._render_state()
 	if !(await _capture_checked(
 		game,
-		"35-mobile-event.png" if mobile else "15-desktop-event.png",
+		"15-desktop-event.png",
 		game.RunState.EVENT,
 		["ChoiceView", "QuestionEventFrame", "QuestionPrompt", "QuestionInteraction"]
 	)):
@@ -323,7 +453,7 @@ func _capture_core_flow(game, mobile: bool) -> bool:
 		return false
 	if !(await _capture_checked(
 		game,
-		"36-mobile-component.png" if mobile else "16-desktop-component.png",
+		"16-desktop-component.png",
 		game.RunState.COMPONENT,
 		["ChoiceView", "ChoiceList"]
 	)):
@@ -336,7 +466,7 @@ func _capture_core_flow(game, mobile: bool) -> bool:
 	game._render_state()
 	if !(await _capture_checked(
 		game,
-		"37-mobile-service-node-11.png" if mobile else "17-desktop-service-node-11.png",
+		"17-desktop-service-node-11.png",
 		game.RunState.REST,
 		["ChoiceView", "ServiceBench", "ChoiceList"]
 	)):
@@ -349,13 +479,13 @@ func _capture_core_flow(game, mobile: bool) -> bool:
 	game._render_state()
 	return await _capture_checked(
 		game,
-		"38-mobile-reward-fallback.png" if mobile else "18-desktop-reward-fallback.png",
+		"18-desktop-reward-fallback.png",
 		game.RunState.REWARD,
 		["ChoiceView", "RewardSkipButton"]
 	)
 
 
-func _capture_combat_depth(game, mobile: bool) -> bool:
+func _capture_combat_depth(game) -> bool:
 	game._reset_run()
 	if !_expect(game.choose_node(0), "reroute capture should enter route node 1"):
 		return false
@@ -366,7 +496,7 @@ func _capture_combat_depth(game, mobile: bool) -> bool:
 		return false
 	if !(await _capture_checked(
 		game,
-		"47-mobile-reroute-selection.png" if mobile else "27-desktop-reroute-selection.png",
+		"27-desktop-reroute-selection.png",
 		game.RunState.COMBAT,
 		["CombatView", "RerouteButton", "RerouteCancelButton", "HandRow"]
 	)):
@@ -389,9 +519,9 @@ func _capture_combat_depth(game, mobile: bool) -> bool:
 		return false
 	if !(await _capture_checked(
 		game,
-		"48-mobile-fault-triggered.png" if mobile else "28-desktop-fault-triggered.png",
+		"28-desktop-fault-triggered.png",
 		game.RunState.COMBAT,
-		["CombatView", "FaultIntentRow", "FaultRuleRow", "FaultCounterRow", "FaultRuleState"]
+		["CombatView", "FaultIntentRow", "FaultRuleRow", "FaultCounterRow", "FaultRuleState", "CombatFeedbackBanner"]
 	)):
 		return false
 
@@ -408,13 +538,137 @@ func _capture_combat_depth(game, mobile: bool) -> bool:
 		return false
 	return await _capture_checked(
 		game,
-		"49-mobile-fault-suppressed.png" if mobile else "29-desktop-fault-suppressed.png",
+		"29-desktop-fault-suppressed.png",
 		game.RunState.COMBAT,
-		["CombatView", "FaultIntentRow", "FaultRuleRow", "FaultCounterRow", "FaultRuleState"]
+		["CombatView", "FaultIntentRow", "FaultRuleRow", "FaultCounterRow", "FaultRuleState", "CombatFeedbackBanner"]
 	)
 
 
-func _capture_question_events(game, mobile: bool) -> bool:
+func _capture_encounter_gallery(game) -> bool:
+	var encounters := [
+		{"id": "mq2_warmup", "tier": "ordinary", "filename": "60-desktop-fault-mq2.png"},
+		{"id": "bh1750_stale", "tier": "ordinary", "filename": "61-desktop-fault-bh1750.png"},
+		{"id": "adc_spike", "tier": "ordinary", "filename": "62-desktop-fault-adc.png"},
+		{"id": "lcd_blocking", "tier": "ordinary", "filename": "63-desktop-fault-lcd.png"},
+		{"id": "alarm_jitter", "tier": "ordinary", "filename": "64-desktop-fault-alarm.png"},
+		{"id": "i2c_congestion", "tier": "elite", "filename": "65-desktop-fault-i2c.png"},
+		{"id": "mq2_baseline_drift", "tier": "ordinary", "filename": "70-desktop-fault-mq2-baseline.png"},
+		{"id": "bh1750_early_read", "tier": "ordinary", "filename": "71-desktop-fault-bh1750-early.png"},
+		{"id": "hdc1080_conversion_wait", "tier": "ordinary", "filename": "72-desktop-fault-hdc1080-wait.png"},
+		{"id": "i2c_address_collision", "tier": "ordinary", "filename": "73-desktop-fault-address-collision.png"},
+		{"id": "uart_frame_overrun", "tier": "ordinary", "filename": "74-desktop-fault-uart-overrun.png"},
+		{"id": "multi_sensor_race", "tier": "elite", "filename": "75-desktop-fault-sensor-race.png"},
+		{"id": "display_bus_deadlock", "tier": "elite", "filename": "76-desktop-fault-display-deadlock.png"},
+	]
+	for raw_encounter in encounters:
+		var encounter := raw_encounter as Dictionary
+		var encounter_id := str(encounter.get("id", ""))
+		var tier := str(encounter.get("tier", "ordinary"))
+		game._reset_run()
+		game.current_node = {"type": tier, "contentId": encounter_id}
+		game._start_encounter(encounter_id, tier)
+		game._render_state()
+		if !(await _capture_checked(
+			game,
+			str(encounter.get("filename", "")),
+			game.RunState.COMBAT,
+			["CombatView", "DeviceTelemetryVisual", "EvidenceSignalVisual", "FaultCoreVisual"]
+		)):
+			return false
+
+	game._reset_run()
+	game.relics = ["trace_probe"]
+	game._activate_relic("trace_probe")
+	game.current_node = {"type": "ordinary", "contentId": "mq2_warmup"}
+	game._start_encounter("mq2_warmup", "ordinary")
+	game.hand = [game._card_copy("logic_probe")]
+	game.processing_points = 3
+	if !_expect(game.play_card(0), "component capture should play its diagnosis card"):
+		return false
+	await process_frame
+	for _wait_index in range(360):
+		if !game.pending_card_selection.is_empty():
+			game.choose_pending_card(0)
+		if !game._card_actions_pending():
+			break
+		await process_frame
+	if !_expect(game.block == 5, "component capture should apply trace-probe block"):
+		return false
+	var component_feedback_found := false
+	for raw_event in game.combat_feedback_snapshot():
+		if str((raw_event as Dictionary).get("kind", "")) == "component":
+			component_feedback_found = true
+	if !_expect(component_feedback_found, "component capture should record component feedback"):
+		return false
+	game._render_state()
+	game.clear_combat_feedback_history()
+	game._emit_component_feedback("总线追踪探头", "首张诊断牌：获得 5 防护")
+	for _fade_frame in range(10):
+		await process_frame
+	if !_expect(game.combat_feedback_banner.is_visible_in_tree(), "component capture should render its feedback banner"):
+		return false
+	if !_capture_image("77-desktop-component-trigger.png"):
+		return false
+
+	game._reset_run()
+	game.current_node = {"type": "ordinary", "contentId": "adc_spike"}
+	game._start_encounter("adc_spike", "ordinary")
+	var condition_cases := [
+		{"ratio": 0.0, "condition": "unstable", "filename": "66-desktop-fault-condition-unstable.png"},
+		{"ratio": 0.40, "condition": "isolated", "filename": "67-desktop-fault-condition-isolated.png"},
+		{"ratio": 0.72, "condition": "stabilizing", "filename": "68-desktop-fault-condition-stabilizing.png"},
+		{"ratio": 1.0, "condition": "restored", "filename": "69-desktop-fault-condition-restored.png"}
+	]
+	for raw_case in condition_cases:
+		var condition_case := raw_case as Dictionary
+		game.repair_progress = int(round(float(game.repair_target) * float(condition_case.get("ratio", 0.0))))
+		game._render_state()
+		var fault_visual = game.find_child("FaultCoreVisual", true, false)
+		if !_expect(fault_visual != null and fault_visual.fault_condition() == str(condition_case.get("condition", "")), "%s capture should bind the expected repair condition" % condition_case.get("condition", "")):
+			return false
+		if !(await _capture_checked(
+			game,
+			str(condition_case.get("filename", "")),
+			game.RunState.COMBAT,
+			["CombatView", "DeviceTelemetryVisual", "EvidenceSignalVisual", "FaultCoreVisual"]
+		)):
+			return false
+	return true
+
+
+func _capture_boss_gate_gallery(game) -> bool:
+	var gates := [
+		{"id": "two_sources", "phase": 0},
+		{"id": "three_sources", "phase": 0},
+		{"id": "trusted_and_filter", "phase": 1},
+		{"id": "trusted_and_calibration", "phase": 1},
+		{"id": "two_output_types", "phase": 2},
+		{"id": "acceptance_output", "phase": 2}
+	]
+	for raw_gate in gates:
+		var gate := raw_gate as Dictionary
+		var gate_id := str(gate.get("id", ""))
+		if !_expect(game.start_lab_scenario({
+			"id": "capture_%s" % gate_id,
+			"kind": "boss_gate",
+			"contentId": "warehouse_acceptance",
+			"tier": "boss",
+			"phase": int(gate.get("phase", 0)),
+			"gateId": gate_id
+		}, "coverage"), "Boss gate capture should launch %s" % gate_id):
+			return false
+		game._render_state()
+		if !(await _capture_checked(
+			game,
+			"boss-gate-%s.png" % gate_id,
+			game.RunState.COMBAT,
+			["CombatView", "GateLabel", "FaultCoreVisual"]
+		)):
+			return false
+	return true
+
+
+func _capture_question_events(game) -> bool:
 	for raw_case in QUESTION_CAPTURE_CASES:
 		var capture_case := raw_case as Dictionary
 		var event_id := str(capture_case.get("event_id", ""))
@@ -444,7 +698,7 @@ func _capture_question_events(game, mobile: bool) -> bool:
 			waveform_valid = waveform_valid or (fallback != null and !fallback.text.strip_edges().is_empty())
 			if !_expect(waveform_valid, "waveform capture should expose a nonblank plot or fallback"):
 				return false
-		var filename := str(capture_case.get("mobile" if mobile else "desktop", ""))
+		var filename := str(capture_case.get("desktop", ""))
 		if !(await _capture_checked(
 			game,
 			filename,
@@ -466,7 +720,7 @@ func _capture_question_events(game, mobile: bool) -> bool:
 		return false
 	if !(await _capture_checked(
 		game,
-		"56-mobile-event-correct-reward.png" if mobile else "36-desktop-event-correct-reward.png",
+		"36-desktop-event-correct-reward.png",
 		game.RunState.EVENT,
 		["ChoiceView", "QuestionExplanation", "QuestionConsequence"]
 	)):
@@ -486,17 +740,17 @@ func _capture_question_events(game, mobile: bool) -> bool:
 		return false
 	return await _capture_checked(
 		game,
-		"57-mobile-event-wrong-penalty.png" if mobile else "37-desktop-event-wrong-penalty.png",
+		"37-desktop-event-wrong-penalty.png",
 		game.RunState.EVENT,
 		["ChoiceView", "QuestionExplanation", "QuestionConsequence", "QuestionContinue"]
 	)
 
 
-func _capture_node_lab(game, mobile: bool) -> bool:
+func _capture_node_lab(game) -> bool:
 	game._enter_node_lab()
 	await _settle()
-	var legacy_catalog_filename := "32-mobile-node-lab.png" if mobile else "12-desktop-node-lab.png"
-	var event_catalog_filename := "58-mobile-node-lab-event-catalog.png" if mobile else "38-desktop-node-lab-event-catalog.png"
+	var legacy_catalog_filename := "12-desktop-node-lab.png"
+	var event_catalog_filename := "38-desktop-node-lab-event-catalog.png"
 	var required_catalog_ids := [
 		"basic_mq2_warmup",
 		"basic_signal_order",
@@ -556,7 +810,7 @@ func _capture_node_lab(game, mobile: bool) -> bool:
 		return false
 	if !(await _capture_checked(
 		game,
-		"33-mobile-node-lab-event.png" if mobile else "13-desktop-node-lab-event.png",
+		"13-desktop-node-lab-event.png",
 		game.RunState.EVENT,
 		["NodeLabToolbar", "NodeLabReturn", "QuestionEventFrame", "QuestionPrompt"]
 	)):
@@ -570,11 +824,32 @@ func _capture_node_lab(game, mobile: bool) -> bool:
 		"tier": "ordinary"
 	}, "coverage"), "retained Node Lab combat capture should launch its enemy"):
 		return false
-	return await _capture_checked(
+	if !(await _capture_checked(
 		game,
-		"34-mobile-node-lab-combat.png" if mobile else "14-desktop-node-lab-combat.png",
+		"14-desktop-node-lab-combat.png",
 		game.RunState.COMBAT,
 		["NodeLabToolbar", "NodeLabReturn", "CombatView", "EncounterArena", "HandRow"]
+	)):
+		return false
+	if !_expect(game.lab_add_card_to_hand("logic_probe"), "Node Lab debug capture should inject a selected card"):
+		return false
+	if !_expect(game.lab_set_stability(23), "Node Lab debug capture should set stability"):
+		return false
+	if !_expect(game.lab_set_fault_remaining(6), "Node Lab debug capture should set remaining fault value"):
+		return false
+	game.node_lab_overlay.show_debug_panel()
+	game.node_lab_overlay.refresh_debug_panel()
+	return await _capture_checked(
+		game,
+		"39-desktop-node-lab-debug.png",
+		game.RunState.COMBAT,
+		[
+			"NodeLabDebugPanel",
+			"NodeLabCardSelector",
+			"NodeLabStabilityInput",
+			"NodeLabFaultRemainingInput",
+			"NodeLabHandList"
+		]
 	)
 
 
@@ -622,13 +897,13 @@ func _capture_image(filename: String) -> bool:
 		return false
 	if !_expect(_image_has_variation(image), "%s is blank or visually uniform" % filename):
 		return false
-	var result := image.save_png(OUT_DIR.path_join(filename))
+	var result := image.save_png(out_dir.path_join(filename))
 	return _expect(result == OK, "could not save capture: %s" % filename)
 
 
 func _expect_capture_files_differ(filename: String, reference_filename: String) -> bool:
-	var capture_path := OUT_DIR.path_join(filename)
-	var reference_path := OUT_DIR.path_join(reference_filename)
+	var capture_path := out_dir.path_join(filename)
+	var reference_path := out_dir.path_join(reference_filename)
 	if !_expect(FileAccess.file_exists(capture_path), "capture comparison is missing %s" % filename):
 		return false
 	if !_expect(FileAccess.file_exists(reference_path), "capture comparison is missing %s" % reference_filename):
@@ -672,8 +947,11 @@ func _expect(condition: bool, message: String) -> bool:
 
 
 func _finish_capture_run(game) -> void:
+	for path in [CAPTURE_SAVE_PATH, CAPTURE_SETTINGS_PATH]:
+		if FileAccess.file_exists(path):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 	game.queue_free()
 	await process_frame
 	if !capture_failed:
-		print("Ch09 graybox captures written to: " + OUT_DIR)
+		print("Ch09 graybox captures written to: " + out_dir)
 	quit(1 if capture_failed else 0)

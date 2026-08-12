@@ -27,7 +27,17 @@ func _run() -> void:
 	_assert(runtime.current_session().is_empty(), "runtime session should be empty before INIT")
 	await process_frame
 	await process_frame
-	_assert(game.state == game.RunState.MAP, "local preview INIT should start a run")
+	_assert(game.state == game.RunState.MENU, "local preview INIT should open the start menu")
+	var paused_layer: int = int(game.current_layer)
+	runtime.bridge.receive_payload({"type": "DGB_GODOT_PAUSE", "version": 1})
+	_assert(game.host_paused, "host PAUSE should set the explicit Ch09 pause state")
+	_assert(paused, "host PAUSE should pause the scene tree")
+	_assert(game.host_pause_overlay != null and game.host_pause_overlay.visible, "host PAUSE should show a blocking overlay")
+	_assert(!game.choose_node(0), "map selection should be rejected while the host is paused")
+	_assert(game.current_layer == paused_layer, "paused map input should not mutate run progress")
+	runtime.bridge.receive_payload({"type": "DGB_GODOT_RESUME", "version": 1})
+	_assert(!game.host_paused and !paused, "host RESUME should restore gameplay processing")
+	_assert(game.host_pause_overlay != null and !game.host_pause_overlay.visible, "host RESUME should hide the blocking overlay")
 	game.state = game.RunState.WAITING
 	game.deck.clear()
 	_assert(game._start_standalone_preview(true), "top-level Web preview should start with default content")
@@ -63,11 +73,30 @@ func _run() -> void:
 		"data": {
 			"gameId": "ch09-env-spire",
 			"runMapId": "mvp_b",
-			"maxStability": 80
+			"maxStability": 80,
+			"questions": [{
+				"id": "basic_mq2_warmup",
+				"name": "宿主注入题目",
+				"questionType": "diagnosis",
+				"knowledgeTags": ["runtime", "injected"],
+				"prompt": "宿主注入的问题是否覆盖本地预览题目？",
+				"options": [
+					{"id": "yes", "label": "是"},
+					{"id": "no", "label": "否"}
+				],
+				"correctAnswer": "yes",
+				"explanation": "课程宿主是发布环境中的教学内容权威来源。"
+			}]
 		}
 	})
 	_assert(game.run_map_id == "mvp_b", "host should inject map id")
-	_assert(game.max_stability == 80 and game.stability == 80, "host should inject max stability")
+	_assert(game.max_stability == 80 and game.state == game.RunState.MENU, "host should inject max stability and return to the menu")
+	_assert(game.select_start_menu_command("run"), "host-configured menu should start the formal run")
+	_assert(game.stability == 80, "formal run should initialize with the host stability limit")
+	_assert(
+		str((game.event_defs.get("basic_mq2_warmup", {}) as Dictionary).get("prompt", "")) == "宿主注入的问题是否覆盖本地预览题目？",
+		"host questions should override the local preview copy by stable question id"
+	)
 	game.current_layer = 12
 	game.visited_nodes.resize(12)
 	game.checkpoints_passed = 2

@@ -1,0 +1,13 @@
+DingTalk JinBuTi Font Notice
+
+Font file: DingTalkJinBuTi.ttf
+Publisher: DingTalk
+Official source: https://page.dingtalk.com/wow/dingtalk/act/zsdd
+Authorization statement shown by the publisher: "永久免费、授权商用"
+Source checked: 2026-08-12
+
+This notice records the authorization statement published on the official
+DingTalk website. The downloaded font package did not include a separate,
+detailed license text in this repository. Do not redistribute or sell the
+font as a standalone product; review the publisher's current terms before
+using the font outside this application bundle.

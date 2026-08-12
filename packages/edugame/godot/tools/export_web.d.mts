@@ -21,6 +21,13 @@ export interface GodotSpawnSpec {
 	options: { cwd: string; stdio: 'inherit'; shell: false };
 }
 
+export interface ConfiguredGodotGame {
+	gameId: string;
+	entryFiles: string[];
+}
+
+export function configuredGodotGames(): ConfiguredGodotGame[];
+export function defaultGodotBinary(options?: { platform?: string }): string;
 export function cleanWebExportDirectory(outputDir: string, allowedRoot: string): Promise<void>;
 export function finalizeWebExport(options: FinalizeWebExportOptions): Promise<ExportWebResult>;
 export function publishStagedWebExport(options: PublishStagedWebExportOptions): Promise<void>;

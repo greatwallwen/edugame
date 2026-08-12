@@ -17,11 +17,12 @@ func _run() -> void:
 
 	for seed in range(32):
 		game.rng.seed = seed
-		game._open_shop()
-		_assert(game.shop_cards.size() == 5, "shop seed %d should offer five cards" % seed)
+		game.current_layer = 9
+		var service_cards: Array = game._service_add_options()
+		_assert(service_cards.size() == 3, "service seed %d should offer three cards" % seed)
 		_assert(
-			_shop_has_missing_output(game, game.shop_cards),
-			"shop seed %d should offer a genuinely missing output type" % seed
+			_service_has_missing_output(game, service_cards),
+			"service seed %d should offer a genuinely missing output type" % seed
 		)
 
 	var original_defs: Dictionary = game.card_defs.duplicate(true)
@@ -61,7 +62,7 @@ func _run() -> void:
 	_finish()
 
 
-func _shop_has_missing_output(game, cards: Array) -> bool:
+func _service_has_missing_output(game, cards: Array) -> bool:
 	var existing_outputs: Dictionary = game._deck_output_types()
 	for raw_card in cards:
 		var tags: Array = (raw_card as Dictionary).get("tags", [])

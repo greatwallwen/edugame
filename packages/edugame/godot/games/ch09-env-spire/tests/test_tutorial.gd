@@ -18,12 +18,12 @@ func _run() -> void:
 	await process_frame
 
 	_assert(
-		game._select_initial_experience(false, false, 0) == "tutorial",
-		"missing completion should launch the tutorial"
+		game._select_initial_experience(false, false, 0) == "menu",
+		"missing completion should open the menu with a tutorial recommendation"
 	)
 	_assert(
-		game._select_initial_experience(false, false, game.TUTORIAL_VERSION) == "run",
-		"matching completion should launch the formal run"
+		game._select_initial_experience(false, false, game.TUTORIAL_VERSION) == "menu",
+		"matching completion should still open the menu"
 	)
 	_assert(
 		game._select_initial_experience(true, true, 0) == "node_lab",
@@ -48,12 +48,12 @@ func _run() -> void:
 
 	game._start_tutorial_briefing()
 	_assert(game.tutorial_step == game.TutorialStep.BRIEFING, "tutorial briefing should set the briefing step")
-	game.budget = 99
+	game.pending_service_energy_penalty = -2
 	game._on_runtime_reset()
 	_assert(game.tutorial_active, "runtime reset should keep tutorial mode active")
 	_assert(!game.formal_run_active, "runtime reset should not begin a formal attempt during tutorial")
 	_assert(game.state == game.RunState.WAITING, "runtime reset should return to the tutorial briefing")
-	_assert(game.budget == 99, "runtime reset should not reset formal resources during tutorial")
+	_assert(game.pending_service_energy_penalty == -2, "runtime reset should not reset formal resources during tutorial")
 
 	_dirty_tutorial_state(game)
 	_assert(game._skip_tutorial(TEST_RECORD_PATH), "skip should enter a formal run")
@@ -81,6 +81,11 @@ func _run() -> void:
 	game.card_defs["led_alarm"] = saved_led
 
 	_enter_practice(game)
+	_assert(
+		str(game.TutorialPresenter.coach_text(game.TutorialStep.READ_INTENT)).contains("敌人上方")
+		and str(game.TutorialPresenter.coach_text(game.TutorialStep.READ_INTENT)).contains("点击"),
+		"intent tutorial copy should direct players to click the floating enemy badge"
+	)
 	_assert(
 		game.tutorial_step == game.TutorialStep.READ_INTENT,
 		"practice should begin by reading intent"
@@ -130,11 +135,13 @@ func _run() -> void:
 	await process_frame
 	var completion_summary := game.find_child("TutorialCompletionSummary", true, false) as Label
 	var completion_button := game.find_child("TutorialCompleteButton", true, false) as Button
+	var completion_menu_button := game.find_child("TutorialMenuButton", true, false) as Button
 	_assert(completion_summary != null and completion_summary.is_visible_in_tree(), "completion should show the formal loop summary")
 	if completion_summary != null:
 		_assert(completion_summary.text.contains("读取意图 -> 消耗处理点 -> 建立证据 -> 修复故障 -> 改善牌组"), "completion summary should explain the core loop")
 		_assert(completion_summary.text.contains("战斗奖励") and completion_summary.text.contains("功能节点") and completion_summary.text.contains("LED"), "completion summary should explain rewards, utility nodes, and the practice-only LED card")
 	_assert(completion_button != null and completion_button.is_visible_in_tree() and !completion_button.disabled, "completion should expose an enabled formal-run command")
+	_assert(completion_menu_button != null and completion_menu_button.is_visible_in_tree() and !completion_menu_button.disabled, "completion should expose an enabled menu command")
 	if completion_button != null:
 		completion_button.emit_signal("pressed")
 		await process_frame
@@ -155,7 +162,7 @@ func _dirty_tutorial_state(game) -> void:
 	game.tutorial_active = true
 	game.tutorial_step = game.TutorialStep.PLAY_CONVERT
 	game.stability = 13
-	game.budget = 999
+	game.pending_service_energy_penalty = -2
 	game.current_layer = 7
 	game.visited_nodes = [{"type": "tutorial"}]
 	game.deck = [game._card_copy("led_alarm")]
@@ -169,7 +176,7 @@ func _assert_clean_formal_run(game, route: String) -> void:
 	_assert(game.state == game.RunState.MAP, "%s should enter the formal map" % route)
 	_assert(game.current_layer == 0 and game.visited_nodes.is_empty(), "%s formal route should be untouched" % route)
 	_assert(game.stability == game.max_stability, "%s should restore formal stability" % route)
-	_assert(game.budget == 30, "%s should restore the formal budget" % route)
+	_assert(game.pending_service_energy_penalty == 0, "%s should clear queued service costs" % route)
 	_assert(game.deck.size() == game.STARTER_CARD_IDS.size(), "%s should rebuild the formal deck" % route)
 	_assert(game.debug_reports.is_empty(), "%s should clear tutorial reports" % route)
 

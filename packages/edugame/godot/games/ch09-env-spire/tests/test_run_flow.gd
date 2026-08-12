@@ -22,6 +22,9 @@ func _run() -> void:
 	game._reset_run()
 	_assert_boss_phase_contracts(game)
 	game._reset_run()
+	var first_layer := ((game.run_map.get("layers", []) as Array)[0] as Dictionary)
+	var first_choice := (first_layer.get("choices", []) as Array)[0] as Dictionary
+	first_choice["contentId"] = "mq2_warmup"
 
 	_assert(game.current_layer == 0 and game.state == game.RunState.MAP, "new run should begin before layer one")
 	var script_constants: Dictionary = game.get_script().get_script_constant_map()
@@ -92,7 +95,11 @@ func _run() -> void:
 
 	_assert(bool(game.choose_node(0)), "layer three ordinary fault should be selectable")
 	_assert(str(game.current_node.get("type", "")) == "ordinary", "layer three should be an ordinary fault")
-	game.encounter_evidence_tags = {"light": true, "i2c": true}
+	game.encounter_evidence_tags.clear()
+	for raw_group in game.current_encounter.get("evidenceGroups", []) as Array:
+		var group := raw_group as Array
+		if !group.is_empty():
+			game.encounter_evidence_tags[str(group[0])] = true
 	game.repair_progress = game.repair_target
 	game._finish_encounter()
 	_assert(game.state == game.RunState.REWARD, "layer three fault should grant a reward")
@@ -100,7 +107,8 @@ func _run() -> void:
 
 	_assert(bool(game.choose_node(0)), "layer four rest should be selectable")
 	_assert(game.state == game.RunState.REST, "layer four should open rest state")
-	_assert(bool(game.choose_service("upgrade")), "layer four upgrade should resolve")
+	_assert(bool(game.choose_service("upgrade")), "layer four upgrade should open a card selection")
+	_assert(bool(game.choose_pending_card(0)), "layer four upgrade should resolve after choosing a card")
 
 	_assert(bool(game.choose_node(0)), "layer five checkpoint should be selectable")
 	_assert(str(game.current_node.get("type", "")) == "checkpoint_sensor", "layer five should be sensor checkpoint")
@@ -137,12 +145,12 @@ func _run() -> void:
 
 		var component_ids: Array = game.relic_defs.keys()
 		component_ids.sort()
-		game.relics = component_ids.slice(0, 4)
+		game.relics = component_ids.slice(0, component_ids.size() - 1)
 		game._open_component_choice()
 		_assert(game.component_choices.size() == 2, "one remaining component should be paired with one fallback")
 		_assert(_array_has_id(game.component_choices, "upgrade_fallback"), "component shortage should offer a card upgrade fallback")
 
-	_assert_boss_shop_guarantee(game)
+	_assert_tradeoff_service_room(game)
 	game.current_layer = 10
 	game.state = game.RunState.MAP
 	_assert(bool(game.choose_node(0)), "layer eleven service should be selectable")
@@ -152,17 +160,12 @@ func _run() -> void:
 	_assert(game.stability > 20, "maintenance should restore stability")
 	_assert(game.state == game.RunState.MAP, "service should return to map")
 	game.state = game.RunState.REST
-	game.budget = 200
-	_assert(bool(game.choose_service("shop")), "service should open the parts shop")
-	_assert(game.state == game.RunState.SHOP and game.shop_cards.size() == 5, "shop should offer five non-starter cards")
-	var shop_deck_before: int = game.deck.size()
-	var shop_card_id := str((game.shop_cards[0] as Dictionary).get("id", ""))
-	_assert(bool(game.purchase_shop_card(shop_card_id)), "affordable shop card should be purchasable")
-	_assert(game.deck.size() == shop_deck_before + 1 and game.budget < 200, "purchase should spend budget and add a card")
-	_assert(bool(game.leave_shop()) and game.state == game.RunState.MAP, "leaving the shop should return to map")
+	_assert(bool(game.choose_service("skip")), "service should always allow a free skip")
+	_assert(game.state == game.RunState.MAP, "skipping service should return to map")
 
 	_assert(bool(game.choose_node(0)), "layer twelve boss should be selectable")
 	_assert(game.state == game.RunState.COMBAT and game.boss_phase == 0, "boss should begin at phase one")
+	game.boss_gate_ids.assign(["two_sources", "trusted_and_filter", "two_output_types"])
 	if !game.has_method("_boss_phase_requirements_met"):
 		_assert(false, "boss encounters should expose a phase gate evaluator")
 		game.queue_free()
@@ -225,7 +228,7 @@ func _assert_route_order(game) -> void:
 	var expected_types := [
 		"ordinary", "event", "ordinary", "service",
 		"checkpoint_sensor", "event", "ordinary", "checkpoint_trust",
-		"shop", "elite", "service", "boss"
+		"service", "elite", "service", "boss"
 	]
 	for raw_map in game.map_defs.values():
 		var map := raw_map as Dictionary
@@ -247,98 +250,62 @@ func _assert_route_order(game) -> void:
 				_assert(str(choice.get("contentId", "")) == "random_advanced", "node six should use the seeded advanced selector")
 
 
-func _assert_boss_shop_guarantee(game) -> void:
-	if (
-		!game.has_method("_boss_gap_card_id")
-		or !game.has_method("_missing_boss_stage_tags")
-		or !game.has_method("_guaranteed_boss_shop_card_id")
-	):
-		_assert(false, "late shops should expose Boss missing-link helpers")
-		return
-
+func _assert_tradeoff_service_room(game) -> void:
 	game._reset_run()
-	_assert(game._missing_boss_stage_tags() == ["output"], "starter deck should expose only the Boss output-diversity gap")
-	_assert(game._guaranteed_boss_shop_card_id() == "time_slice", "equal-price output cards should preserve the first exact catalog candidate")
-
-	game._reset_run()
-	game.deck = [game._card_copy("mq2_sample")]
-	_assert(!game._missing_boss_stage_tags().is_empty(), "one-source deck should expose Boss gaps")
-	game.budget = 35
-	game.current_layer = 8
-	game.state = game.RunState.MAP
-	_assert(game.choose_node(0), "node nine shop should be selectable")
-	_assert(game.current_layer == 9 and game.state == game.RunState.SHOP, "node nine should open its shop")
-	var guaranteed_id: String = game._guaranteed_boss_shop_card_id()
-	_assert(!guaranteed_id.is_empty(), "one-source deck should identify an exact Boss preparation card")
-	_assert(_array_has_id(game.shop_cards, guaranteed_id), "node nine shop should inject a missing-link card")
-	var guaranteed_price := 999
-	for raw_card in game.shop_cards:
-		var shop_card := raw_card as Dictionary
-		if str(shop_card.get("id", "")) == guaranteed_id:
-			guaranteed_price = int(shop_card.get("price", 999))
-	_assert(guaranteed_price <= game.budget, "guaranteed card should be affordable")
-
-	game._reset_run()
-	game.deck = [game._card_copy("mq2_sample")]
-	game.budget = 35
-	game.current_layer = 11
+	game.current_layer = 9
 	game.state = game.RunState.REST
-	_assert(game.choose_service("shop"), "node eleven service should open its shop")
-	guaranteed_id = game._guaranteed_boss_shop_card_id()
-	_assert(_array_has_id(game.shop_cards, guaranteed_id), "node eleven service shop should inject a missing-link card")
-	for raw_card in game.shop_cards:
-		var shop_card := raw_card as Dictionary
-		if str(shop_card.get("id", "")) == guaranteed_id:
-			_assert(int(shop_card.get("price", 999)) <= game.budget, "service-shop guarantee should also be affordable")
+	game.stability = 30
+	var maintenance_max_before: int = game.max_stability
+	_assert(game.choose_service("maintenance"), "maintenance tradeoff should resolve")
+	_assert(game.stability == 50 and game.max_stability == maintenance_max_before - 5, "maintenance should heal and reduce maximum stability by five")
 
 	game._reset_run()
-	game.deck = [
-		game._card_copy("uart_log"),
-		game._card_copy("lcd_display")
-	]
-	_assert(
-		game._boss_gap_card_id().is_empty(),
-		"early shops should not invent a report/control gap after two distinct output types"
-	)
+	game.current_layer = 9
+	game.state = game.RunState.REST
+	var deck_before: int = game.deck.size()
+	_assert(game.choose_service("add"), "card supply tradeoff should open a selection")
+	_assert(str(game.pending_card_selection.get("owner", "")) == "service", "service card selection should keep service ownership")
+	_assert((game.pending_card_selection.get("options", []) as Array).size() == 3, "card supply should offer three complete cards")
+	_assert(game.choose_pending_card(0), "service card supply should accept one card")
+	_assert(game.deck.size() == deck_before + 1 and game.pending_service_reroute_lock, "card supply should add the selected card and queue a first-turn reroute lock")
+	_assert(game.state == game.RunState.MAP, "service card selection should return to map")
+	game.current_node = {"type": "ordinary", "contentId": "mq2_warmup"}
+	game._start_encounter("mq2_warmup", "ordinary")
+	_assert(!game.reroute_available and !game.pending_service_reroute_lock, "card supply reroute cost should apply exactly once at the next encounter")
+	game._reset_turn_state(false)
+	_assert(game.reroute_available, "card supply reroute cost should expire after the opening turn")
 
 	game._reset_run()
-	game.deck = [game._card_copy("mq2_sample")]
-	var early_gap_id: String = game._boss_gap_card_id()
-	_assert(early_gap_id == "lcd_display", "a deck without outputs should receive the first missing output type")
-	game.budget = 35
-	game.current_layer = 3
-	game.state = game.RunState.MAP
-	_assert(game.choose_node(0), "node four service should be selectable")
-	_assert(game.current_layer == 4 and game.state == game.RunState.REST, "node four should open service choices")
-	_assert(game.choose_service("shop"), "node four service should open its ordinary shop")
-	_assert(game.shop_cards.size() == 5, "early service shop should retain a five-card inventory")
-	var early_gap_card := game.shop_cards[0] as Dictionary
-	_assert(str(early_gap_card.get("id", "")) == early_gap_id, "early service shop should prepend the legacy gap candidate")
-	_assert(int(early_gap_card.get("price", -1)) == game._card_price(early_gap_card), "early gap candidate should retain its normal price")
-	_assert(int(early_gap_card.get("price", -1)) > game.budget, "early gap candidate should not receive the Boss preparation price cap")
-	for raw_card in game.shop_cards:
-		var shop_card := raw_card as Dictionary
-		_assert(int(shop_card.get("price", -1)) == game._card_price(shop_card), "early service shop should preserve ordinary pricing")
+	game.state = game.RunState.REST
+	var stability_before: int = game.stability
+	_assert(game.choose_service("upgrade"), "firmware tradeoff should open a selection")
+	var upgrade_options := game.pending_card_selection.get("options", []) as Array
+	var upgrade_index := int((upgrade_options[0] as Dictionary).get("_deckIndex", -1))
+	_assert(game.choose_pending_card(0), "firmware upgrade should accept one card")
+	_assert(upgrade_index >= 0 and bool((game.deck[upgrade_index] as Dictionary).get("upgraded", false)), "firmware upgrade should upgrade the selected card")
+	_assert(game.stability == stability_before - 8 and game.state == game.RunState.MAP, "firmware upgrade should cost 8 stability and return to map")
 
 	game._reset_run()
-	game.deck = [
-		game._card_copy("mq2_sample"),
-		game._card_copy("bh1750_read"),
-		game._card_copy("adc_convert"),
-		game._card_copy("i2c_transaction"),
-		game._card_copy("calibration_curve"),
-		game._card_copy("uart_log"),
-		game._card_copy("lcd_display")
-	]
-	_assert(
-		game._missing_boss_stage_tags().is_empty(),
-		"Boss shop coverage should accept calibration and any two distinct output types"
-	)
+	game.state = game.RunState.REST
+	deck_before = game.deck.size()
+	_assert(game.choose_service("remove"), "cable cleanup tradeoff should open a selection")
+	_assert(game.choose_pending_card(0), "cable cleanup should accept one card")
+	_assert(game.deck.size() == deck_before - 1, "cable cleanup should remove the selected card")
+	_assert(game.pending_service_energy_penalty == -1 and game.state == game.RunState.MAP, "cable cleanup should queue one less opening energy and return to map")
+	game.current_node = {"type": "ordinary", "contentId": "mq2_warmup"}
+	game._start_encounter("mq2_warmup", "ordinary")
+	_assert(game.processing_points == 2 and game.pending_service_energy_penalty == 0, "cable cleanup energy cost should apply exactly once at the next encounter")
+
 	game._reset_run()
+	game.state = game.RunState.REST
+	game.stability = 8
+	_assert(!game.choose_service("upgrade"), "unsafe firmware upgrades should be rejected")
+	_assert(game.stability == 8 and game.state == game.RunState.REST, "rejected service actions should not change run state")
 
 
 func _assert_boss_phase_contracts(game) -> void:
 	_start_boss_phase(game, 1)
+	game.boss_gate_ids[1] = "trusted_and_calibration"
 	game.raw_data = {"smoke": 1, "light": 1, "temp": 0, "humidity": 0}
 	game.hand = [
 		game._card_copy("adc_convert"),
@@ -352,6 +319,7 @@ func _assert_boss_phase_contracts(game) -> void:
 	_assert(game._boss_phase_requirements_met(), "phase two should accept trusted data plus calibration")
 
 	_start_boss_phase(game, 1)
+	game.boss_gate_ids[1] = "trusted_and_filter"
 	game.raw_data = {"smoke": 1, "light": 1, "temp": 0, "humidity": 0}
 	game.hand = [
 		game._card_copy("adc_convert"),
@@ -365,6 +333,7 @@ func _assert_boss_phase_contracts(game) -> void:
 	_assert(game._boss_phase_requirements_met(), "phase two should continue accepting trusted data plus filtering")
 
 	_start_boss_phase(game, 2)
+	game.boss_gate_ids[2] = "two_output_types"
 	game.trusted_data["smoke"] = 1
 	game.draw_pile.clear()
 	game.discard_pile.clear()
@@ -488,7 +457,6 @@ func _assert_question_event_resolution(game) -> void:
 
 	_force_event(game, "basic_mq2_warmup")
 	game.stability = 4
-	var budget_before_wrong: int = game.budget
 	var deck_before_wrong: int = game.deck.size()
 	_assert(!game.continue_event(), "event should not continue before an answer")
 	_assert(game.submit_event_answer("adc_resolution"), "wrong answer should lock")
@@ -496,20 +464,19 @@ func _assert_question_event_resolution(game) -> void:
 	_assert(!bool(game.event_result.get("correct", true)), "wrong answer should be recorded")
 	_assert(str(game.event_result.get("explanation", "")).length() > 0, "wrong answer should show explanation")
 	_assert(game.stability == 1, "wrong stability penalty should clamp at one")
-	_assert(game.budget == budget_before_wrong and game.deck.size() == deck_before_wrong, "wrong answer should apply only its declared penalty")
+	_assert(game.deck.size() == deck_before_wrong, "wrong answer should apply only its declared penalty")
 	_assert(game.continue_event() and game.state == game.RunState.MAP, "wrong explained result should continue to the map")
 
 	_force_event(game, "basic_mq2_warmup")
 	game.stability = game.max_stability
-	var budget_before_reward: int = game.budget
 	_assert(game.submit_event_answer("insufficient_warmup"), "correct option ID should lock")
 	_assert(bool(game.event_result.get("correct", false)), "correct answer should be recorded")
 	_assert(bool(game.event_result.get("rewardPending", false)), "correct answer should expose a pending reward")
 	_assert((game.event_result.get("rewardChoices", []) as Array).size() == 2, "correct answer should expose two rewards")
-	_assert(game.budget == budget_before_reward, "correct answer should not apply a reward before selection")
+	_assert(game.revealed_nodes.is_empty(), "correct answer should not apply a reward before selection")
 	_assert(!game.continue_event(), "correct event should not continue before reward selection")
 	_assert(game.choose_event_reward(0), "one correct-answer reward should be selectable")
-	_assert(game.budget == budget_before_reward + 20, "selected budget reward should apply once")
+	_assert(game.revealed_nodes == [3, 4], "selected route preview reward should apply once")
 	_assert(!game.choose_event_reward(1), "a second reward should be rejected")
 	_assert(game.continue_event() and game.state == game.RunState.MAP, "rewarded event should continue after explanation")
 
@@ -566,10 +533,10 @@ func _assert_question_event_resolution(game) -> void:
 	_assert(game.continue_event(), "chain reward event should continue explicitly")
 
 	_force_event(game, "basic_i2c_pullup")
-	game.budget = 5
-	_assert(game.submit_event_answer("change_sample_period"), "wrong budget answer should resolve")
-	_assert(game.budget == 0, "budget penalty should clamp at zero")
-	_assert(game.continue_event(), "budget penalty should not block continuation")
+	var pullup_deck_before: int = game.deck.size()
+	_assert(game.submit_event_answer("change_sample_period"), "wrong pull-up answer should resolve")
+	_assert(game.deck.size() == pullup_deck_before + 1 and _array_has_id(game.deck, "i2c_nack"), "pull-up mistake should add one I2C NACK")
+	_assert(game.continue_event(), "pull-up penalty should not block continuation")
 
 	_force_event(game, "basic_i2c_result")
 	var negative_count_before: int = game.deck.size()
@@ -595,7 +562,6 @@ func _assert_question_event_resolution(game) -> void:
 	_assert_failed_question_rewards_preserve_choices(game)
 
 	var malformed_stability: int = game.stability
-	var malformed_budget: int = game.budget
 	var malformed_deck_size: int = game.deck.size()
 	game.current_event = {
 		"id": "malformed_event",
@@ -612,7 +578,7 @@ func _assert_question_event_resolution(game) -> void:
 	game.pending_card_selection.clear()
 	_assert(game.submit_event_answer("missing"), "malformed event should resolve safely")
 	_assert(str(game.event_result.get("explanation", "")).contains("事件数据无效"), "malformed event should expose a visible data error")
-	_assert(game.stability == malformed_stability and game.budget == malformed_budget and game.deck.size() == malformed_deck_size, "malformed event should apply no consequence")
+	_assert(game.stability == malformed_stability and game.deck.size() == malformed_deck_size, "malformed event should apply no consequence")
 	_assert(game.continue_event() and game.state == game.RunState.MAP, "malformed event should safely continue to map")
 
 

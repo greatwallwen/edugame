@@ -75,6 +75,26 @@ func _run() -> void:
 	_assert(game.play_card(0), "power card with the next stage should play")
 	_assert(game.chain_count == 3, "power card with the next valid stage should advance the chain")
 
+	game.chain_count = 2
+	game.last_stage = "process"
+	game.hand = [game._card_copy("i2c_address_table")]
+	game.processing_points = 3
+	_assert(game.play_card(0), "out-of-order power card should play")
+	_assert(game.chain_count == 2 and game.last_stage == "process", "out-of-order power card should preserve chain progress")
+
+	game.chain_count = 2
+	game.last_stage = "process"
+	game.hand = [game._card_copy("bus_reset")]
+	game.processing_points = 3
+	_assert(game.play_card(0), "out-of-order defense card should play")
+	_assert(game.chain_count == 2 and game.last_stage == "process", "out-of-order defense card should preserve chain progress")
+
+	game.chain_count = 2
+	game.last_stage = "process"
+	game.hand = [{"id": "ordinary_out_of_order", "cost": 0, "stage": "interface", "type": "interface", "effects": []}]
+	_assert(game.play_card(0), "out-of-order engineering card should remain legal")
+	_assert(game.chain_count == 0 and game.last_stage == "interface", "out-of-order engineering card should still break and restart the chain")
+
 	game.chain_count = 1
 	game.last_stage = "interface"
 	game.hand = [{"id": "neutral_stage", "cost": 0, "stage": "", "type": "utility", "effects": []}]
@@ -187,6 +207,7 @@ func _run() -> void:
 	_assert_reroute_public_api_contract(game)
 
 	game._start_encounter("warehouse_acceptance", "boss")
+	game.boss_gate_ids.assign(["two_sources", "trusted_and_filter", "two_output_types"])
 	game.boss_phase = 2
 	game._apply_boss_phase()
 	var has_phase_output_property := false
@@ -233,10 +254,92 @@ func _run() -> void:
 	_assert_chain_draw_state_template(game)
 	_assert_reward_composition(game)
 	_assert_lethal_deferred_effect_arbitration(game)
+	_assert_boss_phase_hand_normalization(game)
 
 	game.queue_free()
 	await process_frame
 	_finish()
+
+
+func _assert_boss_phase_hand_normalization(game) -> void:
+	_assert(game.has_method("_ensure_boss_phase_gate_card_in_hand"), "Boss should expose deterministic phase-opening hand normalization")
+	if !game.has_method("_ensure_boss_phase_gate_card_in_hand"):
+		return
+
+	game._start_encounter("warehouse_acceptance", "boss")
+	game.boss_gate_ids.assign(["two_sources", "trusted_and_filter", "two_output_types"])
+	game.boss_phase = 0
+	game._apply_boss_phase()
+	game.hand = [
+		game._card_copy("sliding_average"),
+		game._card_copy("time_slice"),
+		game._card_copy("unit_convert"),
+		game._card_copy("uart_log"),
+		game._card_copy("state_machine")
+	]
+	game.draw_pile = [game._card_copy("time_slice")]
+	_assert(game._ensure_boss_phase_gate_card_in_hand(), "missing phase answer should create one formal-card assistance copy")
+	var generated_source_found := false
+	for raw_card in game.hand:
+		if str((raw_card as Dictionary).get("stage", "")) == "collect":
+			generated_source_found = true
+	_assert(generated_source_found and game.hand.size() == 5, "phase assistance should replace one hand card with a source")
+
+	game.hand = [
+		game._card_copy("sliding_average"), game._card_copy("time_slice"), game._card_copy("unit_convert"),
+		game._card_copy("uart_log"), game._card_copy("state_machine")
+	]
+	game.draw_pile = [game._card_copy("mq2_sample")]
+	var original_draw_size: int = game.draw_pile.size()
+	_assert(game._ensure_boss_phase_gate_card_in_hand(), "owned source card should move into phase-one opening hand")
+	_assert(game.hand.size() == 5, "phase search should swap instead of increasing hand size")
+	_assert(game.draw_pile.size() == original_draw_size, "phase search should preserve draw-pile size")
+	_assert(_pile_has_card_id(game.hand, "mq2_sample"), "phase-one hand should contain the owned source card")
+	_assert(game._ensure_boss_phase_gate_card_in_hand(), "a multi-source gate may normalize a second complementary source")
+	_assert(game.hand.size() == 5, "repeat phase assistance should preserve hand size")
+
+	game.boss_phase = 1
+	game._apply_boss_phase()
+	game.phase_filters_played = 0
+	game.phase_calibrations_played = 0
+	game.hand = [
+		game._card_copy("mq2_sample"),
+		game._card_copy("bh1750_read"),
+		game._card_copy("uart_log"),
+		game._card_copy("lcd_display"),
+		game._card_copy("time_slice")
+	]
+	game.draw_pile = [game._card_copy("sliding_average"), game._card_copy("adc_convert")]
+	_assert(game._ensure_boss_phase_gate_card_in_hand(), "phase two should retrieve owned filter or calibration preparation")
+	_assert(_pile_has_card_id(game.hand, "sliding_average"), "phase-two opening hand should prioritize preparation")
+
+	game.boss_phase = 2
+	game._apply_boss_phase()
+	game.persistent_output_types = {"uart": true}
+	game.phase_output_types.clear()
+	game.hand = [
+		game._card_copy("mq2_sample"),
+		game._card_copy("bh1750_read"),
+		game._card_copy("adc_convert"),
+		game._card_copy("sliding_average"),
+		game._card_copy("uart_log")
+	]
+	game.draw_pile = [game._card_copy("lcd_display")]
+	_assert(game._ensure_boss_phase_gate_card_in_hand(), "phase three should retrieve an owned missing output type")
+	_assert(_pile_has_card_id(game.hand, "lcd_display"), "phase-three opening hand should contain the missing display output")
+
+	game.boss_phase = 1
+	game._apply_boss_phase()
+	game._reset_turn_state(true)
+	game.hand = [game._card_copy("uart_log")]
+	game.draw_pile = [game._card_copy("sliding_average"), game._card_copy("mq2_sample")]
+	game.discard_pile.clear()
+	game.processing_points = 3
+	_assert(game.begin_reroute(), "Boss targeted reroute fixture should enter selection mode")
+	_assert(game.reroute_card(0), "Boss targeted reroute should replace the selected card")
+	_assert(_pile_has_card_id(game.hand, "sliding_average"), "Boss reroute should retrieve the highest-priority owned gate card")
+	_assert(!_pile_has_card_id(game.hand, "mq2_sample"), "Boss reroute should not use the ordinary top draw when a better gate card exists")
+	_assert(game.processing_points == 2, "Boss targeted reroute should cost one processing point")
 
 
 func _assert_reroute_public_api_contract(game) -> void:
@@ -377,7 +480,7 @@ func _assert_deferred_card_finalization(game) -> void:
 		"timing": "after_card",
 		"triggerStage": "collect",
 		"triggerCount": 1,
-		"negativeCard": "abnormal_reading",
+		"penalties": [{"op": "add_negative", "cardId": "abnormal_reading"}],
 		"counterTags": []
 	}
 	game.current_encounter["evidenceGroups"] = []
@@ -417,7 +520,7 @@ func _assert_deferred_card_finalization(game) -> void:
 		"timing": "after_card",
 		"triggerStage": "collect",
 		"triggerCount": 1,
-		"negativeCard": "abnormal_reading",
+		"penalties": [{"op": "add_negative", "cardId": "abnormal_reading"}],
 		"counterTags": []
 	}
 	game.draw_pile.clear()
@@ -433,13 +536,14 @@ func _assert_deferred_card_finalization(game) -> void:
 
 func _assert_event_owned_selection(game) -> void:
 	game._reset_run()
-	var budget_before: int = game.budget
+	game.stability = 40
+	var stability_before: int = game.stability
 	game.current_event = {
 		"id": "event_card_selection",
 		"options": [{
 			"effects": [
 				{"op": "select_card", "cardIds": ["logic_probe"]},
-				{"op": "budget", "amount": 7}
+				{"op": "heal", "amount": 7}
 			]
 		}]
 	}
@@ -452,16 +556,17 @@ func _assert_event_owned_selection(game) -> void:
 	if _choose_pending_card(game, 0, "event should accept its declared selection owner"):
 		_assert(game.state == game.RunState.MAP, "event selection should resume and complete its event continuation")
 		_assert(_pile_has_card_id(game.deck, "logic_probe"), "event card selection should add the chosen card")
-		_assert(game.budget == budget_before + 7, "event selection should resume remaining event effects")
+		_assert(game.stability == stability_before + 7, "event selection should resume remaining event effects")
 
 	game._reset_run()
-	budget_before = game.budget
+	game.stability = 40
+	stability_before = game.stability
 	game.current_event = {
 		"id": "event_component_selection",
 		"options": [{
 			"effects": [
 				{"op": "select_component", "componentIds": ["state_template"]},
-				{"op": "budget", "amount": 5}
+				{"op": "heal", "amount": 5}
 			]
 		}]
 	}
@@ -472,7 +577,7 @@ func _assert_event_owned_selection(game) -> void:
 	if _choose_pending_card(game, 0, "event component selection should accept its declared selection owner"):
 		_assert(game.state == game.RunState.MAP, "event component selection should resume event completion")
 		_assert(game.relics.has("state_template") and int(game.powers.get("chain_draw", 0)) == 1, "event component selection should activate the chosen component")
-		_assert(game.budget == budget_before + 5, "event component selection should continue remaining effects")
+		_assert(game.stability == stability_before + 5, "event component selection should continue remaining effects")
 
 
 func _assert_card_resolution_effects(game) -> void:
@@ -572,11 +677,23 @@ func _assert_chain_draw_state_template(game) -> void:
 	_assert(int(game.powers.get("chain_draw", 0)) == 1, "state template should activate chain draw")
 	game._start_encounter("mq2_warmup", "ordinary")
 	game.powers["chain_energy"] = 8
-	game.draw_pile = [game._card_copy("uart_log")]
-	game.hand.clear()
+	game.draw_pile = [game._card_copy("mq2_sample")]
+	game.hand = []
 	for stage in ["collect", "interface", "process", "output"]:
-		game._advance_chain(stage)
-	_assert(game._hand_has_card("uart_log"), "chain-draw state template should draw on the first complete chain")
+		game.hand.append({
+			"id": "component_chain_%s" % stage,
+			"name": stage,
+			"stage": stage,
+			"type": stage,
+			"tags": [],
+			"cost": 0,
+			"effects": [],
+			"upgraded": false
+		})
+	game.processing_points = 3
+	for _index in range(4):
+		_assert(game.play_card(0), "state template fixture should play each ordered stage")
+	_assert(game._hand_has_card("mq2_sample"), "chain-draw state template should draw after the first complete chain")
 	_assert(game.processing_points <= 4, "legacy chain energy should not restore extra processing points")
 
 
@@ -685,6 +802,13 @@ func _count_card_id(cards: Array, card_id: String) -> int:
 		if str((raw_card as Dictionary).get("id", "")) == card_id:
 			count += 1
 	return count
+
+
+func _card_ids(cards: Array) -> Array[String]:
+	var result: Array[String] = []
+	for raw_card in cards:
+		result.append(str((raw_card as Dictionary).get("id", "")))
+	return result
 
 
 func _assert(condition: bool, message: String) -> void:

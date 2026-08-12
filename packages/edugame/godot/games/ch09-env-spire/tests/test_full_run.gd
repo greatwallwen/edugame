@@ -6,6 +6,12 @@ var failures := 0
 var game
 var steps := 0
 var boss_turns := 0
+var boss_phase_turns := {"1": 0, "2": 0, "3": 0}
+var boss_phase_reroutes := {"1": 0, "2": 0, "3": 0}
+var encounter_turns := {}
+var encounter_tiers := {}
+var recorded_turns := {}
+var reroutes := 0
 var target_map_id := "mvp_a"
 
 
@@ -36,11 +42,13 @@ func _run() -> void:
 				_assert(game.choose_reward(_reward_choice_id()), "autoplayer should resolve the card reward")
 			game.RunState.EVENT:
 				_resolve_question_event()
-			game.RunState.SHOP:
-				_resolve_shop()
 			game.RunState.REST:
-				var needs_boss_card: bool = game.current_layer >= 8 and !game._missing_boss_stage_tags().is_empty()
-				_assert(game.choose_service("shop" if needs_boss_card else "maintenance"), "autoplayer should resolve the service node")
+				if !game.pending_card_selection.is_empty():
+					_assert(game.choose_pending_card(0), "autoplayer should resolve service card selections")
+				else:
+					var needs_boss_card: bool = game.current_layer >= 8 and !game._missing_boss_stage_tags().is_empty()
+					var action := "add" if needs_boss_card else ("maintenance" if game.stability < game.max_stability else "skip")
+					_assert(game.choose_service(action), "autoplayer should resolve the service tradeoff")
 			game.RunState.COMPONENT:
 				var component_id := str((game.component_choices[0] as Dictionary).get("id", ""))
 				_assert(bool(game.choose_component(component_id)), "autoplayer should select an offered component")
@@ -57,12 +65,26 @@ func _run() -> void:
 	_assert(game.checkpoint_results.size() == 2, "full run should record two checkpoints")
 	_assert(game.checkpoints_passed == 2, "reasonable starter-deck play should pass both checkpoints")
 	_assert(game.boss_phase == 2, "full run should clear all three boss phases")
-	_assert(game.stability > 0, "successful run should retain stability")
+	_assert(boss_turns >= 8 and boss_turns <= 11, "standard Boss should take 8-11 actual turns; got %d" % boss_turns)
+	_assert(game.stability >= 20 and game.stability <= 70, "standard clear should finish at 20-70 stability after service tradeoffs; got %d" % game.stability)
+	for encounter_id in encounter_turns.keys():
+		var tier := str(encounter_tiers.get(encounter_id, ""))
+		var turns := int(encounter_turns.get(encounter_id, 0))
+		if tier == "ordinary":
+			_assert(turns >= 2 and turns <= 4, "ordinary encounter %s should take 2-4 turns; got %d" % [encounter_id, turns])
+		elif tier == "elite":
+			_assert(turns >= 3 and turns <= 7, "elite encounter %s should take 3-7 turns with service-added cards; got %d" % [encounter_id, turns])
 	_assert(game.score >= 60, "successful full run should score at least sixty")
 	print(JSON.stringify({
 		"map": target_map_id,
+		"bossGates": game.boss_gate_ids,
+		"components": game.relics,
 		"steps": steps,
 		"bossTurns": boss_turns,
+		"bossPhaseTurns": boss_phase_turns,
+		"bossPhaseReroutes": boss_phase_reroutes,
+		"encounterTurns": encounter_turns,
+		"reroutes": reroutes,
 		"bossPhase": game.boss_phase,
 		"score": game.score,
 		"stability": game.stability,
@@ -80,7 +102,7 @@ func _route_choice() -> int:
 	var layers: Array = game.run_map.get("layers", [])
 	var layer := layers[game.current_layer] as Dictionary
 	var choices: Array = layer.get("choices", [])
-	for preferred_type in ["ordinary", "event", "shop", "elite"]:
+	for preferred_type in ["ordinary", "event", "service", "elite"]:
 		for index in range(choices.size()):
 			if str((choices[index] as Dictionary).get("type", "")) == preferred_type:
 				return index
@@ -91,22 +113,44 @@ func _play_combat_step() -> void:
 	if !game.pending_card_selection.is_empty():
 		_assert(game.choose_pending_card(0), "autoplayer should resolve combat-owned card selections")
 		return
+	_record_active_turn()
 	var is_boss := str(game.current_encounter.get("tier", "")) == "boss"
-	if is_boss:
-		boss_turns += 1
 	if game.cards_played_this_turn == 0 and game.reroute_available and _required_gate_unmet() and !_has_playable_gate_card():
 		var reroute_index := _reroute_index()
 		if reroute_index >= 0 and game.begin_reroute():
 			if game.reroute_card(reroute_index):
+				reroutes += 1
+				if is_boss:
+					var phase_key := str(game.boss_phase + 1)
+					boss_phase_reroutes[phase_key] = int(boss_phase_reroutes.get(phase_key, 0)) + 1
 				return
 	var played_any := true
 	while played_any and game.state == game.RunState.COMBAT:
 		played_any = false
 		var index := _best_card_index()
+		var phase_before: int = game.boss_phase
 		if index >= 0 and game.play_card(index):
 			played_any = true
+			if is_boss and game.boss_phase != phase_before:
+				return
 	if game.state == game.RunState.COMBAT:
 		game.end_turn()
+
+
+func _record_active_turn() -> void:
+	var tier := str(game.current_encounter.get("tier", "ordinary"))
+	var encounter_id := str(game.current_encounter.get("id", game.current_encounter.get("name", "unknown")))
+	var phase_key := str(game.boss_phase + 1) if tier == "boss" else ""
+	var turn_key := "%s:%s:%s:%d" % [tier, encounter_id, phase_key, game.turn_number]
+	if recorded_turns.has(turn_key):
+		return
+	recorded_turns[turn_key] = true
+	if tier == "boss":
+		boss_phase_turns[phase_key] = int(boss_phase_turns.get(phase_key, 0)) + 1
+		boss_turns += 1
+	elif ["ordinary", "elite"].has(tier):
+		encounter_turns[encounter_id] = int(encounter_turns.get(encounter_id, 0)) + 1
+		encounter_tiers[encounter_id] = tier
 
 
 func _best_card_index() -> int:
@@ -184,13 +228,6 @@ func _resolve_question_event() -> void:
 		_assert(game.choose_pending_card(0), "autoplayer should resolve the event-owned card or component choice")
 	if bool(game.event_result.get("resolved", false)):
 		_assert(game.continue_event(), "autoplayer should continue after the question explanation")
-
-
-func _resolve_shop() -> void:
-	var guaranteed_id: String = game._guaranteed_boss_shop_card_id()
-	if !guaranteed_id.is_empty() and _array_has_id(game.shop_cards, guaranteed_id):
-		_assert(game.purchase_shop_card(guaranteed_id), "autoplayer should buy the affordable Boss preparation card")
-	_assert(game.leave_shop(), "autoplayer should leave the shop")
 
 
 func _reward_choice_id() -> String:
@@ -277,21 +314,7 @@ func _card_advances_required_gate(card: Dictionary) -> bool:
 		return false
 	if tier != "boss":
 		return false
-	match game.boss_phase:
-		0:
-			return _card_collects_new_source(card, game.phase_source_coverage)
-		1:
-			if (
-				game.phase_filters_played == 0
-				and game.phase_calibrations_played == 0
-				and (tags.has("filter") or tags.has("calibration"))
-			):
-				return true
-			if game.phase_trusted_sources.size() < 2:
-				return _card_can_convert_new_source(card, game.phase_trusted_sources) or _card_collects_new_source(card, game.phase_trusted_sources)
-		2:
-			return _card_adds_distinct_boss_output(card)
-	return false
+	return game._boss_phase_gate_card_score(card) > 0
 
 
 func _card_adds_distinct_boss_output(card: Dictionary) -> bool:

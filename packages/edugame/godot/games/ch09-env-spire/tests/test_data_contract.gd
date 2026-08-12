@@ -3,7 +3,7 @@ extends SceneTree
 const SINGLE_ROUTE_TYPES := [
 	"ordinary", "event", "ordinary", "service",
 	"checkpoint_sensor", "event", "ordinary", "checkpoint_trust",
-	"shop", "elite", "service", "boss"
+	"service", "elite", "service", "boss"
 ]
 const REQUIRED_ROUTE_MILESTONES := {
 	2: {"type": "event", "contentId": "random_basic", "eventTier": "basic"},
@@ -32,12 +32,12 @@ const EVENT_IDS := [
 const EVENT_EXPECTATIONS := {
 	"basic_mq2_warmup": {
 		"answer": "insufficient_warmup",
-		"rewards": [{"op": "budget", "amount": 20}, {"op": "heal", "amount": 6}],
+		"rewards": [{"op": "reveal_nodes", "nodes": [3, 4]}, {"op": "heal", "amount": 6}],
 		"penalty": {"op": "heal", "amount": -6, "minimum": 1}
 	},
 	"basic_signal_order": {
 		"answer": ["sensor", "interface", "convert", "output"],
-		"rewards": [{"op": "choose_card", "rarity": "common"}, {"op": "budget", "amount": 25}],
+		"rewards": [{"op": "choose_card", "rarity": "common"}, {"op": "heal", "amount": 8}],
 		"penalty": {"op": "add_negative", "cardId": "stale_data"}
 	},
 	"basic_adc_spike": {
@@ -48,8 +48,8 @@ const EVENT_EXPECTATIONS := {
 	},
 	"basic_i2c_pullup": {
 		"answer": "inspect_pullups",
-		"rewards": [{"op": "budget", "amount": 20}, {"op": "reveal_nodes", "nodes": [3, 4]}],
-		"penalty": {"op": "budget", "amount": -15, "minimum": 0}
+		"rewards": [{"op": "heal", "amount": 6}, {"op": "reveal_nodes", "nodes": [3, 4]}],
+		"penalty": {"op": "add_negative", "cardId": "i2c_nack"}
 	},
 	"basic_raw_trusted": {
 		"answer": "convert_then_validate",
@@ -58,18 +58,18 @@ const EVENT_EXPECTATIONS := {
 	},
 	"basic_sample_period": {
 		"answer": "nonblocking_500ms",
-		"rewards": [{"op": "budget", "amount": 25}, {"op": "heal", "amount": 6}],
+		"rewards": [{"op": "reveal_nodes", "nodes": [3, 4]}, {"op": "heal", "amount": 6}],
 		"penalty": {"op": "heal", "amount": -6, "minimum": 1}
 	},
 	"basic_i2c_result": {
 		"answer": "retry_and_log",
-		"rewards": [{"op": "choose_card", "rarity": "common", "tag": "diagnosis"}, {"op": "budget", "amount": 20}],
+		"rewards": [{"op": "choose_card", "rarity": "common", "tag": "diagnosis"}, {"op": "heal", "amount": 6}],
 		"penalty": {"op": "add_negative", "cardId": "i2c_nack"}
 	},
 	"basic_sensor_interface": {
 		"answer": "mq2_adc_others_i2c",
 		"rewards": [{"op": "reveal_nodes", "nodes": [3, 4]}, {"op": "choose_card", "rarity": "common", "type": "interface"}],
-		"penalty": {"op": "budget", "amount": -15, "minimum": 0}
+		"penalty": {"op": "heal", "amount": -6, "minimum": 1}
 	},
 	"advanced_moving_average": {
 		"answer": "reduce_spike_add_delay",
@@ -90,7 +90,7 @@ const EVENT_EXPECTATIONS := {
 	"advanced_display_buffer": {
 		"answer": "separate_sample_refresh",
 		"rewards": [{"op": "choose_component", "componentIds": ["lcd_buffer"]}, {"op": "upgrade_card", "type": "output"}],
-		"penalty": {"op": "budget", "amount": -20, "minimum": 0}
+		"penalty": {"op": "add_negative", "cardId": "blocking_delay"}
 	},
 	"advanced_alarm_hysteresis": {
 		"answer": "on70_off60",
@@ -111,7 +111,7 @@ const EVENT_EXPECTATIONS := {
 	"advanced_uart_report": {
 		"answer": "timestamp_status_raw_trusted",
 		"rewards": [{"op": "upgrade_card", "type": "output"}, {"op": "remove_card", "rarity": "starter"}],
-		"penalty": {"op": "budget", "amount": -25, "minimum": 0}
+		"penalty": {"op": "heal", "amount": -10, "minimum": 1}
 	}
 }
 
@@ -123,9 +123,16 @@ func _init() -> void:
 
 
 func _run() -> void:
+	var level_payload = JSON.parse_string(FileAccess.get_file_as_string("res://levels/ch09_env_spire_level.json"))
+	_assert(typeof(level_payload) == TYPE_DICTIONARY, "level manifest should be a JSON object")
+	if typeof(level_payload) == TYPE_DICTIONARY:
+		var level_data := (level_payload as Dictionary).get("data", {}) as Dictionary
+		_assert(int(level_data.get("nodeCount", 0)) == 12, "level manifest should advertise all twelve route nodes")
 	var cards := _load_array("res://data/cards.local.json", "cards")
 	var enemies := _load_array("res://data/enemies.local.json", "enemies")
-	var events := _load_array("res://data/events.local.json", "events")
+	var event_mechanics := _load_array("res://data/events.local.json", "events")
+	var questions := _load_top_level_array("res://data/questions.local.json")
+	var events := _compose_events(event_mechanics, questions)
 	var relics := _load_array("res://data/relics.local.json", "relics")
 	var maps := _load_array("res://data/run_maps.local.json", "maps")
 	var scene := load("res://scenes/main.tscn")
@@ -166,8 +173,8 @@ func _run() -> void:
 				if ["draw", "draw_discard", "select_draw", "draw_if_removed", "next_energy"].has(str(effect.get("op", ""))):
 					_assert(int(effect.get("perTurnLimit", 0)) > 0, "%s zero-cost draw or refund should be turn-limited" % card.get("id", "card"))
 	_assert(_unique_ids(cards), "card ids should be unique and non-empty")
-	_assert(_count_where(enemies, "tier", "ordinary") == 5, "MVP should define five ordinary faults")
-	_assert(_count_where(enemies, "tier", "elite") == 1, "MVP should define one elite fault")
+	_assert(_count_where(enemies, "tier", "ordinary") == 10, "release build should define ten ordinary faults")
+	_assert(_count_where(enemies, "tier", "elite") == 3, "release build should define three elite faults")
 	_assert(_count_where(enemies, "tier", "boss") == 1, "MVP should define one boss")
 	for raw_enemy in enemies:
 		var enemy := raw_enemy as Dictionary
@@ -182,6 +189,20 @@ func _run() -> void:
 			_assert(!str(rule.get("description", "")).is_empty(), "fault rule should explain its trigger")
 			_assert(!str(rule.get("counterText", "")).is_empty(), "fault rule should explain its counter")
 			_assert((rule.get("counterTags", []) as Array).size() >= 2 or bool(rule.get("behaviorCounter", false)), "fault rule should have broad counterplay")
+			var penalties: Array = rule.get("penalties", [])
+			_assert(!penalties.is_empty(), "%s should declare data-driven penalties" % enemy.get("id", "enemy"))
+			for raw_penalty in penalties:
+				var penalty := raw_penalty as Dictionary
+				_assert(["add_negative", "damage", "next_energy"].has(str(penalty.get("op", ""))), "fault penalties should use supported operations")
+		elif str(enemy.get("tier", "")) == "boss":
+			var phases: Array = enemy.get("phases", [])
+			_assert(phases.size() == 3, "Boss should retain three phases")
+			for raw_phase in phases:
+				var gate_options: Array = (raw_phase as Dictionary).get("gateOptions", [])
+				_assert(gate_options.size() == 2, "each Boss phase should expose two visible gate options")
+				for raw_gate in gate_options:
+					var gate := raw_gate as Dictionary
+					_assert(!str(gate.get("id", "")).is_empty() and !str(gate.get("label", "")).is_empty(), "Boss gate options should expose id and label")
 	_assert(events.size() == 16, "question event pool should define sixteen events")
 	_assert(_count_where(events, "tier", "basic") == 8, "question event pool should define eight basic events")
 	_assert(_count_where(events, "tier", "advanced") == 8, "question event pool should define eight advanced events")
@@ -213,7 +234,7 @@ func _run() -> void:
 			_assert(_same_value(event.get("waveform"), expected.get("waveform")), "%s should declare the specified waveform samples" % event_id)
 	actual_event_ids.sort()
 	_assert(actual_event_ids == EVENT_IDS, "question event pool should use the sixteen specified IDs")
-	_assert(relics.size() == 5, "MVP should define five engineering components")
+	_assert(relics.size() == 10, "release build should define ten engineering components")
 	var state_template := {}
 	for raw_relic in relics:
 		var relic := raw_relic as Dictionary
@@ -245,7 +266,12 @@ func _run() -> void:
 				_assert(content_id == str(milestone.get("contentId", "")), "layer %d should use the required route content" % layer_number)
 				if milestone.has("eventTier"):
 					_assert(str(choice.get("eventTier", "")) == str(milestone.get("eventTier", "")), "layer %d should use the required event tier" % layer_number)
-			if ["ordinary", "elite", "boss"].has(node_type):
+			if ["ordinary", "elite"].has(node_type):
+				var content_pool: Array = choice.get("contentPool", [])
+				_assert(!content_pool.is_empty(), "%s %s node should declare a content pool" % [run_map.get("id", "map"), node_type])
+				for pooled_id in content_pool:
+					_assert(enemy_ids.has(str(pooled_id)), "%s should resolve pooled enemy %s" % [run_map.get("id", "map"), pooled_id])
+			elif node_type == "boss":
 				_assert(enemy_ids.has(content_id), "%s should resolve enemy %s" % [run_map.get("id", "map"), content_id])
 			elif node_type == "event":
 				_assert(!str(choice.get("id", "")).is_empty(), "%s event node should expose a seeded-selection node id" % run_map.get("id", "map"))
@@ -254,6 +280,35 @@ func _run() -> void:
 		game.queue_free()
 		await process_frame
 	_finish()
+
+
+func _compose_events(mechanics: Array, questions: Array) -> Array:
+	var questions_by_id := {}
+	for raw_question in questions:
+		var question := raw_question as Dictionary
+		questions_by_id[str(question.get("id", ""))] = question
+	var result: Array = []
+	for raw_mechanic in mechanics:
+		var mechanic := raw_mechanic as Dictionary
+		var question_id := str(mechanic.get("questionId", ""))
+		_assert(questions_by_id.has(question_id), "event mechanic should resolve question %s" % question_id)
+		if !questions_by_id.has(question_id):
+			continue
+		var merged := (questions_by_id[question_id] as Dictionary).duplicate(true)
+		merged.merge(mechanic, true)
+		result.append(merged)
+	return result
+
+
+func _load_top_level_array(path: String) -> Array:
+	if !FileAccess.file_exists(path):
+		_assert(false, "%s should exist" % path)
+		return []
+	var parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if typeof(parsed) != TYPE_ARRAY:
+		_assert(false, "%s should contain a top-level array" % path)
+		return []
+	return parsed as Array
 
 
 func _load_array(path: String, key: String) -> Array:

@@ -21,7 +21,7 @@
         "triggerCount": 2,
         "counterTags": ["diagnosis", "calibration"],
         "behaviorCounter": true,
-        "negativeCard": "uncalibrated_reading",
+        "penalties": [{"op": "add_negative", "cardId": "uncalibrated_reading"}],
         "description": "本回合第 2 次烟雾采集会加入未校准读数。",
         "counterText": "先诊断/校准，或本回合只采集一次。"
       }
@@ -45,7 +45,7 @@
         "source": "light",
         "counterTags": ["buffer", "scheduler"],
         "behaviorCounter": true,
-        "negativeCard": "stale_data",
+        "penalties": [{"op": "add_negative", "cardId": "stale_data"}],
         "description": "回合结束时保留光照原始数据会加入旧数据。",
         "counterText": "使用缓存保留，或先完成光照数据处理。"
       }
@@ -69,7 +69,7 @@
         "triggerStage": "collect",
         "triggerCount": 2,
         "counterTags": ["filter", "diagnosis"],
-        "negativeCard": "abnormal_reading",
+        "penalties": [{"op": "add_negative", "cardId": "abnormal_reading"}],
         "description": "本回合第 2 次采集会放大 ADC 尖峰噪声。",
         "counterText": "先滤波或诊断，再进行连续采集。"
       }
@@ -93,7 +93,7 @@
         "triggerStage": "output",
         "triggerCount": 1,
         "counterTags": ["buffer", "scheduler", "diagnosis"],
-        "nextEnergy": -1,
+        "penalties": [{"op": "next_energy", "amount": -1}],
         "description": "未准备的显示输出会占用下一回合处理点。",
         "counterText": "先准备缓冲、调度或诊断，再执行输出。"
       }
@@ -103,7 +103,7 @@
       "name": "报警阈值抖动",
       "tier": "ordinary",
       "region": 3,
-      "repairTarget": 44,
+      "repairTarget": 40,
       "weaknessTags": ["alarm", "filter", "smoke"],
       "evidenceGroups": [["smoke"], ["alarm", "filter"]],
       "knowledgePoint": "报警逻辑需要滤波和迟滞区间。",
@@ -117,9 +117,134 @@
         "triggerTag": "alarm",
         "triggerCount": 1,
         "counterTags": ["filter", "trusted_data"],
-        "negativeCard": "false_alarm",
+        "penalties": [{"op": "add_negative", "cardId": "false_alarm"}],
         "description": "缺少可信数据时触发报警会加入误报警。",
         "counterText": "先滤波，或使用可信数据触发报警。"
+      }
+    },
+    {
+      "id": "mq2_baseline_drift",
+      "name": "MQ-2 基线漂移",
+      "tier": "ordinary",
+      "region": 1,
+      "repairTarget": 26,
+      "weaknessTags": ["smoke", "calibration", "diagnosis"],
+      "evidenceGroups": [["smoke"], ["calibration", "diagnosis"]],
+      "knowledgePoint": "烟雾传感器采集前应完成基线校准或诊断。",
+      "intentPattern": [
+        {"type": "negative", "card": "uncalibrated_reading", "text": "加入未校准读数"},
+        {"type": "damage", "amount": 7, "text": "基线漂移：稳定度 -7"}
+      ],
+      "faultRule": {
+        "id": "mq2_baseline_drift",
+        "timing": "after_card",
+        "triggerTag": "smoke",
+        "triggerStage": "collect",
+        "triggerCount": 1,
+        "counterTags": ["calibration", "diagnosis"],
+        "penalties": [{"op": "add_negative", "cardId": "uncalibrated_reading"}],
+        "description": "未先校准或诊断便采集烟雾数据会加入未校准读数。",
+        "counterText": "先使用校准或诊断牌，再采集烟雾数据。"
+      }
+    },
+    {
+      "id": "bh1750_early_read",
+      "name": "BH1750 提前读取",
+      "tier": "ordinary",
+      "region": 1,
+      "repairTarget": 27,
+      "weaknessTags": ["light", "scheduler", "diagnosis"],
+      "evidenceGroups": [["light"], ["scheduler", "diagnosis"]],
+      "knowledgePoint": "BH1750 测量需要等待转换完成后再读取。",
+      "intentPattern": [
+        {"type": "negative", "card": "stale_data", "text": "加入旧数据"},
+        {"type": "damage", "amount": 7, "text": "提前读取：稳定度 -7"}
+      ],
+      "faultRule": {
+        "id": "bh1750_early_read",
+        "timing": "after_card",
+        "triggerTag": "light",
+        "triggerStage": "collect",
+        "triggerCount": 1,
+        "counterTags": ["scheduler", "diagnosis"],
+        "penalties": [{"op": "add_negative", "cardId": "stale_data"}],
+        "description": "未安排转换等待便读取光照数据会加入旧数据。",
+        "counterText": "先使用调度或诊断牌，再读取光照数据。"
+      }
+    },
+    {
+      "id": "hdc1080_conversion_wait",
+      "name": "HDC1080 转换阻塞",
+      "tier": "ordinary",
+      "region": 2,
+      "repairTarget": 34,
+      "weaknessTags": ["temp", "humidity", "scheduler", "i2c"],
+      "evidenceGroups": [["temp", "humidity"], ["scheduler", "i2c"]],
+      "knowledgePoint": "温湿度转换等待应交给非阻塞调度。",
+      "intentPattern": [
+        {"type": "negative", "card": "blocking_delay", "text": "加入阻塞延时"},
+        {"type": "damage", "amount": 8, "text": "转换阻塞：稳定度 -8"}
+      ],
+      "faultRule": {
+        "id": "hdc1080_conversion_wait",
+        "timing": "after_card",
+        "triggerTag": "i2c",
+        "triggerCount": 2,
+        "counterTags": ["scheduler", "buffer", "diagnosis"],
+        "penalties": [{"op": "add_negative", "cardId": "blocking_delay"}],
+        "description": "连续接口事务缺少调度会加入阻塞延时。",
+        "counterText": "先安排调度、缓冲或诊断，再执行连续事务。"
+      }
+    },
+    {
+      "id": "i2c_address_collision",
+      "name": "I2C 地址冲突",
+      "tier": "ordinary",
+      "region": 2,
+      "repairTarget": 36,
+      "weaknessTags": ["i2c", "diagnosis", "scheduler"],
+      "evidenceGroups": [["i2c"], ["diagnosis", "scheduler"]],
+      "knowledgePoint": "总线事务前应扫描并确认设备地址。",
+      "intentPattern": [
+        {"type": "negative", "card": "address_conflict", "text": "加入地址冲突"},
+        {"type": "damage", "amount": 9, "text": "地址争用：稳定度 -9"}
+      ],
+      "faultRule": {
+        "id": "i2c_address_collision",
+        "timing": "after_card",
+        "triggerTag": "i2c",
+        "triggerCount": 1,
+        "counterTags": ["diagnosis", "scheduler"],
+        "penalties": [{"op": "add_negative", "cardId": "address_conflict"}],
+        "description": "未诊断便发起 I2C 事务会加入地址冲突。",
+        "counterText": "先使用诊断或调度牌确认总线状态。"
+      }
+    },
+    {
+      "id": "uart_frame_overrun",
+      "name": "UART 帧溢出",
+      "tier": "ordinary",
+      "region": 3,
+      "repairTarget": 46,
+      "weaknessTags": ["uart", "buffer", "scheduler"],
+      "evidenceGroups": [["uart"], ["buffer", "scheduler"]],
+      "knowledgePoint": "连续串口输出需要缓冲与发送调度。",
+      "intentPattern": [
+        {"type": "negative", "card": "blocking_delay", "text": "加入阻塞延时"},
+        {"type": "damage", "amount": 11, "text": "帧溢出：稳定度 -11"}
+      ],
+      "faultRule": {
+        "id": "uart_frame_overrun",
+        "timing": "after_card",
+        "triggerStage": "output",
+        "triggerCount": 2,
+        "counterTags": ["buffer", "scheduler", "diagnosis"],
+        "penalties": [
+          {"op": "damage", "amount": 4},
+          {"op": "add_negative", "cardId": "blocking_delay"}
+        ],
+        "description": "连续输出缺少缓冲或调度会损失稳定度并加入阻塞延时。",
+        "counterText": "先准备缓冲、调度或诊断，再连续输出。"
       }
     },
     {
@@ -144,10 +269,69 @@
         "triggerTag": "i2c",
         "triggerCount": 2,
         "counterTags": ["diagnosis", "scheduler", "chain3"],
-        "damage": 6,
-        "negativeCard": "blocking_delay",
+        "penalties": [
+          {"op": "damage", "amount": 6},
+          {"op": "add_negative", "cardId": "blocking_delay"}
+        ],
         "description": "本回合第 2 次 I2C 事务会造成总线阻塞。",
         "counterText": "先诊断、调度，或完成三段连携后再执行事务。"
+      }
+    },
+    {
+      "id": "multi_sensor_race",
+      "name": "多传感器竞争",
+      "tier": "elite",
+      "region": 3,
+      "repairTarget": 64,
+      "weaknessTags": ["scheduler", "diagnosis", "smoke", "light"],
+      "evidenceGroups": [["smoke", "light", "temp", "humidity"], ["scheduler", "diagnosis"]],
+      "knowledgePoint": "多传感器采集应通过调度避免共享资源竞争。",
+      "intentPattern": [
+        {"type": "damage", "amount": 10, "text": "采集竞争：稳定度 -10"},
+        {"type": "negative", "card": "stale_data", "text": "加入旧数据"},
+        {"type": "damage", "amount": 13, "text": "时序失配：稳定度 -13"}
+      ],
+      "faultRule": {
+        "id": "multi_sensor_race",
+        "timing": "after_card",
+        "triggerStage": "collect",
+        "triggerCount": 2,
+        "counterTags": ["scheduler", "diagnosis"],
+        "penalties": [
+          {"op": "damage", "amount": 6},
+          {"op": "add_negative", "cardId": "stale_data"}
+        ],
+        "description": "连续采集缺少调度或诊断会造成伤害并加入旧数据。",
+        "counterText": "先调度或诊断，再执行连续采集。"
+      }
+    },
+    {
+      "id": "display_bus_deadlock",
+      "name": "显示总线死锁",
+      "tier": "elite",
+      "region": 3,
+      "repairTarget": 68,
+      "weaknessTags": ["display", "buffer", "scheduler", "diagnosis"],
+      "evidenceGroups": [["display", "uart"], ["buffer", "scheduler", "diagnosis"]],
+      "knowledgePoint": "显示输出与采集总线应隔离并使用缓冲调度。",
+      "intentPattern": [
+        {"type": "damage", "amount": 11, "text": "总线等待：稳定度 -11"},
+        {"type": "negative", "card": "blocking_delay", "text": "加入阻塞延时"},
+        {"type": "damage", "amount": 14, "text": "显示死锁：稳定度 -14"}
+      ],
+      "faultRule": {
+        "id": "display_bus_deadlock",
+        "timing": "after_card",
+        "triggerTag": "display",
+        "triggerStage": "output",
+        "triggerCount": 1,
+        "counterTags": ["buffer", "scheduler", "diagnosis"],
+        "penalties": [
+          {"op": "damage", "amount": 7},
+          {"op": "add_negative", "cardId": "blocking_delay"}
+        ],
+        "description": "显示输出缺少缓冲或调度会造成伤害并加入阻塞延时。",
+        "counterText": "先建立缓冲、调度或诊断，再刷新显示。"
       }
     },
     {
@@ -161,7 +345,10 @@
         {
           "name": "采集接入",
           "repairTarget": 28,
-          "gate": "two_sources",
+          "gateOptions": [
+            {"id": "two_sources", "label": "覆盖两个传感器来源"},
+            {"id": "three_sources", "label": "覆盖三个传感器来源"}
+          ],
           "intentPattern": [
             {"type": "damage", "amount": 8, "text": "传感器离线：稳定度 -8"},
             {"type": "negative", "card": "uncalibrated", "text": "加入未校准读数"}
@@ -170,7 +357,10 @@
         {
           "name": "数据可信",
           "repairTarget": 36,
-          "gate": "trusted_and_filter",
+          "gateOptions": [
+            {"id": "trusted_and_filter", "label": "两类可信数据 + 滤波"},
+            {"id": "trusted_and_calibration", "label": "两类可信数据 + 校准"}
+          ],
           "intentPattern": [
             {"type": "negative", "card": "abnormal_reading", "text": "加入异常读数"},
             {"type": "negative", "card": "stale_data", "text": "加入旧数据"},
@@ -180,7 +370,10 @@
         {
           "name": "系统闭环",
           "repairTarget": 44,
-          "gate": "two_output_types",
+          "gateOptions": [
+            {"id": "two_output_types", "label": "完成两种不同输出"},
+            {"id": "acceptance_output", "label": "验收类输出 + 另一种输出"}
+          ],
           "intentPattern": [
             {"type": "negative", "card": "blocking_delay", "text": "加入阻塞延时"},
             {"type": "negative", "card": "false_alarm", "text": "加入误报警"},

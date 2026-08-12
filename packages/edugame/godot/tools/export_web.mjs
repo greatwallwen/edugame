@@ -10,6 +10,15 @@ const repoRoot = resolve(toolDir, '../../../..');
 const publicGodotRoot = resolve(repoRoot, 'apps/player/public/assets/godot');
 
 const GAME_CONFIGS = {
+  'ch09-env-spire': {
+    projectDir: resolve(repoRoot, 'packages/edugame/godot/games/ch09-env-spire'),
+    outputDir: resolve(publicGodotRoot, 'ch09-env-spire'),
+    entryFiles: [
+      resolve(repoRoot, 'courses/stm32f10x/chapters/ch08_ch09.py'),
+      resolve(repoRoot, 'packages/edugame/godot/games/ch09-env-spire/levels/ch09_env_spire_level.json'),
+      resolve(repoRoot, 'apps/player/public/manifest.json'),
+    ],
+  },
   'ch11-band-defense': {
     projectDir: resolve(repoRoot, 'packages/edugame/godot/games/ch11-band-defense'),
     outputDir: resolve(publicGodotRoot, 'ch11-band-defense'),
@@ -29,6 +38,15 @@ const GAME_CONFIGS = {
     ],
   },
 };
+
+export function configuredGodotGames() {
+  return Object.entries(GAME_CONFIGS)
+    .map(([gameId, config]) => ({
+      gameId,
+      entryFiles: config.entryFiles.map((file) => relative(repoRoot, file).replaceAll('\\', '/')),
+    }))
+    .sort((left, right) => left.gameId.localeCompare(right.gameId));
+}
 
 function assertDirectChild(outputDir, allowedRoot) {
   const absoluteOutput = resolve(outputDir);
@@ -203,7 +221,14 @@ function runGodot(godotBin, projectDir, outputPath) {
   });
 }
 
-export async function exportWebGames({ gameIds, godotBin = process.env.GODOT_BIN || 'godot' }) {
+export function defaultGodotBinary({ platform = process.platform } = {}) {
+	return platform === 'win32' ? 'godot.cmd' : 'godot';
+}
+
+export async function exportWebGames({
+	gameIds,
+	godotBin = process.env.GODOT_BIN || defaultGodotBinary(),
+}) {
 	await syncTeachingAssets({ repositoryRoot: repoRoot, mode: 'sync' });
 	const results = [];
 	for (const gameId of gameIds) {

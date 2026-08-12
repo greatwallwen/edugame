@@ -4,6 +4,11 @@
     {"id": "serial_helper", "name": "串口调试助手", "description": "每场第一张 UART 牌费用为 0。", "effect": {"id": "first_uart_free", "amount": 1}},
     {"id": "window_n8", "name": "滑动窗口 N=8", "description": "每场第一张滤波牌额外获得 4 防护。", "effect": {"id": "first_filter_block", "amount": 4}},
     {"id": "state_template", "name": "状态机模板", "description": "每回合首次完成四段连携时抽 1 张。", "effect": {"id": "chain_draw", "amount": 1}},
-    {"id": "lcd_buffer", "name": "LCD 缓冲区", "description": "每场第一次阻塞延时无效。", "effect": {"id": "block_first_delay", "amount": 1}}
+    {"id": "lcd_buffer", "name": "LCD 缓冲区", "description": "每场第一次阻塞延时无效。", "effect": {"id": "block_first_delay", "amount": 1}},
+    {"id": "precision_reference", "name": "精密基准源", "description": "每场第一张校准牌费用为 0。", "effect": {"id": "first_calibration_free", "amount": 1}},
+    {"id": "dma_channel", "name": "DMA 通道", "description": "每场第一张缓冲牌额外抽 1 张。", "effect": {"id": "first_buffer_draw", "amount": 1}},
+    {"id": "watchdog_timer", "name": "看门狗定时器", "description": "每场第一次稳定度伤害减少 4。", "effect": {"id": "first_damage_reduction", "amount": 4}},
+    {"id": "shielded_cable", "name": "屏蔽信号线", "description": "每场第一张模拟采集牌额外修复 3。", "effect": {"id": "first_analog_repair", "amount": 3}},
+    {"id": "trace_probe", "name": "总线追踪探头", "description": "每场第一张诊断牌额外获得 5 防护。", "effect": {"id": "first_diagnosis_block", "amount": 5}}
   ]
 }

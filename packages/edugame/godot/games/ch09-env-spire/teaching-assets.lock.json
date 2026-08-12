@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "gameId": "ch09-env-spire",
+  "authority": "courses/stm32f10x",
+  "generated": [
+    {
+      "id": "ch09-questions",
+      "source": "courses/stm32f10x/knowledge/ch09-env-spire.questions.json",
+      "publicTarget": "apps/player/public/assets/courses/stm32-course/knowledge/ch09-env-spire.questions.json",
+      "localTarget": "packages/edugame/godot/games/ch09-env-spire/data/questions.local.json",
+      "sha256": "d33313be864e300dd3c492e0add00a5baf116e46f0f8f1ef0bda670f6847092c"
+    }
+  ]
+}

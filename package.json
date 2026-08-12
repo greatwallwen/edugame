@@ -20,7 +20,7 @@
     "godot:runtime:check": "node packages/edugame/godot/tools/sync_runtime.mjs check",
     "godot:teaching:sync": "node packages/edugame/godot/tools/sync_teaching_assets.mjs sync",
     "godot:teaching:check": "node packages/edugame/godot/tools/sync_teaching_assets.mjs check",
-    "godot:web:export": "node packages/edugame/godot/tools/export_web.mjs all",
+    "godot:web:export": "node packages/edugame/godot/tools/export_web.mjs",
     "gorest:generate": "node ../.codex-tools/gorest-2d-animation-spritesheet-generator/scripts/gorest-cli.mjs generate",
     "gorest:latest": "node ../.codex-tools/gorest-2d-animation-spritesheet-generator/scripts/gorest-cli.mjs latest",
     "gorest:health": "node ../.codex-tools/gorest-2d-animation-spritesheet-generator/scripts/gorest-cli.mjs health"
